@@ -11,24 +11,27 @@ import passport from "passport";
 import mongoose from "mongoose";
 import "dotenv/config";
 import multer from "multer";
-
-// Models & Routes
-import authRoutes from "./routes/authRoutes.js";
-import User from "./models/User.js";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import { spawn } from "child_process";
 
+// Models & Routes
+import authRoutes from "./routes/authRoutes.js";
+import User from "./models/User.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure FFmpeg path is set correctly
+// Ensure FFmpeg path
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
 const httpServer = createServer(app);
 
-// 1. Socket.io Setup with Dynamic CORS
+// --- 1. PRO PRODUCTION SETUP ---
+// This is critical for Render/Heroku to handle HTTPS cookies correctly
+app.set("trust proxy", 1);
+
 const io = new Server(httpServer, {
   cors: {
     origin:
@@ -39,18 +42,14 @@ const io = new Server(httpServer, {
   },
 });
 
-// 2. Absolute Folders Setup (Prevents "Folder Not Found" crashes)
+// --- 2. FOLDER & STATIC SETUP ---
 const uploadDir = path.resolve(__dirname, "uploads");
 const exportDir = path.resolve(__dirname, "exports");
 
 [uploadDir, exportDir].forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-    console.log(`📁 Created directory: ${dir}`);
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// 3. Middlewares
 app.use(
   cors({
     origin:
@@ -60,25 +59,29 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-// Database Connection
+// --- 3. DATABASE & SESSION ---
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
-// 4. Authentication & Session
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "medialab-secret-key",
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 24 * 60 * 60, // 1 day
+    }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
-      secure: process.env.NODE_ENV === "production", // Recommended for HTTPS
+      // CRITICAL: On Render, secure must be true and sameSite must be 'none' for Google Auth
+      secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   }),
@@ -87,33 +90,28 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Static Serving
+// Serving
 app.use(express.static(path.join(__dirname, "client")));
 app.use("/uploads", express.static(uploadDir));
 app.use("/exports", express.static(exportDir));
 
-// --- API ROUTES ---
-
+// --- 4. API ROUTES ---
 app.use("/api/auth", authRoutes);
 
-// Fix Multer to use absolute path variable
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
   }),
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
 });
 
 app.post("/api/upload", upload.single("file"), (req, res) => {
   if (!req.file)
-    return res
-      .status(400)
-      .json({ success: false, message: "No file received" });
+    return res.status(400).json({ success: false, message: "No file" });
   res.json({ success: true, filename: req.file.filename });
 });
 
-// --- UPDATED VIDEO TO AUDIO ROUTE ---
+// --- VIDEO TO AUDIO ---
 app.post("/api/convert/video-to-audio", async (req, res) => {
   const { videoFile, socketId, requestedFormat } = req.body;
   const format = requestedFormat || "mp3";
@@ -121,29 +119,12 @@ app.post("/api/convert/video-to-audio", async (req, res) => {
   const outputPath = path.join(exportDir, outputFileName);
   const inputPath = path.join(uploadDir, videoFile);
 
-  console.log("📂 Input Path:", inputPath);
-  console.log("ID for Socket:", socketId);
+  if (!fs.existsSync(inputPath))
+    return res.status(404).json({ success: false, message: "File not found" });
 
-  // 1. Check if file actually exists before calling FFmpeg
-  if (!fs.existsSync(inputPath)) {
-    console.error("❌ ERROR: Source video file not found at path!");
-    return res
-      .status(404)
-      .json({ success: false, message: "File not found on server" });
-  }
-
-  if (socketId) {
-    io.to(socketId).emit("process-step", {
-      message: "🚀 FFmpeg Engine Initializing...",
-      percent: 10,
-    });
-  }
-
-  // 2. Wrap FFmpeg in a try/catch or ensure error listeners are robust
   ffmpeg(inputPath)
     .toFormat(format)
-    .on("start", (commandLine) => {
-      console.log("🎬 FFmpeg started with command: " + commandLine);
+    .on("start", () => {
       if (socketId)
         io.to(socketId).emit("process-step", {
           message: "🎸 Extracting Audio...",
@@ -152,70 +133,46 @@ app.post("/api/convert/video-to-audio", async (req, res) => {
     })
     .on("progress", (progress) => {
       if (progress.percent && socketId) {
-        const overallPercent = 30 + Math.round(progress.percent) * 0.5;
+        const overallPercent = 30 + Math.round(progress.percent) * 0.6;
         io.to(socketId).emit("process-step", {
-          message: "Converting...",
-          percent: overallPercent,
+          message: "AI Converting...",
+          percent: Math.min(overallPercent, 95),
         });
       }
     })
     .on("end", async () => {
-      console.log("✅ FFmpeg Conversion Finished Successfully");
       const finalUrl = `/exports/${outputFileName}`;
-
-      // 1. Force the UI to hit 100% via Socket
-      if (socketId) {
-        io.to(socketId).emit("process-step", {
-          message: "✨ AI Optimization Complete!",
-          percent: 100,
-        });
-      }
-
-      // 2. Save to Project History (MongoDB)
-      if (req.user) {
-        try {
-          await User.findByIdAndUpdate(req.user._id, {
-            $push: {
-              projects: {
-                toolType: "Video → Audio",
-                fileName: videoFile,
-                fileUrl: finalUrl,
-                createdAt: new Date(),
-              },
-            },
-          });
-          console.log("💾 Project saved to MongoDB history");
-        } catch (dbErr) {
-          console.error("❌ History Save Error:", dbErr);
-        }
-      }
-
-      // 3. Send final response to the Frontend fetch call
-      res.json({
-        success: true,
-        audioUrl: finalUrl,
-        fileName: videoFile,
-      });
-    })
-    .on("error", (err) => {
-      console.error("❌ FFmpeg Exec Error:", err.message);
       if (socketId)
         io.to(socketId).emit("process-step", {
-          message: "Error: Conversion Failed",
-          percent: 0,
+          message: "✨ Optimization Complete!",
+          percent: 100,
         });
-      res.status(500).json({ success: false, message: err.message });
+
+      if (req.user) {
+        await User.findByIdAndUpdate(req.user._id, {
+          $push: {
+            projects: {
+              toolType: "Video → Audio",
+              fileName: videoFile,
+              fileUrl: finalUrl,
+              createdAt: new Date(),
+            },
+          },
+        });
+      }
+      res.json({ success: true, audioUrl: finalUrl });
     })
+    .on("error", (err) =>
+      res.status(500).json({ success: false, message: err.message }),
+    )
     .save(outputPath);
 });
 
-// --- UPDATED VOICE CLONE ROUTE ---
+// --- VOICE CLONE ---
 app.post("/api/convert/voice-clone", (req, res) => {
   const { text, speakerWav, socketId } = req.body;
   const outputFileName = `clone_${Date.now()}.wav`;
   const outputPath = path.join(exportDir, outputFileName);
-
-  // Cross-platform python command
   const pythonCmd = process.platform === "win32" ? "python" : "python3";
 
   const pyProcess = spawn(pythonCmd, [
@@ -234,10 +191,9 @@ app.post("/api/convert/voice-clone", (req, res) => {
   pyProcess.stdout.on("data", (data) => {
     const msg = data.toString();
     if (msg.startsWith("PROGRESS:") && socketId) {
-      const p = parseInt(msg.split(":")[1]);
       io.to(socketId).emit("process-step", {
         message: "AI Generating Voice...",
-        percent: p,
+        percent: parseInt(msg.split(":")[1]),
       });
     }
   });
@@ -269,6 +225,6 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 MediaLab Server running on port ${PORT}`);
-});
+httpServer.listen(PORT, () =>
+  console.log(`🚀 MediaLab Server running on port ${PORT}`),
+);
