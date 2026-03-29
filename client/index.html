@@ -128,6 +128,23 @@
         box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
         transition: all 0.5s ease-in-out;
       }
+      /* Custom Green Success State for the Thin Line */
+      .bg-complete {
+        background-color: #10b981 !important; /* Green-500 */
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
+        transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      #universal-status-text.complete {
+        color: #10b981;
+        transition: color 0.4s ease;
+      }
+      #web-canvas div {
+        user-select: none; /* Prevents text selection while dragging shapes */
+      }
+      #web-canvas div[contenteditable="true"] {
+        user-select: text;
+      }
     </style>
   </head>
   <body class="bg-gray-950 text-gray-100 min-h-screen">
@@ -281,27 +298,37 @@
       class="hidden h-screen bg-gray-950 flex flex-col overflow-hidden"
     >
       <div
-        class="lg:hidden bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto whitespace-nowrap flex gap-3 no-scrollbar shrink-0"
+        class="lg:hidden bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto whitespace-nowrap flex gap-3 no-scrollbar shrink-0 sticky top-0 z-50"
       >
         <div
+          onclick="switchTool('web-builder')"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2.5 rounded-3xl cursor-pointer"
+        >
+          <i class="fas fa-drafting-compass text-cyan-400"></i>
+          <span class="font-medium text-sm text-gray-200">Web Builder</span>
+          <span
+            class="text-[7px] font-black bg-cyan-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 uppercase"
+            >New</span
+          >
+        </div>
+
+        <div
           onclick="switchTool('image-pdf')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
         >
           <i class="fas fa-image text-cyan-400"></i>
           <span class="font-medium text-sm text-gray-200">Image → PDF</span>
         </div>
-
         <div
           onclick="switchTool('text-doc')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
         >
           <i class="fas fa-file-alt text-cyan-400"></i>
           <span class="font-medium text-sm text-gray-200">Text → Word</span>
         </div>
-
         <div
           onclick="switchTool('video-audio')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
         >
           <i class="fas fa-video text-cyan-400"></i>
           <span class="font-medium text-sm text-gray-200">Video → Audio</span>
@@ -309,45 +336,45 @@
 
         <div
           onclick="switchTool('text-to-speech')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
         >
-          <i class="fas fa-volume-up text-amber-500"></i>
-          <span class="font-medium text-sm text-gray-200">Text to Speech</span>
+          <i class="fas fa-volume-up text-amber-500 text-sm"></i>
+          <span class="font-medium text-sm text-gray-200">Text → Speech</span>
           <span
-            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
             >Pro</span
           >
         </div>
 
         <div
           onclick="switchTool('voice-clone')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
         >
-          <i class="fas fa-microphone-alt text-amber-500"></i>
+          <i class="fas fa-microphone-alt text-amber-500 text-sm"></i>
           <span class="font-medium text-sm text-gray-200">Voice Clone</span>
           <span
-            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
             >Pro</span
           >
         </div>
 
         <div
           onclick="switchTool('image-edit')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
         >
-          <i class="fas fa-magic text-amber-500"></i>
+          <i class="fas fa-magic text-amber-500 text-sm"></i>
           <span class="font-medium text-sm text-gray-200">AI Editor</span>
           <span
-            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
             >Pro</span
           >
         </div>
 
         <div
           onclick="switchTool('history')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
         >
-          <i class="fas fa-history text-cyan-400"></i>
+          <i class="fas fa-history text-gray-400"></i>
           <span class="font-medium text-sm text-gray-200">History</span>
         </div>
       </div>
@@ -361,7 +388,7 @@
               <div
                 class="w-8 h-8 bg-cyan-500 rounded-xl flex items-center justify-center font-bold text-gray-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
               >
-                S
+                M
               </div>
               <span class="text-2xl font-semibold tracking-tighter text-white"
                 >Studio</span
@@ -378,9 +405,30 @@
             <p
               class="text-[10px] font-black text-gray-500 px-5 mb-4 uppercase tracking-[0.2em]"
             >
+              Creation Suite
+            </p>
+            <div
+              onclick="switchTool('web-builder')"
+              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-cyan-500/30"
+            >
+              <i
+                class="fas fa-drafting-compass text-lg text-gray-500 group-hover:text-cyan-400"
+              ></i>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Web Builder</span
+              >
+              <span
+                class="ml-auto bg-cyan-500/10 text-cyan-400 text-[8px] font-black px-1.5 py-0.5 rounded border border-cyan-500/20"
+                >NEW</span
+              >
+            </div>
+
+            <p
+              class="text-[10px] font-black text-gray-500 px-5 mt-8 mb-4 uppercase tracking-[0.2em]"
+            >
               Standard Tools
             </p>
-
             <div
               onclick="switchTool('image-pdf')"
               class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
@@ -393,7 +441,6 @@
                 >Image → PDF</span
               >
             </div>
-
             <div
               onclick="switchTool('text-doc')"
               class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
@@ -406,7 +453,6 @@
                 >Text → Word</span
               >
             </div>
-
             <div
               onclick="switchTool('video-audio')"
               class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
@@ -425,7 +471,6 @@
             >
               Premium Tools
             </p>
-
             <div
               onclick="switchTool('text-to-speech')"
               class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
@@ -442,7 +487,6 @@
                 >PRO</span
               >
             </div>
-
             <div
               onclick="switchTool('voice-clone')"
               class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
@@ -459,13 +503,12 @@
                 >PRO</span
               >
             </div>
-
             <div
               onclick="switchTool('image-edit')"
               class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
             >
               <i
-                class="fas fa-edit text-lg text-gray-500 group-hover:text-amber-500"
+                class="fas fa-magic text-lg text-gray-500 group-hover:text-amber-500"
               ></i>
               <span
                 class="font-bold text-sm text-gray-400 group-hover:text-white"
@@ -478,11 +521,6 @@
             </div>
 
             <div class="mt-8 pt-8 border-t border-gray-800">
-              <p
-                class="text-[10px] font-black text-gray-500 px-5 mb-4 uppercase tracking-[0.2em]"
-              >
-                Library
-              </p>
               <button
                 onclick="switchTool('history')"
                 class="w-full flex items-center justify-between bg-gray-800/40 hover:bg-cyan-500 hover:text-gray-950 p-4 rounded-2xl transition-all group shadow-lg border border-white/5"
@@ -501,52 +539,53 @@
           </div>
         </div>
 
-        <div
-          class="flex-1 p-4 sm:p-8 overflow-y-auto bg-gray-950 relative"
-          id="content-area"
-        >
+        <div class="flex-1 flex flex-col bg-gray-950 relative overflow-hidden">
           <div
-            id="universal-progress"
-            class="hidden max-w-4xl mx-auto mb-12 animate-fadeIn sticky top-0 z-30"
+            class="flex-1 p-4 sm:p-8 overflow-y-auto sidebar-scroll relative"
+            id="content-area"
           >
             <div
-              class="bg-gray-900/80 border border-cyan-500/30 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-xl ring-1 ring-white/10"
+              id="universal-progress"
+              class="hidden max-w-4xl mx-auto mb-6 animate-fadeIn sticky top-0 z-30"
             >
-              <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-3">
+              <div class="relative pt-4">
+                <div
+                  class="h-[2px] w-full bg-gray-800 rounded-full overflow-hidden"
+                >
                   <div
-                    class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"
+                    id="universal-bar"
+                    class="h-full bg-cyan-400 w-0 transition-all duration-500 ease-out shadow-[0_0_12px_rgba(34,211,238,0.8)]"
                   ></div>
+                </div>
+                <div class="flex items-center justify-between mt-3 px-1">
+                  <div class="flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                      <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"
+                      ></span>
+                      <span
+                        class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"
+                      ></span>
+                    </span>
+                    <span
+                      id="universal-status-text"
+                      class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"
+                      >Engine Active...</span
+                    >
+                  </div>
                   <span
-                    id="universal-status-text"
-                    class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]"
-                    >Engine Processing...</span
+                    id="universal-percent"
+                    class="text-[10px] font-black text-cyan-400 tabular-nums"
+                    >0%</span
                   >
                 </div>
-                <span
-                  id="universal-percent"
-                  class="text-sm font-black text-white tabular-nums"
-                  >0%</span
-                >
-              </div>
-              <div
-                class="h-1.5 bg-gray-800 rounded-full overflow-hidden p-[1px]"
-              >
-                <div
-                  id="universal-bar"
-                  class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 w-0 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0.5)] rounded-full"
-                ></div>
               </div>
             </div>
-          </div>
 
-          <div id="tool-display" class="max-w-4xl mx-auto">
-            <div class="text-center py-20 text-gray-600">
-              <i class="fas fa-sparkles text-4xl mb-4 block opacity-20"></i>
-              <p class="text-lg font-medium">
-                Select a tool to begin your workflow
-              </p>
-            </div>
+            <div
+              id="tool-display"
+              class="max-w-5xl mx-auto h-full min-h-[500px]"
+            ></div>
           </div>
         </div>
       </div>
@@ -697,8 +736,14 @@
       let historyItems = [];
       let currentImages = [];
 
-      // ====================== LANDING TOOLS ======================
       const toolsData = [
+        {
+          id: "web-builder",
+          title: "Web Builder",
+          icon: "fa-drafting-compass",
+          desc: "Drag & drop professional web pages",
+          isNew: true,
+        },
         {
           id: "image-pdf",
           title: "Image → PDF",
@@ -715,7 +760,7 @@
           id: "voice-clone",
           title: "Voice Cloning",
           icon: "fa-microphone",
-          desc: "Clone any voice",
+          desc: "Clone any voice with AI",
         },
         {
           id: "text-to-speech",
@@ -727,13 +772,7 @@
           id: "video-audio",
           title: "Video → Audio",
           icon: "fa-video",
-          desc: "Extract MP3/WAV",
-        },
-        {
-          id: "image-edit",
-          title: "Image Editor",
-          icon: "fa-edit",
-          desc: "Crop, resize, rotate, adjust",
+          desc: "Extract high-quality MP3/WAV",
         },
       ];
 
@@ -741,15 +780,22 @@
         document.getElementById("tool-grid").innerHTML = toolsData
           .map(
             (t) => `
-                              <div onclick="openTool('${t.id}')" class="tool-card bg-gray-900 border border-gray-800 rounded-3xl p-8 cursor-pointer">
-                                <i class="fas ${t.icon} text-5xl text-cyan-400 mb-6"></i>
-                                <h3 class="text-2xl font-semibold mb-2">${t.title}</h3>
-                                <p class="text-gray-400">${t.desc}</p>
-                              </div>`,
+        <div onclick="openTool('${t.id}')" class="tool-card bg-gray-900 border border-gray-800 rounded-3xl p-8 cursor-pointer relative overflow-hidden group">
+          ${
+            t.isNew
+              ? `
+            <div class="absolute top-4 right-[-35px] bg-cyan-500 text-gray-950 text-[10px] font-black px-10 py-1 rotate-45 shadow-lg uppercase tracking-tighter">
+                New
+            </div>`
+              : ""
+          }
+          <i class="fas ${t.icon} text-5xl text-cyan-400 mb-6 group-hover:scale-110 transition-transform"></i>
+          <h3 class="text-2xl font-semibold mb-2 text-white">${t.title}</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">${t.desc}</p>
+        </div>`,
           )
           .join("");
       }
-
       // ====================== NAVIGATION ======================
       function handleStartFree() {
         if (loggedIn) goToStudio();
@@ -1676,36 +1722,48 @@
       }
       async function switchTool(id) {
         const area = document.getElementById("tool-display");
+        const builderToolbar = document.getElementById("web-builder-toolbar");
         let html = "";
 
+        // 1. Contextual Toolbar Management
+        // Only show the specialized Web Builder toolbar when that tool is active
+        if (id === "web-builder") {
+          if (builderToolbar) builderToolbar.classList.remove("hidden");
+        } else {
+          if (builderToolbar) builderToolbar.classList.add("hidden");
+        }
+
         // =============================================================
-        // 0. PROJECT HISTORY TOOL (ACTS LIKE A TOOL NOW)
+        // 0. PROJECT HISTORY / LIBRARY
         // =============================================================
-        // Inside switchTool(id) ...
         if (id === "history") {
-          // Freshly grab history from current user or local storage
           const projects = currentUser
             ? currentUser.projects
             : JSON.parse(
                 localStorage.getItem("medialab_guest_history") || "[]",
               );
 
-          area.innerHTML = `
-        <div class="animate-fadeIn">
-            <h2 class="text-3xl font-semibold text-white mb-8">Project History</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                ${renderHistoryItems(projects)}
-            </div>
-        </div>
-    `;
+          html = `
+            <div class="animate-fadeIn">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-semibold text-white tracking-tighter">Project Library</h2>
+                    <button onclick="clearAllHistory()" class="text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-all">
+                        <i class="fas fa-broom mr-2"></i>Clear Cache
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${renderHistoryItems(projects)}
+                </div>
+            </div>`;
         }
+
         // =============================================================
         // 1. IMAGE → PDF CONVERTER
         // =============================================================
         else if (id === "image-pdf") {
           html = `
             <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
-                <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Image → PDF Converter</h2>
+                <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Image → PDF</h2>
                 <button id="clear-all-btn" onclick="resetImageTool()" 
                         class="${currentImages.length > 0 ? "" : "hidden"} text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-all">
                     <i class="fas fa-trash-sweep mr-2"></i>Clear Project
@@ -1714,8 +1772,7 @@
             <div id="result-display" class="hidden mb-8 animate-fadeIn"></div>
             <div id="drop-zone-image" 
                  onclick="document.getElementById('img-input').click()"
-                 class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-12 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group"
-                 ondrop="handleImageDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                 class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-12 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group">
                 <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                     <i class="fas fa-images text-4xl text-gray-600 group-hover:text-cyan-400"></i>
                 </div>
@@ -1726,250 +1783,203 @@
             </div>
             <div id="img-preview" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8"></div>
             <button id="convert-btn" onclick="convertImagesToPDF()" 
-                   class="mt-12 w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-lg font-bold transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-x-3 group">
+                    class="mt-12 w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-lg font-bold transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-x-3 group">
                 <span>Compile to PDF</span>
                 <i class="fas fa-file-pdf group-hover:rotate-12 transition-transform"></i>
-            </button>
-        `;
+            </button>`;
         }
 
         // =============================================================
-        // 2. VIDEO → AUDIO CONVERTER
+        // 2. WEB BUILDER (THE STAGE)
+        // =============================================================
+        else if (id === "web-builder") {
+          html = `
+    <div class="flex flex-col h-[calc(100vh-140px)] animate-fadeIn relative text-gray-200">
+      <div class="bg-gray-900 border border-gray-800 rounded-3xl p-3 mb-5 flex items-center justify-between shadow-2xl overflow-x-auto no-scrollbar gap-4">
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="toggleElementPicker()" class="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-2xl text-[10px] font-black uppercase text-white transition-all shadow-lg shadow-cyan-900/20">
+            <i class="fas fa-plus"></i><span>Insert Element</span>
+          </button>
+          <button onclick="toggleShapePicker()" class="flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-2xl text-[10px] font-black uppercase text-white transition-all">
+            <i class="fas fa-shapes"></i><span>Shapes</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="undo()" class="p-2.5 text-gray-500 hover:text-white transition-colors"><i class="fas fa-undo"></i></button>
+          <button onclick="redo()" class="p-2.5 text-gray-500 hover:text-white transition-colors"><i class="fas fa-redo"></i></button>
+          <div class="w-px h-6 bg-gray-800 mx-2"></div>
+          <button onclick="exportCanvasToHTML()" class="bg-white text-black px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:scale-105 transition-all">Publish Live</button>
+        </div>
+      </div>
+
+      <div id="canvas-container" onclick="deselectAll(event)" class="flex-1 bg-gray-950 border border-gray-800 rounded-[3rem] p-10 overflow-auto flex justify-center items-start shadow-inner relative">
+        <div id="web-canvas" class="bg-white w-[850px] min-h-[1100px] relative shadow-2xl rounded-sm overflow-hidden origin-top scale-100"></div>
+      </div>
+
+      <div id="element-picker" class="hidden absolute top-20 left-10 z-[70] bg-gray-900 border border-gray-700 rounded-[2.5rem] shadow-2xl p-6 w-80 animate-fadeIn">
+        <p class="text-[9px] font-black text-cyan-500 uppercase tracking-[0.2em] mb-4">HTML Components</p>
+        <div class="grid grid-cols-2 gap-3">
+          ${[
+            { id: "input", icon: "fa-keyboard", label: "Text Input" },
+            { id: "button", icon: "fa-hand-pointer", label: "Button" },
+            { id: "a", icon: "fa-link", label: "Hyperlink" },
+            { id: "textarea", icon: "fa-align-left", label: "Text Area" },
+            { id: "select", icon: "fa-list", label: "Dropdown" },
+            { id: "checkbox", icon: "fa-check-square", label: "Checkbox" },
+          ]
+            .map(
+              (item) => `
+            <button onclick="addCanvasElement('${item.id}'); toggleElementPicker()" class="flex flex-col items-center gap-2 p-4 bg-gray-800 hover:bg-cyan-500/20 rounded-2xl border border-transparent hover:border-cyan-500/50 transition-all group">
+              <i class="fas ${item.icon} text-xl text-gray-500 group-hover:text-cyan-400"></i>
+              <span class="text-[9px] font-bold text-gray-400 group-hover:text-white uppercase">${item.label}</span>
+            </button>
+          `,
+            )
+            .join("")}
+        </div>
+      </div>
+
+      <div id="smart-inspector" class="hidden fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-gray-900 border border-gray-800 w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl ring-1 ring-white/10">
+          
+          <div class="h-40 bg-gray-950 flex items-center justify-center border-b border-gray-800 relative pattern-grid">
+             <div id="inspector-preview" class="transition-all duration-300 shadow-2xl"></div>
+          </div>
+
+          <div class="p-8">
+            <div id="inspector-controls" class="min-h-[280px] max-h-[400px] overflow-y-auto sidebar-scroll pr-2"></div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-800">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <button onclick="changeInspectorPage(-1)" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:bg-cyan-500 hover:text-gray-950 transition-all"><i class="fas fa-chevron-left"></i></button>
+                    <div class="text-center">
+                        <span id="page-title" class="block text-[10px] font-black text-cyan-400 uppercase tracking-widest">General</span>
+                        <span id="page-step" class="text-[8px] text-gray-600 font-bold uppercase">Page 1 of 10</span>
+                    </div>
+                    <button onclick="changeInspectorPage(1)" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:bg-cyan-500 hover:text-gray-950 transition-all"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeSmartInspector()" class="flex-1 py-4 bg-gray-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase">Cancel</button>
+                    <button id="inspector-confirm-btn" class="flex-1 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg">Apply Boss Styles</button>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+        }
+
+        // 3. VIDEO → AUDIO CONVERTER
         // =============================================================
         else if (id === "video-audio") {
           html = `
             <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
-                <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Video → Audio Converter</h2>
-                <div class="px-4 py-2 bg-gray-900 rounded-2xl border border-gray-800 text-[10px] text-gray-500 uppercase font-black tracking-widest">
-                    FFmpeg Engine Active
-                </div>
+                <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Video → Audio</h2>
+                <div class="px-4 py-2 bg-gray-900 rounded-2xl border border-gray-800 text-[10px] text-gray-500 uppercase font-black tracking-widest">FFmpeg Active</div>
             </div>
             <div id="video-tool-wrapper" class="space-y-6">
                 <div id="drop-zone-video" 
                      onclick="document.getElementById('video-input').click()"
-                     class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-16 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group"
-                     ondrop="handleVideoDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                     class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-16 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group">
                     <div class="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                         <i class="fas fa-video text-4xl text-gray-500 group-hover:text-cyan-400"></i>
                     </div>
-                    <p class="text-lg font-medium text-gray-200">Drag & drop video file here</p>
-                    <p class="text-sm text-gray-500 mt-1">MP4, MKV, MOV, or AVI supported</p>
-                    <input type="file" id="video-input" accept="video/*" class="hidden" 
-                           onclick="event.stopPropagation()" onchange="handleVideoSelection(this.files[0])">
+                    <p class="text-lg font-medium text-gray-200">Upload Video</p>
+                    <input type="file" id="video-input" accept="video/*" class="hidden" onchange="handleVideoSelection(this.files[0])">
                 </div>
-                <div id="video-info-display" class="hidden bg-gray-900 border border-cyan-500/20 p-6 rounded-3xl flex items-center justify-between animate-fadeIn shadow-2xl">
+                <div id="video-info-display" class="hidden bg-gray-900 border border-cyan-500/20 p-6 rounded-3xl flex items-center justify-between shadow-2xl">
                     <div class="flex items-center gap-5">
-                        <div class="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-400">
-                            <i class="fas fa-file-video text-2xl"></i>
-                        </div>
+                        <div class="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center text-cyan-400"><i class="fas fa-file-video text-2xl"></i></div>
                         <div>
-                            <p id="file-name-label" class="text-base font-bold text-white truncate max-w-[200px] sm:max-w-md">video_file.mp4</p>
-                            <p class="text-[10px] text-green-400 uppercase font-black tracking-widest">Server Upload Verified</p>
+                            <p id="file-name-label" class="text-base font-bold text-white truncate max-w-xs">video_file.mp4</p>
+                            <p class="text-[10px] text-green-400 uppercase font-black tracking-widest">Ready to Extract</p>
                         </div>
                     </div>
-                    <button onclick="switchTool('video-audio')" class="text-gray-500 hover:text-red-400 transition-colors"><i class="fas fa-times-circle text-xl"></i></button>
+                    <button onclick="switchTool('video-audio')" class="text-gray-500 hover:text-red-400"><i class="fas fa-times-circle text-xl"></i></button>
                 </div>
-                
                 <div class="flex flex-col sm:flex-row gap-4 mt-8">
-                    <div class="flex-1 relative">
-                        <i class="fas fa-music absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
-                        <select id="audio-format" class="w-full bg-gray-900 border border-gray-700 rounded-2xl pl-12 pr-6 py-4 text-white outline-none focus:border-cyan-400 appearance-none cursor-pointer">
-                            <option value="mp3">MP3 (Standard Quality)</option>
-                            <option value="wav">WAV (Lossless High-Fi)</option>
-                            <option value="aac">AAC (Mobile Optimized)</option>
-                        </select>
-                    </div>
-                    <button id="convert-btn" onclick="startVideoConversion()" 
-                            class="px-10 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-bold transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-bolt"></i>
-                        <span>Extract Audio</span>
+                    <select id="audio-format" class="flex-1 bg-gray-900 border border-gray-700 rounded-2xl px-6 py-4 text-white outline-none focus:border-cyan-400 appearance-none cursor-pointer">
+                        <option value="mp3">MP3 (Standard)</option>
+                        <option value="wav">WAV (Lossless)</option>
+                    </select>
+                    <button id="convert-btn" onclick="startVideoConversion()" class="px-10 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-bold transition-all shadow-xl flex items-center justify-center gap-3">
+                        <i class="fas fa-bolt"></i> Extract Audio
                     </button>
                 </div>
-            </div>
-        `;
+            </div>`;
         }
 
         // =============================================================
-        // 3. TEXT → DOCUMENT
+        // 4. TEXT → DOCUMENT
         // =============================================================
         else if (id === "text-doc") {
-          // 1. HARD RESET: Memory Management
-          // Revoke old URL if it exists to prevent memory leaks, then clear state
-          if (finalExportBlob) {
-            URL.revokeObjectURL(finalExportBlob);
-            finalExportBlob = null;
-          }
-          currentExportFormat = null;
-
-          // 2. BUILD PROFESSIONAL STUDIO UI
           html = `
-        <div class="animate-fadeIn">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20">
-                        <i class="fas fa-file-signature text-cyan-400"></i>
+            <div class="animate-fadeIn">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-semibold text-white tracking-tighter">Studio Word Processor</h2>
+                    <div id="word-count" class="text-[10px] font-black bg-gray-900 px-4 py-2 rounded-xl border border-gray-800 text-cyan-400 uppercase tracking-widest">0 Words</div>
+                </div>
+                <div id="text-tool-wrapper" class="flex flex-col shadow-2xl rounded-[2.5rem] border border-gray-800 overflow-hidden bg-gray-950">
+                    <div class="bg-gray-900/95 backdrop-blur-xl p-4 flex flex-wrap gap-2 items-center border-b border-gray-800">
+                        <button onclick="undo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-xl text-gray-400"><i class="fas fa-undo"></i></button>
+                        <button onclick="redo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-xl text-gray-400"><i class="fas fa-redo"></i></button>
+                        <div class="w-px h-6 bg-gray-700/50 mx-2"></div>
+                        <button onclick="format('bold')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-xl text-gray-400"><i class="fas fa-bold"></i></button>
+                        <button onclick="format('italic')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-xl text-gray-400"><i class="fas fa-italic"></i></button>
+                        <button onclick="applyListStyle('bullet')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-xl text-gray-400 ml-auto"><i class="fas fa-list-ul"></i></button>
                     </div>
-                    <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Studio Word Processor</h2>
-                </div>
-                <div id="word-count" class="text-[10px] font-black bg-gray-900 px-4 py-2 rounded-xl border border-gray-800 text-cyan-400 uppercase tracking-widest shadow-lg backdrop-blur-md">
-                    0 Words
-                </div>
-            </div>
-
-            <div id="text-tool-wrapper" class="flex flex-col shadow-2xl rounded-[2.5rem] border border-gray-800 overflow-hidden bg-gray-950 transition-all duration-500 ring-1 ring-white/5">
-                
-                <div class="bg-gray-900/95 backdrop-blur-xl p-4 flex flex-wrap gap-2 items-center border-b border-gray-800 sticky top-0 z-20">
-                    <button id="btn-undo" onclick="undo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" title="Undo (Ctrl+Z)" disabled><i class="fas fa-undo"></i></button>
-                    <button id="btn-redo" onclick="redo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" title="Redo (Ctrl+Y)" disabled><i class="fas fa-redo"></i></button>
-                    
-                    <div class="w-px h-8 bg-gray-700/50 mx-2"></div>
-                    
-                    <select id="font-family-select" onchange="format('fontName', this.value)" class="bg-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2.5 outline-none border border-transparent focus:border-cyan-500/50 cursor-pointer appearance-none">
-                        <option value="Inter, sans-serif">Inter (Modern)</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Georgia">Georgia (Serif)</option>
-                        <option value="Courier New">Courier (Mono)</option>
-                    </select>
-
-                    <select id="font-size-select" onchange="format('fontSize', this.value)" class="bg-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2.5 outline-none border border-transparent focus:border-cyan-500/50 cursor-pointer appearance-none">
-                        <option value="1">12px</option>
-                        <option value="2">14px</option>
-                        <option value="3" selected>16px</option>
-                        <option value="4">18px</option>
-                        <option value="5">24px</option>
-                    </select>
-
-                    <div class="w-px h-8 bg-gray-700/50 mx-2"></div>
-
-                    <button id="btn-bold" onclick="format('bold')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-bold"></i></button>
-                    <button id="btn-italic" onclick="format('italic')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-italic"></i></button>
-                    <button id="btn-underline" onclick="format('underline')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-underline"></i></button>
-                    <button onclick="applyListStyle('bullet')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all ml-1"><i class="fas fa-list-ul"></i></button>
-                    
-                    <button onclick="format('removeFormat')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-red-500/10 text-red-400 rounded-2xl ml-auto group" title="Clear Styles">
-                        <i class="fas fa-eraser group-hover:rotate-12 transition-transform"></i>
-                    </button>
-                </div>
-
-                <div id="text-input" contenteditable="true" 
-                     class="w-full p-12 min-h-[520px] text-white outline-none prose prose-invert max-w-none overflow-y-auto selection:bg-cyan-500/30"
-                     style="font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.8;">
-                    <p>Start drafting your professional document here...</p>
-                </div>
-
-                <div class="bg-gray-900/80 p-6 border-t border-gray-800 backdrop-blur-md">
-                    <div class="flex flex-col sm:flex-row gap-4 max-w-3xl mx-auto">
-                        <div class="flex-1 relative">
-                            <i class="fas fa-file-export absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
-                            <select id="format-select" class="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl pl-12 pr-6 py-4 text-sm font-bold outline-none focus:border-cyan-400 appearance-none cursor-pointer">
-                                <option value="pdf">Professional PDF (.pdf)</option>
-                                <option value="docx">Word Document (.docx)</option>
-                                <option value="html">Web Archive (.html)</option>
-                                <option value="txt">Plain Text (.txt)</option>
-                            </select>
-                        </div>
-                        <button id="convert-btn" onclick="convertTextToDoc()" 
-                                class="px-12 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-cyan-900/20 active:scale-[0.98] flex items-center justify-center gap-3">
-                            <span>Export Document</span>
-                            <i class="fas fa-arrow-right text-[10px]"></i>
-                        </button>
+                    <div id="text-input" contenteditable="true" class="w-full p-12 min-h-[500px] text-white outline-none selection:bg-cyan-500/30 font-inter leading-relaxed text-lg">
+                        <p>Draft your message...</p>
+                    </div>
+                    <div class="bg-gray-900 p-6 border-t border-gray-800 flex gap-4">
+                        <select id="format-select" class="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 outline-none">
+                            <option value="pdf">PDF Document</option>
+                            <option value="docx">Word (.docx)</option>
+                        </select>
+                        <button onclick="convertTextToDoc()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all">Export</button>
                     </div>
                 </div>
-            </div>
+                <div id="result-display" class="hidden"></div>
+            </div>`;
+          setTimeout(attachEditorListeners, 100);
+        }
 
-            <div id="result-display" class="hidden animate-fadeIn"></div>
-        </div>
-    `;
-
-          // 3. RE-INITIALIZE ENGINE
-          setTimeout(() => {
-            // Force system defaults for the contentEditable area
-            document.execCommand("defaultParagraphSeparator", false, "p");
-            document.execCommand("styleWithCSS", false, true);
-
-            // Attach all high-level logic handlers
-            if (typeof attachEditorListeners === "function")
-              attachEditorListeners();
-            if (typeof updateToolbarState === "function") updateToolbarState();
-
-            // Finalize UI Polish
-            const editor = document.getElementById("text-input");
-            if (editor) {
-              editor.focus();
-              // Place cursor at the end of the initial text
-              const range = document.createRange();
-              const sel = window.getSelection();
-              range.selectNodeContents(editor);
-              range.collapse(false);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          }, 100);
-        } // =============================================================
-        // 4. PREMIUM TOOLS (LOCKED/PRO)
         // =============================================================
-        else if (
-          ["pdf-tools", "image-edit", "voice-clone", "text-to-speech"].includes(
-            id,
-          )
-        ) {
-          let title = "Premium Tool";
-          let desc = "";
-          let btnText = "";
-          let btnAction = "";
-          let icon = "fa-lock";
-          let badge = "";
-
-          if (id === "image-edit") {
-            title = "AI Image Editor";
-            icon = "fa-edit";
-          } else if (id === "voice-clone") {
-            title = "Neural Voice Cloning";
-            icon = "fa-microphone-alt";
-          } else if (id === "text-to-speech") {
-            title = "Neural Text to Speech";
-            icon = "fa-volume-up";
-          } else if (id === "pdf-tools") {
-            title = "PDF Merge & Split";
-            icon = "fa-file-pdf";
-          }
-
-          if (!loggedIn) {
-            desc = `Unlock the full potential of <b>${title}</b>. Create a free account to access our high-performance neural engines and save your projects.`;
-            btnText = "Sign in to Unlock";
-            btnAction = "showLogin()";
-            badge = `<span class="bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-cyan-500/20 backdrop-blur-md"><i class="fas fa-unlock-alt mr-1"></i> Member Access</span>`;
-          } else {
-            desc = `You've reached the limit for the free tier. Upgrade to <b>MediaLab Pro</b> for unlimited ${title} exports and priority GPU processing.`;
-            btnText = "Upgrade to Studio Pro";
-            btnAction = "upgradePlan()";
-            icon = "fa-crown";
-            badge = `<span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-amber-500/20 backdrop-blur-md"><i class="fas fa-sparkles mr-1"></i> Pro Feature</span>`;
-          }
+        // 5. PREMIUM / PRO TOOLS (LOCKED)
+        // =============================================================
+        else if (["voice-clone", "text-to-speech"].includes(id)) {
+          let toolName =
+            id === "voice-clone" ? "Voice Cloning" : "Text to Speech";
+          let icon =
+            id === "voice-clone" ? "fa-microphone-alt" : "fa-volume-up";
 
           html = `
             <div class="max-w-3xl mx-auto py-12 animate-fadeIn">
                 <div class="bg-gray-900/50 border border-gray-800 rounded-[3rem] p-16 text-center shadow-2xl relative overflow-hidden group">
-                    <div class="absolute -top-24 -left-24 w-80 h-80 ${loggedIn ? "bg-yellow-500/5" : "bg-cyan-500/5"} rounded-full blur-3xl opacity-50 transition-all"></div>
-                    <div class="mb-6">${badge}</div>
-                    <div class="w-24 h-24 ${loggedIn ? "bg-yellow-500/10" : "bg-cyan-500/10"} rounded-3xl flex items-center justify-center mx-auto mb-8 transform group-hover:rotate-6 transition-all border border-white/5 shadow-inner">
-                        <i class="fas ${icon} text-4xl ${loggedIn ? "text-yellow-500" : "text-cyan-400"}"></i>
+                    <div class="absolute -top-24 -left-24 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl opacity-50"></div>
+                    <div class="mb-6"><span class="bg-amber-500/10 text-amber-500 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase border border-amber-500/20">PRO FEATURE</span></div>
+                    <div class="w-24 h-24 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-inner">
+                        <i class="fas ${icon} text-4xl text-amber-500"></i>
                     </div>
-                    <h3 class="text-3xl font-bold text-white mb-4 tracking-tighter">${title}</h3>
-                    <p class="text-gray-400 text-lg mb-10 max-w-sm mx-auto leading-relaxed">${desc}</p>
-                    <button onclick="${btnAction}" class="relative px-12 py-5 ${loggedIn ? "bg-yellow-500" : "bg-white"} text-gray-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.03] active:scale-[0.98] transition-all shadow-2xl flex items-center gap-3 mx-auto">
-                        <span>${btnText}</span>
+                    <h3 class="text-3xl font-bold text-white mb-4 tracking-tighter">${Krank} ${toolName}</h3>
+                    <p class="text-gray-400 text-lg mb-10 max-w-sm mx-auto leading-relaxed">
+                        ${
+                          loggedIn
+                            ? `You've reached your daily limit. Upgrade to <b>MediaLab Pro</b> for unlimited neural processing.`
+                            : `Access high-performance neural engines. Sign in to unlock <b>${toolName}</b>.`
+                        }
+                    </p>
+                    <button onclick="${loggedIn ? "upgradePlan()" : "showLogin()"}" class="relative px-12 py-5 bg-amber-500 text-gray-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.03] transition-all shadow-2xl flex items-center gap-3 mx-auto">
+                        <span>${loggedIn ? "Upgrade to Pro" : "Sign in to Unlock"}</span>
                         <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
-            </div>
-        `;
+            </div>`;
         }
 
+        // Inject the final HTML into the main viewport
         area.innerHTML = html;
-      }
-
-      // ====================== HELPER: RENDER HISTORY ITEMS ======================
+      } // ====================== HELPER: RENDER HISTORY ITEMS ======================
       function handleDragOver(e) {
         e.preventDefault();
         e.currentTarget.classList.add("dragover");
@@ -3025,6 +3035,347 @@
         }
         // Refresh the sidebar automatically
         updateSidebarHistory(currentUser ? currentUser.projects : null);
+      }
+      // ====================== FULL WEB DRAG & DROP BUILDER ======================
+      // ====================== WEB BUILDER CORE ======================
+      // --- CONFIGURATION ---
+      const inspectorPages = [
+        "Identity",
+        "Content",
+        "Visuals",
+        "FX",
+        "Type",
+        "Stroke",
+        "Shadow",
+        "Transform",
+        "Spacing",
+        "Glass",
+      ];
+      const shapeIconMap = {
+        rect: "fa-square",
+        rounded: "fa-shapes",
+        circle: "fa-circle",
+        triangle: "fa-play fa-rotate-270",
+        star: "fa-star",
+        heart: "fa-heart",
+        arrow: "fa-arrow-right",
+        line: "fa-minus",
+      };
+
+      // --- STATE ---
+      let selectedEl = null;
+      let isDragging = false;
+      let historyStack = [];
+      let historyIndex = -1;
+      let inspectorPageIndex = 0;
+      let dragOffset = { x: 0, y: 0 };
+      let currentInspectorState = {
+        type: null,
+        targetEl: null,
+        styles: {},
+        attributes: {},
+      };
+
+      // --- INITIALIZATION ---
+      function initCanvasLogic() {
+        const canvas = document.getElementById("web-canvas");
+        if (canvas) {
+          canvas.innerHTML = "";
+          canvas.onclick = (e) => {
+            if (e.target.id === "web-canvas") deselectAll();
+          };
+        }
+        saveToHistory();
+        document.addEventListener("contextmenu", handleRightClick);
+      }
+
+      // --- CORE CREATION ---
+      function addCanvasElement(type) {
+        openSmartInspector(type); // Designers style before they insert
+      }
+
+      function addObject(type, styles, attrs) {
+        const canvas = document.getElementById("web-canvas");
+        const el = document.createElement("div");
+        el.id = `wrapper_${Date.now()}`;
+        el.setAttribute("data-type", type);
+        el.className =
+          "canvas-element absolute group p-2 transition-shadow active:cursor-grabbing";
+
+        // 8-Point Resizer Handles
+        const handles = ["tl", "tr", "bl", "br", "mt", "mb", "ml", "mr"];
+        let handlesHTML = handles
+          .map(
+            (h) =>
+              `<div class="resizer ${h} absolute w-2 h-2 bg-cyan-500 border border-white rounded-full opacity-0 group-hover:opacity-100 z-50"></div>`,
+          )
+          .join("");
+
+        el.innerHTML = `
+        ${handlesHTML}
+        <div class="absolute -top-10 left-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-[60]">
+            <div class="drag-handle w-7 h-7 bg-gray-900 text-white rounded-lg border border-gray-700 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
+            <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-900 text-cyan-400 rounded-lg border border-gray-700 shadow-2xl flex items-center justify-center pointer-events-auto"><i class="fas fa-cog"></i></button>
+            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-900 text-red-500 rounded-lg border border-gray-700 shadow-2xl flex items-center justify-center pointer-events-auto"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="object-inner w-full h-full flex items-center justify-center"></div>
+    `;
+
+        const inner = el.querySelector(".object-inner");
+        setupComponent(type, inner, styles, attrs);
+
+        Object.assign(el.style, {
+          width: "220px",
+          height: "60px",
+          left: "150px",
+          top: "150px",
+          zIndex: "10",
+          ...styles,
+        });
+        el.onmousedown = (e) => handleObjectInteraction(e, el);
+
+        canvas.appendChild(el);
+        selectElement(el);
+        saveToHistory();
+      }
+
+      function setupComponent(type, container, styles, attrs) {
+        if (["input", "button", "a", "textarea"].includes(type)) {
+          const comp = document.createElement(type);
+          if (type === "input") comp.type = "text";
+          comp.id = attrs.id || `el_${Date.now()}`;
+          comp.placeholder = attrs.placeholder || "Enter text...";
+          if (type === "button" || type === "a")
+            comp.innerText = attrs.text || "Click Me";
+          if (type === "a") comp.href = attrs.href || "#";
+          comp.className =
+            "w-full h-full outline-none transition-all bg-transparent";
+          comp.style.color = styles.color;
+          comp.style.fontSize = styles.fontSize;
+          container.appendChild(comp);
+        } else if (type === "text") {
+          container.innerHTML = `<div contenteditable="true" class="outline-none w-full h-full font-medium" style="color:${styles.color}">${attrs.text || "Double tap to edit"}</div>`;
+        } else {
+          const syms = { triangle: "▲", star: "★", heart: "❤️", arrow: "→" };
+          container.innerHTML = `<span style="font-size: 50px; color: ${styles.backgroundColor}">${syms[type] || "●"}</span>`;
+          styles.backgroundColor = "transparent";
+        }
+      }
+      function openSmartInspector(type, existingEl = null) {
+        inspectorPageIndex = 0; // Boss Reset
+        const modal = document.getElementById("smart-inspector");
+        modal.classList.remove("hidden");
+
+        currentInspectorState.type = type;
+        currentInspectorState.targetEl = existingEl;
+
+        if (existingEl) {
+          currentInspectorState.styles = extractStyles(existingEl);
+          currentInspectorState.attributes = extractAttributes(existingEl);
+        } else {
+          currentInspectorState.styles = {
+            backgroundColor: "#22d3ee",
+            borderRadius: "12px",
+            color: "#000000",
+            fontSize: "16px",
+            opacity: 1,
+          };
+          currentInspectorState.attributes = {
+            id: `id_${Math.floor(Math.random() * 1000)}`,
+            placeholder: "Enter text...",
+            text: "Action Item",
+            href: "#",
+          };
+        }
+
+        renderInspectorControls(type);
+        updateInspectorPreview();
+
+        document.getElementById("inspector-confirm-btn").onclick = () => {
+          if (existingEl) applyStylesToExisting();
+          else
+            addObject(
+              currentInspectorState.type,
+              currentInspectorState.styles,
+              currentInspectorState.attributes,
+            );
+          closeSmartInspector();
+        };
+      }
+
+      function renderInspectorControls(type) {
+        const container = document.getElementById("inspector-controls");
+        const s = currentInspectorState.styles;
+        const a = currentInspectorState.attributes;
+
+        document.getElementById("page-title").innerText =
+          inspectorPages[inspectorPageIndex];
+        document.getElementById("page-step").innerText =
+          `Page ${inspectorPageIndex + 1} of 10`;
+
+        let html = "";
+        switch (inspectorPageIndex) {
+          case 0: // IDENTITY
+            html = `<label class="text-[9px] font-black uppercase text-gray-500 mb-2 block">Unique ID</label>
+                    <input type="text" value="${a.id}" oninput="updateAttr('id', this.value)" class="w-full bg-gray-800 p-3 rounded-xl border border-gray-700 text-white text-xs">`;
+            break;
+          case 1: // CONTENT
+            if (["input", "textarea"].includes(type)) {
+              html = `<label class="text-[9px] font-black uppercase text-gray-500 block mb-2">Placeholder</label>
+                        <input type="text" value="${a.placeholder}" oninput="updateAttr('placeholder', this.value)" class="w-full bg-gray-800 p-3 rounded-xl border border-gray-700 text-white text-xs">`;
+            } else {
+              html = `<label class="text-[9px] font-black uppercase text-gray-500 block mb-2">Text Value</label>
+                        <input type="text" value="${a.text || ""}" oninput="updateAttr('text', this.value)" class="w-full bg-gray-800 p-3 rounded-xl border border-gray-700 text-white text-xs">`;
+            }
+            break;
+          case 2: // VISUALS
+            html = `<label class="text-[9px] font-black uppercase text-gray-500 mb-2 block">Fill Color</label>
+                    <input type="color" value="${s.backgroundColor}" oninput="updateStyle('backgroundColor', this.value)" class="w-full h-12 rounded-xl bg-gray-800 border-none cursor-pointer">`;
+            break;
+          case 9: // GLASS
+            html = `<button onclick="applyGlassBoss()" class="w-full py-4 bg-cyan-500/10 text-cyan-400 rounded-2xl border border-cyan-500/20 font-black text-[9px] uppercase tracking-widest">Apply Boss Glass</button>`;
+            break;
+          default:
+            html = `<div class="py-10 text-center text-gray-600 text-[10px] uppercase font-black">Property Page ${inspectorPageIndex + 1} Ready</div>`;
+        }
+        container.innerHTML = `<div class="animate-fadeIn space-y-4">${html}</div>`;
+      }
+
+      function updateStyle(prop, val) {
+        currentInspectorState.styles[prop] = val;
+        updateInspectorPreview();
+      }
+      function updateAttr(prop, val) {
+        currentInspectorState.attributes[prop] = val;
+        updateInspectorPreview();
+      }
+
+      function updateInspectorPreview() {
+        const preview = document.getElementById("inspector-preview");
+        const s = currentInspectorState.styles;
+        const type = currentInspectorState.type;
+        const a = currentInspectorState.attributes;
+
+        Object.assign(preview.style, {
+          background: s.backgroundColor,
+          borderRadius: s.borderRadius,
+          boxShadow: s.boxShadow,
+          width: "100px",
+          height: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: s.border,
+        });
+
+        if (type === "text" || type === "button") {
+          preview.innerHTML = `<span style="color:${s.color}; font-size:12px; font-weight:bold;">${a.text || "PREVIEW"}</span>`;
+        } else {
+          preview.innerHTML = "";
+        }
+      }
+      function handleObjectInteraction(e, el) {
+        if (e.target.isContentEditable) return;
+        e.stopPropagation();
+        selectElement(el);
+
+        const isResizer = e.target.classList.contains("resizer");
+        const isDragHandle = e.target.closest(".drag-handle");
+        if (!isResizer && !isDragHandle) return;
+
+        const startX = e.clientX,
+          startY = e.clientY;
+        const startW = el.offsetWidth,
+          startH = el.offsetHeight;
+        const startL = el.offsetLeft,
+          startT = el.offsetTop;
+        const rType = e.target.classList[1];
+
+        const onMouseMove = (ev) => {
+          const dx = ev.clientX - startX,
+            dy = ev.clientY - startY;
+          if (isResizer) {
+            if (rType.includes("r")) el.style.width = startW + dx + "px";
+            if (rType.includes("b")) el.style.height = startH + dy + "px";
+            if (rType.includes("l")) {
+              el.style.width = startW - dx + "px";
+              el.style.left = startL + dx + "px";
+            }
+            if (rType.includes("t")) {
+              el.style.height = startH - dy + "px";
+              el.style.top = startT + dy + "px";
+            }
+          } else {
+            el.style.left = startL + dx + "px";
+            el.style.top = startT + dy + "px";
+          }
+        };
+
+        const onMouseUp = () => {
+          saveToHistory();
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+        };
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      }
+
+      function saveToHistory() {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        if (historyStack[historyIndex] === canvas.innerHTML) return;
+        historyStack = historyStack.slice(0, historyIndex + 1);
+        historyStack.push(canvas.innerHTML);
+        historyIndex++;
+      }
+
+      // --- UTILS ---
+      function changeInspectorPage(dir) {
+        inspectorPageIndex = (inspectorPageIndex + dir + 10) % 10;
+        renderInspectorControls(currentInspectorState.type);
+      }
+      function toggleElementPicker() {
+        document.getElementById("element-picker")?.classList.toggle("hidden");
+      }
+      function toggleShapePicker() {
+        document.getElementById("shape-picker")?.classList.toggle("hidden");
+      }
+      function closeSmartInspector() {
+        document.getElementById("smart-inspector").classList.add("hidden");
+      }
+      function deselectAll() {
+        if (selectedEl) selectedEl.classList.remove("ring-4", "ring-cyan-400");
+        selectedEl = null;
+      }
+      function selectElement(el) {
+        deselectAll();
+        selectedEl = el;
+        el.classList.add("ring-4", "ring-cyan-400");
+      }
+      function handleRightClick(e) {
+        const el = e.target.closest(".canvas-element");
+        if (el) {
+          e.preventDefault();
+          openSmartInspector(el.getAttribute("data-type"), el);
+        }
+      }
+      function getShapeIcon(type) {
+        return shapeIconMap[type] || "fa-question";
+      }
+      function rgbToHex(rgb) {
+        if (!rgb || rgb.startsWith("#")) return rgb || "#22d3ee";
+        const nums = rgb.match(/\d+/g);
+        return nums
+          ? "#" +
+              nums
+                .map((n) => parseInt(n).toString(16).padStart(2, "0"))
+                .join("")
+          : "#22d3ee";
+      }
+      function applyGlassBoss() {
+        updateStyle("backdropFilter", "blur(15px)");
+        updateStyle("backgroundColor", "rgba(255,255,255,0.1)");
+        updateStyle("border", "1px solid rgba(255,255,255,0.2)");
       }
     </script>
   </body>
