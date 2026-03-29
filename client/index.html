@@ -281,49 +281,74 @@
       class="hidden h-screen bg-gray-950 flex flex-col overflow-hidden"
     >
       <div
-        class="bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto whitespace-nowrap flex gap-3 no-scrollbar shrink-0"
+        class="lg:hidden bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto whitespace-nowrap flex gap-3 no-scrollbar shrink-0"
       >
         <div
           onclick="switchTool('image-pdf')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
         >
-          <i class="fas fa-image text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Image → PDF</span>
+          <i class="fas fa-image text-cyan-400"></i>
+          <span class="font-medium text-sm text-gray-200">Image → PDF</span>
         </div>
+
         <div
           onclick="switchTool('text-doc')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
         >
-          <i class="fas fa-file-alt text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Text → Doc</span>
+          <i class="fas fa-file-alt text-cyan-400"></i>
+          <span class="font-medium text-sm text-gray-200">Text → Word</span>
         </div>
-        <div
-          onclick="switchTool('voice-clone')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-microphone text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Voice Cloning</span>
-        </div>
-        <div
-          onclick="switchTool('text-to-speech')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-volume-up text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Text to Speech</span>
-        </div>
+
         <div
           onclick="switchTool('video-audio')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
         >
-          <i class="fas fa-video text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Video → Audio</span>
+          <i class="fas fa-video text-cyan-400"></i>
+          <span class="font-medium text-sm text-gray-200">Video → Audio</span>
         </div>
+
+        <div
+          onclick="switchTool('text-to-speech')"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
+        >
+          <i class="fas fa-volume-up text-amber-500"></i>
+          <span class="font-medium text-sm text-gray-200">Text to Speech</span>
+          <span
+            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            >Pro</span
+          >
+        </div>
+
+        <div
+          onclick="switchTool('voice-clone')"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
+        >
+          <i class="fas fa-microphone-alt text-amber-500"></i>
+          <span class="font-medium text-sm text-gray-200">Voice Clone</span>
+          <span
+            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            >Pro</span
+          >
+        </div>
+
         <div
           onclick="switchTool('image-edit')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-gray-700 px-5 py-3 rounded-3xl cursor-pointer"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/20 hover:border-amber-500/50 px-5 py-2.5 rounded-3xl cursor-pointer transition-all relative group"
         >
-          <i class="fas fa-edit text-cyan-400"></i
-          ><span class="font-medium text-sm text-gray-200">Image Editor</span>
+          <i class="fas fa-magic text-amber-500"></i>
+          <span class="font-medium text-sm text-gray-200">AI Editor</span>
+          <span
+            class="text-[7px] font-black bg-amber-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 tracking-tighter uppercase"
+            >Pro</span
+          >
+        </div>
+
+        <div
+          onclick="switchTool('history')"
+          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 hover:bg-cyan-500 hover:text-gray-950 px-5 py-2.5 rounded-3xl cursor-pointer transition-all border border-transparent"
+        >
+          <i class="fas fa-history text-cyan-400"></i>
+          <span class="font-medium text-sm text-gray-200">History</span>
         </div>
       </div>
 
@@ -333,101 +358,194 @@
         >
           <div class="p-8 shrink-0">
             <div class="flex items-center gap-x-3 mb-6">
-              <span class="text-3xl font-semibold tracking-tighter text-white"
+              <div
+                class="w-8 h-8 bg-cyan-500 rounded-xl flex items-center justify-center font-bold text-gray-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
+              >
+                S
+              </div>
+              <span class="text-2xl font-semibold tracking-tighter text-white"
                 >Studio</span
               >
             </div>
-            <div class="h-px bg-gray-800 w-full"></div>
+            <div
+              class="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent w-full"
+            ></div>
           </div>
 
           <div
-            class="flex-1 overflow-y-auto sidebar-scroll px-4 pb-12 space-y-2"
+            class="flex-1 overflow-y-auto sidebar-scroll px-4 pb-12 space-y-1"
           >
             <p
-              class="text-xs font-bold text-gray-500 px-5 mb-4 uppercase tracking-widest"
+              class="text-[10px] font-black text-gray-500 px-5 mb-4 uppercase tracking-[0.2em]"
             >
-              Media Tools
+              Standard Tools
             </p>
 
             <div
               onclick="switchTool('image-pdf')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
+              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
             >
               <i
-                class="fas fa-image text-xl text-gray-400 group-hover:text-cyan-400"
+                class="fas fa-image text-lg text-gray-500 group-hover:text-cyan-400"
               ></i>
-              <span class="font-medium text-gray-300">Image → PDF</span>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Image → PDF</span
+              >
             </div>
 
             <div
               onclick="switchTool('text-doc')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
+              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
             >
               <i
-                class="fas fa-file-alt text-xl text-gray-400 group-hover:text-cyan-400"
+                class="fas fa-file-word text-lg text-gray-500 group-hover:text-cyan-400"
               ></i>
-              <span class="font-medium text-gray-300">Text → Document</span>
-            </div>
-
-            <div
-              onclick="switchTool('voice-clone')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-microphone text-xl text-gray-400 group-hover:text-cyan-400"
-              ></i>
-              <span class="font-medium text-gray-300">Voice Cloning</span>
-            </div>
-
-            <div
-              onclick="switchTool('text-to-speech')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-volume-up text-xl text-gray-400 group-hover:text-cyan-400"
-              ></i>
-              <span class="font-medium text-gray-300">Text to Speech</span>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Text → Word</span
+              >
             </div>
 
             <div
               onclick="switchTool('video-audio')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
+              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
             >
               <i
-                class="fas fa-video text-xl text-gray-400 group-hover:text-cyan-400"
+                class="fas fa-video text-lg text-gray-500 group-hover:text-cyan-400"
               ></i>
-              <span class="font-medium text-gray-300">Video → Audio</span>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Video → Audio</span
+              >
+            </div>
+
+            <p
+              class="text-[10px] font-black text-amber-500/60 px-5 mt-8 mb-4 uppercase tracking-[0.2em]"
+            >
+              Premium Tools
+            </p>
+
+            <div
+              onclick="switchTool('text-to-speech')"
+              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
+            >
+              <i
+                class="fas fa-volume-up text-lg text-gray-500 group-hover:text-amber-500"
+              ></i>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Text to Speech</span
+              >
+              <span
+                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
+                >PRO</span
+              >
+            </div>
+
+            <div
+              onclick="switchTool('voice-clone')"
+              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
+            >
+              <i
+                class="fas fa-microphone-alt text-lg text-gray-500 group-hover:text-amber-500"
+              ></i>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >Voice Cloning</span
+              >
+              <span
+                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
+                >PRO</span
+              >
             </div>
 
             <div
               onclick="switchTool('image-edit')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
+              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
             >
               <i
-                class="fas fa-edit text-xl text-gray-400 group-hover:text-cyan-400"
+                class="fas fa-edit text-lg text-gray-500 group-hover:text-amber-500"
               ></i>
-              <span class="font-medium text-gray-300">Image Editor</span>
+              <span
+                class="font-bold text-sm text-gray-400 group-hover:text-white"
+                >AI Image Editor</span
+              >
+              <span
+                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
+                >PRO</span
+              >
             </div>
 
-            <div
-              onclick="switchTool('pdf-tools')"
-              class="flex items-center gap-x-4 px-5 py-4 hover:bg-gray-800 rounded-3xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-file-pdf text-xl text-gray-400 group-hover:text-cyan-400"
-              ></i>
-              <span class="font-medium text-gray-300">PDF Merge & Split</span>
+            <div class="mt-8 pt-8 border-t border-gray-800">
+              <p
+                class="text-[10px] font-black text-gray-500 px-5 mb-4 uppercase tracking-[0.2em]"
+              >
+                Library
+              </p>
+              <button
+                onclick="switchTool('history')"
+                class="w-full flex items-center justify-between bg-gray-800/40 hover:bg-cyan-500 hover:text-gray-950 p-4 rounded-2xl transition-all group shadow-lg border border-white/5"
+              >
+                <div class="flex items-center gap-3">
+                  <i
+                    class="fas fa-history text-cyan-400 group-hover:text-gray-950"
+                  ></i>
+                  <span class="font-black text-xs uppercase tracking-widest"
+                    >Full History</span
+                  >
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-30"></i>
+              </button>
             </div>
           </div>
         </div>
 
         <div
-          class="flex-1 p-4 sm:p-8 overflow-y-auto bg-gray-950"
+          class="flex-1 p-4 sm:p-8 overflow-y-auto bg-gray-950 relative"
           id="content-area"
         >
-          <div class="max-w-4xl mx-auto">
-            <div class="text-center py-20 text-gray-400">
-              Select a tool to begin
+          <div
+            id="universal-progress"
+            class="hidden max-w-4xl mx-auto mb-12 animate-fadeIn sticky top-0 z-30"
+          >
+            <div
+              class="bg-gray-900/80 border border-cyan-500/30 p-6 rounded-[2.5rem] shadow-2xl backdrop-blur-xl ring-1 ring-white/10"
+            >
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-2 h-2 bg-cyan-500 rounded-full animate-ping"
+                  ></div>
+                  <span
+                    id="universal-status-text"
+                    class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em]"
+                    >Engine Processing...</span
+                  >
+                </div>
+                <span
+                  id="universal-percent"
+                  class="text-sm font-black text-white tabular-nums"
+                  >0%</span
+                >
+              </div>
+              <div
+                class="h-1.5 bg-gray-800 rounded-full overflow-hidden p-[1px]"
+              >
+                <div
+                  id="universal-bar"
+                  class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 w-0 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0.5)] rounded-full"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tool-display" class="max-w-4xl mx-auto">
+            <div class="text-center py-20 text-gray-600">
+              <i class="fas fa-sparkles text-4xl mb-4 block opacity-20"></i>
+              <p class="text-lg font-medium">
+                Select a tool to begin your workflow
+              </p>
             </div>
           </div>
         </div>
@@ -535,36 +653,34 @@
       </div>
     </div>
 
-    <footer class="bg-gray-950 border-t border-gray-900 py-12">
+    <footer class="bg-gray-950 border-t border-gray-900 py-4">
       <div
-        class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6"
+        class="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-[10px] sm:text-xs"
       >
-        <div class="flex items-center gap-x-3 opacity-50">
+        <div class="flex items-center gap-x-2 opacity-40">
           <div
-            class="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-xs font-bold text-black"
+            class="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center text-[8px] font-bold text-black"
           >
             M
           </div>
-          <span class="text-sm font-medium tracking-tighter"
-            >MediaLab © 2026</span
-          >
+          <span class="font-medium tracking-tighter">MediaLab © 2026</span>
         </div>
 
-        <div class="flex gap-x-8 text-sm text-gray-500">
+        <div class="flex gap-x-4 text-gray-600">
           <a
             href="/privatePolicies.html"
             class="hover:text-cyan-400 transition-colors"
-            >Privacy Policy</a
+            >Privacy</a
           >
           <a
             href="/terms-and-services.html"
             class="hover:text-cyan-400 transition-colors"
-            >Terms of Service</a
+            >Terms</a
           >
           <a
             href="/contact-support.html"
             class="hover:text-cyan-400 transition-colors"
-            >Contact Support</a
+            >Support</a
           >
         </div>
       </div>
@@ -686,6 +802,17 @@
         }
       });
       // PROFESSIONAL CONVERSION TRIGGER
+
+      // UNIVERSAL AI PROGRESS LISTENER
+      // Listener for the FFmpeg progress (the moving percentage)
+      socket.on("conversion-progress", (data) => {
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
+        if (bar && data.percent) {
+          bar.style.width = data.percent + "%";
+          percentLabel.innerText = data.percent + "%";
+        }
+      });
       async function startProfessionalConversion(endpoint, payload, type) {
         const btn = document.getElementById("convert-btn");
         const progressContainer = document.getElementById(
@@ -718,19 +845,123 @@
         }
       }
 
+      // ====================== UNIVERSAL PROGRESS LOGIC ======================
+      socket.on("process-step", (data) => {
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
+
+        progressDiv.classList.remove("hidden");
+        if (statusText) statusText.innerText = data.message;
+
+        if (data.percent) {
+          bar.style.width = data.percent + "%";
+          percentLabel.innerText = data.percent + "%";
+        }
+
+        if (data.percent >= 100 || data.message.includes("Complete")) {
+          bar.classList.replace("bg-cyan-500", "bg-green-500");
+          setTimeout(() => {
+            progressDiv.classList.add("hidden");
+            bar.style.width = "0%";
+            bar.classList.replace("bg-green-500", "bg-cyan-500");
+          }, 4000);
+        }
+      });
+
+      // ====================== HISTORY LOGIC (SIDEBAR & TOOL) ======================
+
+      function updateSidebarHistory(projects) {
+        const list = document.getElementById("project-history-list");
+        if (!list) return;
+
+        // Pull from provided data or guest cache
+        const displayProjects =
+          projects ||
+          JSON.parse(localStorage.getItem("medialab_guest_history") || "[]");
+
+        if (displayProjects.length === 0) {
+          list.innerHTML = `<p class="text-[10px] text-gray-600 italic px-5">No recent projects.</p>`;
+          return;
+        }
+
+        // Show only 5 newest for the sidebar
+        list.innerHTML = [...displayProjects]
+          .reverse()
+          .slice(0, 5)
+          .map(
+            (p) => `
+        <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700 hover:border-cyan-500 transition-all cursor-pointer mb-2">
+          <div class="flex justify-between items-start">
+            <span class="text-[10px] text-cyan-400 font-bold uppercase">${p.toolType}</span>
+          </div>
+          <p class="text-[11px] text-gray-300 truncate mt-1">${p.fileName}</p>
+          <a href="${p.fileUrl}" download class="inline-block mt-2 text-[10px] text-white underline opacity-60 hover:opacity-100">Download</a>
+        </div>
+    `,
+          )
+          .join("");
+      }
+
+      function renderHistoryItems(projects) {
+        if (!projects || projects.length === 0) {
+          return `<div class="col-span-full py-20 text-center text-gray-500 bg-gray-900/50 rounded-[3rem] border border-dashed border-gray-800">
+                  <i class="fas fa-folder-open text-5xl mb-6 block opacity-20"></i>
+                  <p class="text-xl font-medium">Your library is empty</p>
+                </div>`;
+        }
+        return [...projects]
+          .reverse()
+          .map(
+            (p) => `
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-[2.5rem] hover:border-cyan-500/50 transition-all group shadow-xl">
+            <div class="flex justify-between items-start mb-6">
+                <span class="bg-cyan-500/10 text-cyan-400 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-cyan-500/10">
+                    ${p.toolType}
+                </span>
+                <span class="text-[10px] text-gray-600 font-bold">${new Date(p.createdAt || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <h4 class="text-white font-semibold truncate mb-8 text-lg">${p.fileName}</h4>
+            <a href="${p.fileUrl}" download class="w-full py-4 bg-gray-800 group-hover:bg-cyan-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3">
+                <i class="fas fa-cloud-download-alt text-base"></i> Download Result
+            </a>
+        </div>
+    `,
+          )
+          .join("");
+      }
+
+      function clearAllHistory() {
+        if (
+          confirm("This will clear your local guest project cache. Continue?")
+        ) {
+          localStorage.removeItem("medialab_guest_history");
+          if (typeof switchTool === "function") switchTool("history");
+          updateSidebarHistory([]);
+        }
+      }
+
       function showDownloadState(url, type) {
         const btn = document.getElementById("convert-btn");
 
-        // Change button to Download button
+        if (!btn) return;
+
+        // 1. Reset state
         btn.disabled = false;
-        btn.classList.replace("bg-cyan-500", "bg-green-600");
-        btn.classList.add("hover:bg-green-500", "animate-bounce");
+
+        // 2. Visual Polish: Switch from Cyan to Green
+        btn.classList.replace("bg-cyan-600", "bg-green-600");
+        btn.classList.replace("hover:bg-cyan-500", "hover:bg-green-500");
+
+        // REMOVED "animate-bounce" from this line
         btn.innerHTML = `<i class="fas fa-download mr-2"></i> Download Result`;
 
-        // Set the click action to download
+        // 3. Set the click action to download the specific file
         btn.onclick = () => {
           const link = document.createElement("a");
           link.href = url;
+          // Creates a professional filename based on the current timestamp
           link.download = `MediaLab_Export_${Date.now()}`;
           document.body.appendChild(link);
           link.click();
@@ -810,7 +1041,19 @@
           console.error("Auth error:", err);
         }
       }
+
+      // --- Updated fakeOAuth Function ---
       function fakeOAuth(provider) {
+        if (provider === "Apple") {
+          alert(
+            "Apple Sign-In isn't supported at the moment. Please use Google or Email instead.",
+          );
+          // We do NOT set loggedIn = true here
+          // We do NOT call goToStudio() here
+          return; // Stop the function
+        }
+
+        // Logic for other providers if you add them later
         alert(`✅ Logged in with ${provider}`);
         hideLogin();
         loggedIn = true;
@@ -823,11 +1066,16 @@
         try {
           const res = await fetch("/api/auth/me", { credentials: "include" });
           const data = await res.json();
+
           if (data.success && data.user) {
             loggedIn = true;
             currentUser = data.user;
+
+            // UI: Toggle Login Buttons
             document.getElementById("start-btn").classList.add("hidden");
             document.getElementById("user-section").classList.remove("hidden");
+
+            // UI: Set Profile Details
             const picSrc =
               currentUser.profilePicture ||
               "https://via.placeholder.com/32/22d3ee/ffffff?text=👤";
@@ -839,11 +1087,20 @@
               currentUser.name || "User";
             document.getElementById("dropdown-email").textContent =
               currentUser.email || "";
+
+            // --- NEW: Load Sidebar History ---
+            if (currentUser.projects) {
+              updateSidebarHistory(currentUser.projects);
+            }
+
             goToStudio();
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error("Auth check failed:", e);
+        }
       }
 
+      // Optimized Sidebar History Renderer
       // ====================== UNDO / REDO ======================
       let undoStack = [];
       let redoStack = [];
@@ -1124,60 +1381,108 @@
         const formatType = document.getElementById("format-select").value;
         const btn = document.getElementById("convert-btn");
         const toolWrapper = document.getElementById("text-tool-wrapper");
-        const resultDisplay = document.getElementById("result-display");
+        const toolArea = document.getElementById("tool-display");
+        const wordCountBadge = document.getElementById("word-count");
 
-        // Progress Bar Elements
-        const progressContainer = document.getElementById(
-          "upload-progress-text",
-        );
-        const progressBar = document.getElementById("progress-bar-text");
-        const progressText = document.getElementById("progress-text-text");
-        const progressStatus = document.getElementById("progress-status-text");
+        // Universal Progress Elements
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
 
+        // 1. Validation
         if (!editor.innerText.trim()) return alert("The document is empty!");
 
-        // 1. Enter Loading State
+        // 2. THE "STAGE WIPE": Hide the editor to focus on engine progress
         btn.disabled = true;
-        btn.classList.add("opacity-50", "cursor-not-allowed");
-        if (progressContainer) {
-          progressContainer.classList.remove("hidden");
-          // Reset to Cyan
-          progressBar.style.width = "0%";
-          progressBar.classList.remove(
-            "bg-green-500",
-            "shadow-[0_0_20px_rgba(34,197,94,0.4)]",
-          );
-          progressBar.classList.add("bg-cyan-500");
-          progressStatus.textContent = "Compiling document...";
+        btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Initializing Export...`;
+
+        if (toolWrapper) toolWrapper.classList.add("hidden");
+        if (wordCountBadge) wordCountBadge.classList.add("hidden");
+
+        // 3. Initialize Universal Progress
+        progressDiv.classList.remove("hidden");
+        statusText.innerText = "📝 Analyzing Document Structure...";
+        bar.style.width = "15%";
+        percentLabel.innerText = "15%";
+
+        try {
+          // Step 2: Simulate Engine Processing
+          setTimeout(() => {
+            statusText.innerText = `📄 Compiling ${formatType.toUpperCase()} metadata...`;
+            bar.style.width = "45%";
+            percentLabel.innerText = "45%";
+          }, 600);
+
+          setTimeout(async () => {
+            statusText.innerText = `✨ Polishing Final Styles...`;
+            bar.style.width = "85%";
+            percentLabel.innerText = "85%";
+
+            // Perform the actual export logic you already have
+            await executeFinalExport(editor, formatType);
+
+            // SUCCESS STATE: UPDATE PROGRESS BAR
+            statusText.innerText = "✅ Export Successful!";
+            bar.style.width = "100%";
+            percentLabel.innerText = "100%";
+            bar.classList.replace("bg-cyan-500", "bg-green-500");
+            bar.classList.add("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+
+            // SUCCESS STATE: INJECT THE RESULT CARD
+            const fileName = `Document_${Date.now()}.${formatType}`;
+            const downloadUrl = finalExportBlob
+              ? URL.createObjectURL(finalExportBlob)
+              : "#";
+
+            toolArea.innerHTML = `
+                <div class="max-w-2xl mx-auto py-10 animate-fadeIn">
+                    <div class="bg-gray-900 border border-green-500/20 rounded-[3rem] p-12 text-center shadow-2xl">
+                        <div class="w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-green-500/20">
+                            <i class="fas fa-file-export text-4xl text-green-400"></i>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mb-2 tracking-tighter">Export Ready!</h3>
+                        <p class="text-gray-400 mb-10">Your document has been successfully converted to a professional <b>.${formatType.toUpperCase()}</b> file.</p>
+                        
+                        <div class="flex flex-col gap-4">
+                            <button onclick="downloadExportedFile()" 
+                               class="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98]">
+                                <i class="fas fa-cloud-download-alt"></i>
+                                <span>Save .${formatType.toUpperCase()} to Device</span>
+                            </button>
+                            
+                            <button onclick="switchTool('text-doc')" 
+                                    class="text-sm font-black text-gray-500 hover:text-cyan-400 uppercase tracking-widest transition-all mt-4">
+                                <i class="fas fa-edit mr-2"></i> Return to Editor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Save to history automatically
+            saveProjectToHistory({
+              toolType: `Text → ${formatType.toUpperCase()}`,
+              fileName: fileName,
+              fileUrl: downloadUrl,
+            });
+
+            // Auto-hide progress bar after 4 seconds
+            setTimeout(() => {
+              progressDiv.classList.add("hidden");
+              bar.style.width = "0%";
+              bar.classList.replace("bg-green-500", "bg-cyan-500");
+              bar.classList.remove("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+            }, 4000);
+          }, 1500);
+        } catch (error) {
+          console.error(error);
+          statusText.innerText = "❌ Export Failed";
+          if (toolWrapper) toolWrapper.classList.remove("hidden");
+          btn.disabled = false;
+          btn.innerHTML = `Try Export Again`;
         }
-
-        // 2. Simulate Professional Progress
-        let percent = 0;
-        const simulation = setInterval(async () => {
-          percent += Math.floor(Math.random() * 10) + 5;
-
-          if (percent >= 100) {
-            percent = 100;
-            clearInterval(simulation);
-
-            // --- SUCCESS UI: TURN GREEN ---
-            if (progressBar) {
-              progressBar.classList.replace("bg-cyan-500", "bg-green-500");
-              progressBar.classList.add(
-                "shadow-[0_0_20px_rgba(34,197,94,0.4)]",
-              );
-              progressStatus.textContent = "Compilation Complete!";
-              progressText.innerHTML = '<i class="fas fa-check"></i>';
-            }
-
-            // 3. Execute Real Conversion Logic
-          }
-
-          if (progressBar) progressBar.style.width = percent + "%";
-          if (progressText) progressText.textContent = percent + "%";
-        }, 80);
       }
-
       function finishExport(format) {
         hideLoading();
         const toolWrapper = document.getElementById("text-tool-wrapper");
@@ -1213,89 +1518,106 @@
       async function handleVideoSelection(file) {
         if (!file) return;
 
-        // 1. Get UI elements
-        const dropZone = document.getElementById("drop-zone-video");
-        const infoDisplay = document.getElementById("video-info-display");
-        const fileNameLabel = document.getElementById("file-name-label");
-        const progressContainer = document.getElementById(
-          "upload-progress-video",
-        );
-        const progressBar = document.getElementById("progress-bar-video");
-        const progressText = document.getElementById("progress-text-video");
-        const statusLabel = document.getElementById("progress-status-video");
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
         const convertBtn = document.getElementById("convert-btn");
 
-        // 2. Start Upload UI state
-        progressContainer.classList.remove("hidden");
-        statusLabel.innerText = "Uploading to MediaLab Server...";
-        convertBtn.disabled = true;
+        // 1. Show Universal Progress immediately
+        progressDiv.classList.remove("hidden");
+        statusText.innerText = "Uploading Video to Server...";
+        bar.style.width = "10%";
 
-        // 3. Prepare data for the backend
+        // 2. Prepare Form Data
         const formData = new FormData();
         formData.append("file", file);
 
         try {
-          // Physical upload to your Express /api/upload route
-          const response = await fetch("https://medialab-6b20.onrender.com", {
+          // USE RELATIVE PATH: Render handles the domain automatically
+          const response = await fetch("/api/upload", {
             method: "POST",
             body: formData,
           });
 
-          if (!response.ok) throw new Error("Upload failed");
+          if (!response.ok) throw new Error("Upload Failed");
 
           const result = await response.json();
 
           if (result.success) {
-            // 4. Success State: Update Global Filename
-            selectedVideoFile = result.filename;
+            selectedVideoFile = result.filename; // Store for the next step
 
-            // 5. Toggle UI: Hide Dropzone, show File Info
-            dropZone.classList.add("hidden");
-            infoDisplay.classList.remove("hidden");
-            fileNameLabel.innerText = file.name;
+            // 3. Update UI to "Ready" state
+            statusText.innerText = "Upload Complete. Ready to Extract.";
+            bar.style.width = "100%";
+            bar.classList.replace("bg-cyan-500", "bg-green-500");
 
-            // 6. Polish Progress Bar
-            progressBar.style.width = "100%";
-            progressText.innerText = "100%";
-            progressBar.classList.replace("bg-cyan-500", "bg-green-500");
-            statusLabel.innerText = "Upload Verified. Ready to Extract.";
-            statusLabel.classList.add("text-green-400");
+            if (convertBtn) convertBtn.disabled = false;
 
-            // Enable the main action button
-            convertBtn.disabled = false;
+            // Hide progress after 2 seconds so user sees the "Extract" button
+            setTimeout(() => {
+              progressDiv.classList.add("hidden");
+              bar.style.width = "0%";
+              bar.classList.replace("bg-green-500", "bg-cyan-500");
+            }, 2000);
+
+            // Show the file info display if it exists in your tool HTML
+            const infoDisplay = document.getElementById("video-info-display");
+            const nameLabel = document.getElementById("file-name-label");
+            if (infoDisplay) infoDisplay.classList.remove("hidden");
+            if (nameLabel) nameLabel.innerText = file.name;
+
+            // Hide the drop zone
+            const dropZone = document.getElementById("drop-zone-video");
+            if (dropZone) dropZone.classList.add("hidden");
           }
         } catch (err) {
           console.error("Upload Error:", err);
-          statusLabel.innerText = "Upload failed. Please try again.";
-          statusLabel.classList.add("text-red-400");
+          statusText.innerText = "Error: File too large or connection lost.";
+          bar.classList.replace("bg-cyan-500", "bg-red-500");
+          alert("Video upload failed. Ensure the file is under 100MB.");
+        }
+      }
+
+      function handleVideoDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleVideoSelection(files[0]); // Redirect to the selection logic
         }
       }
       // 2. When user clicks "Extract Audio"
       async function startVideoConversion() {
         const format = document.getElementById("audio-format").value;
         const btn = document.getElementById("convert-btn");
-        const progressContainer = document.getElementById(
-          "upload-progress-video",
-        );
-        const statusLabel = document.getElementById("progress-status-video");
+        const progressDiv = document.getElementById("universal-progress");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
+        const statusText = document.getElementById("universal-status-text");
 
-        // 1. Initial UI State
+        // 1. Validation: Ensure a file was actually uploaded first
+        if (!selectedVideoFile) {
+          alert("Please upload a video first!");
+          return;
+        }
+
+        // 2. UI State: Disable button and show progress bar
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Initializing Engine...`;
-        progressContainer.classList.remove("hidden");
 
-        // Reset bar if doing a second conversion
-        const progressBar = document.getElementById("progress-bar-video");
-        progressBar.style.width = "0%";
-        progressBar.classList.replace("bg-green-500", "bg-cyan-500");
+        if (progressDiv) {
+          progressDiv.classList.remove("hidden");
+          statusText.innerText = "Connecting to AI Engine...";
+        }
 
         try {
+          // 3. Send the request to the backend
           const response = await fetch("/api/convert/video-to-audio", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              videoFile: selectedVideoFile, // Ensure handleVideoSelection set this
-              socketId: clientSocketId, // From your io.on("connect")
+              videoFile: selectedVideoFile,
+              socketId: socket.id,
               requestedFormat: format,
             }),
           });
@@ -1303,48 +1625,84 @@
           const result = await response.json();
 
           if (result.success) {
-            // SUCCESS: Transform the button into a green download button
-            btn.disabled = false;
-            btn.classList.remove("bg-cyan-600", "hover:bg-cyan-500");
-            btn.classList.add(
-              "bg-green-600",
-              "hover:bg-green-500",
-              "shadow-[0_0_15px_rgba(34,197,94,0.4)]",
-            );
-            btn.innerHTML = `<i class="fas fa-download mr-2"></i> Download ${format.toUpperCase()}`;
+            // 4. Success UI Fix: Ensure bar hits 100% Green
+            if (bar) {
+              bar.style.width = "100%";
+              bar.classList.replace("bg-cyan-500", "bg-green-500");
+              bar.classList.add("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+            }
+            if (percentLabel) percentLabel.innerText = "100%";
+            if (statusText) statusText.innerText = "✨ AI Extraction Complete!";
 
-            // Link the button directly to the output file
-            btn.onclick = () => {
-              const link = document.createElement("a");
-              link.href = result.audioUrl;
-              link.download = `MediaLab_Audio_${Date.now()}.${format}`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            };
+            // 5. Transform the main button into a Green Download Button
+            showDownloadState(result.audioUrl, "video");
 
-            // Hide the tiny spinner next to progress
-            document.getElementById("progress-spinner").classList.add("hidden");
+            // 6. Save to Local History (for Guests) and Refresh UI
+            saveProjectToHistory({
+              toolType: "Video → Audio",
+              fileName: selectedVideoFile,
+              fileUrl: result.audioUrl,
+            });
+
+            // 7. Refresh Sidebar automatically
+            if (typeof updateSidebarHistory === "function") {
+              updateSidebarHistory(currentUser ? currentUser.projects : null);
+            }
+
+            console.log("✅ Conversion Success:", result.audioUrl);
+
+            // 8. Auto-hide the progress bar after 4 seconds
+            setTimeout(() => {
+              progressDiv.classList.add("hidden");
+              // Reset bar colors for the next use
+              bar.style.width = "0%";
+              bar.classList.replace("bg-green-500", "bg-cyan-500");
+              bar.classList.remove("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+            }, 4000);
           } else {
-            throw new Error("Backend reported failure");
+            throw new Error(
+              result.message || "Engine failed to process video.",
+            );
           }
         } catch (err) {
-          console.error("Conversion failed", err);
-          statusLabel.innerText = "Error: Conversion Failed";
-          statusLabel.classList.add("text-red-400");
+          console.error("Fetch Error:", err);
           btn.disabled = false;
-          btn.innerHTML = `<i class="fas fa-redo mr-2"></i> Try Again`;
+          btn.innerHTML = `<i class="fas fa-bolt mr-2"></i> Try Again`;
+          if (statusText) statusText.innerText = "Error: Conversion Failed";
+          alert(
+            "Conversion failed. Please check if the video format is supported.",
+          );
         }
       }
-
       async function switchTool(id) {
-        const area = document.getElementById("content-area");
+        const area = document.getElementById("tool-display");
         let html = "";
 
         // =============================================================
-        // 1. IMAGE → PDF CONVERTER (FULLY FUNCTIONAL)
+        // 0. PROJECT HISTORY TOOL (ACTS LIKE A TOOL NOW)
         // =============================================================
-        if (id === "image-pdf") {
+        // Inside switchTool(id) ...
+        if (id === "history") {
+          // Freshly grab history from current user or local storage
+          const projects = currentUser
+            ? currentUser.projects
+            : JSON.parse(
+                localStorage.getItem("medialab_guest_history") || "[]",
+              );
+
+          area.innerHTML = `
+        <div class="animate-fadeIn">
+            <h2 class="text-3xl font-semibold text-white mb-8">Project History</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ${renderHistoryItems(projects)}
+            </div>
+        </div>
+    `;
+        }
+        // =============================================================
+        // 1. IMAGE → PDF CONVERTER
+        // =============================================================
+        else if (id === "image-pdf") {
           html = `
             <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
                 <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Image → PDF Converter</h2>
@@ -1366,15 +1724,6 @@
                 <input type="file" id="img-input" multiple accept="image/*" class="hidden" 
                        onclick="event.stopPropagation()" onchange="handleImages(this.files)">
             </div>
-            <div id="upload-progress-image" class="hidden mt-6 bg-gray-900/30 p-4 rounded-2xl border border-gray-800">
-                <div class="flex justify-between text-[10px] mb-2 text-gray-500 uppercase font-black tracking-widest">
-                    <span id="progress-status-image">Uploading assets...</span>
-                    <span id="progress-text-image">0%</span>
-                </div>
-                <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
-                    <div id="progress-bar-image" class="progress-bar h-full bg-cyan-400 w-0 transition-all duration-300"></div>
-                </div>
-            </div>
             <div id="img-preview" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8"></div>
             <button id="convert-btn" onclick="convertImagesToPDF()" 
                    class="mt-12 w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-lg font-bold transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-x-3 group">
@@ -1385,7 +1734,7 @@
         }
 
         // =============================================================
-        // 2. VIDEO → AUDIO CONVERTER (FULLY FUNCTIONAL)
+        // 2. VIDEO → AUDIO CONVERTER
         // =============================================================
         else if (id === "video-audio") {
           html = `
@@ -1420,18 +1769,7 @@
                     </div>
                     <button onclick="switchTool('video-audio')" class="text-gray-500 hover:text-red-400 transition-colors"><i class="fas fa-times-circle text-xl"></i></button>
                 </div>
-                <div id="upload-progress-video" class="hidden bg-gray-900/30 p-6 rounded-3xl border border-gray-800/50">
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center gap-3">
-                            <div id="progress-spinner" class="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                            <span id="progress-status-video" class="text-xs font-bold text-gray-400 uppercase tracking-widest">Initialising FFmpeg...</span>
-                        </div>
-                        <span id="progress-text-video" class="text-sm font-black text-white">0%</span>
-                    </div>
-                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
-                        <div id="progress-bar-video" class="progress-bar h-full bg-cyan-500 w-0 transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]"></div>
-                    </div>
-                </div>
+                
                 <div class="flex flex-col sm:flex-row gap-4 mt-8">
                     <div class="flex-1 relative">
                         <i class="fas fa-music absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"></i>
@@ -1452,72 +1790,125 @@
         }
 
         // =============================================================
-        // 3. TEXT → DOCUMENT (FULLY FUNCTIONAL)
+        // 3. TEXT → DOCUMENT
         // =============================================================
         else if (id === "text-doc") {
+          // 1. HARD RESET: Memory Management
+          // Revoke old URL if it exists to prevent memory leaks, then clear state
+          if (finalExportBlob) {
+            URL.revokeObjectURL(finalExportBlob);
+            finalExportBlob = null;
+          }
+          currentExportFormat = null;
+
+          // 2. BUILD PROFESSIONAL STUDIO UI
           html = `
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
-                <h4 class="text-lg sm:text-xl font-semibold text-white tracking-tight">Studio Word Processor</h4>
-                <div id="word-count" class="text-[10px] font-black bg-gray-900 px-4 py-2 rounded-xl border border-gray-800 text-cyan-400 uppercase tracking-widest shadow-lg">0 Words</div>
-            </div>
-            <div id="result-display" class="hidden mb-8 animate-fadeIn"></div>
-            <div id="text-tool-wrapper" class="flex flex-col shadow-2xl rounded-3xl border border-gray-800 overflow-hidden bg-gray-950">
-                <div class="bg-gray-900/95 backdrop-blur-md p-4 flex flex-wrap gap-2 items-center border-b border-gray-800 sticky top-0 z-20">
-                    <button id="btn-undo" onclick="undo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" disabled><i class="fas fa-undo"></i></button>
-                    <button id="btn-redo" onclick="redo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" disabled><i class="fas fa-redo"></i></button>
-                    <div class="w-px h-8 bg-gray-700 mx-2"></div>
-                    <select id="font-family-select" onchange="format('fontName', this.value)" class="bg-gray-800 text-gray-300 text-sm rounded-xl px-3 py-2 outline-none border border-transparent focus:border-cyan-500 cursor-pointer">
-                        <option value="Inter, sans-serif">Inter</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Courier New">Courier</option>
-                    </select>
-                    <select id="font-size-select" onchange="format('fontSize', this.value)" class="bg-gray-800 text-gray-300 text-sm rounded-xl px-3 py-2 outline-none border border-transparent focus:border-cyan-500 cursor-pointer">
-                        <option value="1">12px</option><option value="2">14px</option><option value="3" selected>16px</option><option value="4">18px</option><option value="5">24px</option>
-                    </select>
-                    <div class="w-px h-8 bg-gray-700 mx-2"></div>
-                    <button id="btn-bold" onclick="format('bold')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><i class="fas fa-bold"></i></button>
-                    <button id="btn-italic" onclick="format('italic')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><i class="fas fa-italic"></i></button>
-                    <button id="btn-underline" onclick="format('underline')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><i class="fas fa-underline"></i></button>
-                    <button onclick="applyListStyle('bullet')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white ml-2"><i class="fas fa-list-ul"></i></button>
-                    <button onclick="format('removeFormat')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-red-500/10 text-red-400 rounded-2xl ml-auto"><i class="fas fa-eraser"></i></button>
-                </div>
-                <div id="text-input" contenteditable="true" 
-                     class="w-full p-10 min-h-[480px] text-white outline-none prose prose-invert max-w-none overflow-y-auto selection:bg-cyan-500/30"
-                     style="font-family: Inter, sans-serif; font-size: 16px;">
-                </div>
-                <div class="bg-gray-900 p-6 border-t border-gray-800">
-                    <div id="upload-progress-text" class="hidden mb-6 animate-fadeIn">
-                        <div class="flex justify-between text-[10px] mb-2 text-gray-500 uppercase font-black tracking-widest">
-                            <span id="progress-status-text">Processing...</span>
-                            <span id="progress-text-text">0%</span>
-                        </div>
-                        <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
-                            <div id="progress-bar-text" class="h-full bg-cyan-500 w-0 transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.3)]"></div>
-                        </div>
+        <div class="animate-fadeIn">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20">
+                        <i class="fas fa-file-signature text-cyan-400"></i>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <select id="format-select" class="bg-gray-800 border border-gray-700 text-white rounded-2xl px-6 py-4 flex-1 outline-none focus:border-cyan-400 appearance-none cursor-pointer">
-                            <option value="pdf">Professional PDF</option>
-                            <option value="docx">Word Document (.docx)</option>
-                            <option value="html">Web Page (.html)</option>
-                            <option value="txt">Plain Text (.txt)</option>
-                        </select>
-                        <button id="convert-btn" onclick="convertTextToDoc()" class="px-12 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-bold transition-all shadow-xl flex items-center justify-center gap-3">
-                            <i class="fas fa-file-export"></i>
+                    <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Studio Word Processor</h2>
+                </div>
+                <div id="word-count" class="text-[10px] font-black bg-gray-900 px-4 py-2 rounded-xl border border-gray-800 text-cyan-400 uppercase tracking-widest shadow-lg backdrop-blur-md">
+                    0 Words
+                </div>
+            </div>
+
+            <div id="text-tool-wrapper" class="flex flex-col shadow-2xl rounded-[2.5rem] border border-gray-800 overflow-hidden bg-gray-950 transition-all duration-500 ring-1 ring-white/5">
+                
+                <div class="bg-gray-900/95 backdrop-blur-xl p-4 flex flex-wrap gap-2 items-center border-b border-gray-800 sticky top-0 z-20">
+                    <button id="btn-undo" onclick="undo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" title="Undo (Ctrl+Z)" disabled><i class="fas fa-undo"></i></button>
+                    <button id="btn-redo" onclick="redo()" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all disabled:opacity-40" title="Redo (Ctrl+Y)" disabled><i class="fas fa-redo"></i></button>
+                    
+                    <div class="w-px h-8 bg-gray-700/50 mx-2"></div>
+                    
+                    <select id="font-family-select" onchange="format('fontName', this.value)" class="bg-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2.5 outline-none border border-transparent focus:border-cyan-500/50 cursor-pointer appearance-none">
+                        <option value="Inter, sans-serif">Inter (Modern)</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Georgia">Georgia (Serif)</option>
+                        <option value="Courier New">Courier (Mono)</option>
+                    </select>
+
+                    <select id="font-size-select" onchange="format('fontSize', this.value)" class="bg-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2.5 outline-none border border-transparent focus:border-cyan-500/50 cursor-pointer appearance-none">
+                        <option value="1">12px</option>
+                        <option value="2">14px</option>
+                        <option value="3" selected>16px</option>
+                        <option value="4">18px</option>
+                        <option value="5">24px</option>
+                    </select>
+
+                    <div class="w-px h-8 bg-gray-700/50 mx-2"></div>
+
+                    <button id="btn-bold" onclick="format('bold')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-bold"></i></button>
+                    <button id="btn-italic" onclick="format('italic')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-italic"></i></button>
+                    <button id="btn-underline" onclick="format('underline')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all"><i class="fas fa-underline"></i></button>
+                    <button onclick="applyListStyle('bullet')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-all ml-1"><i class="fas fa-list-ul"></i></button>
+                    
+                    <button onclick="format('removeFormat')" class="toolbar-btn w-10 h-10 flex items-center justify-center hover:bg-red-500/10 text-red-400 rounded-2xl ml-auto group" title="Clear Styles">
+                        <i class="fas fa-eraser group-hover:rotate-12 transition-transform"></i>
+                    </button>
+                </div>
+
+                <div id="text-input" contenteditable="true" 
+                     class="w-full p-12 min-h-[520px] text-white outline-none prose prose-invert max-w-none overflow-y-auto selection:bg-cyan-500/30"
+                     style="font-family: 'Inter', sans-serif; font-size: 16px; line-height: 1.8;">
+                    <p>Start drafting your professional document here...</p>
+                </div>
+
+                <div class="bg-gray-900/80 p-6 border-t border-gray-800 backdrop-blur-md">
+                    <div class="flex flex-col sm:flex-row gap-4 max-w-3xl mx-auto">
+                        <div class="flex-1 relative">
+                            <i class="fas fa-file-export absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                            <select id="format-select" class="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl pl-12 pr-6 py-4 text-sm font-bold outline-none focus:border-cyan-400 appearance-none cursor-pointer">
+                                <option value="pdf">Professional PDF (.pdf)</option>
+                                <option value="docx">Word Document (.docx)</option>
+                                <option value="html">Web Archive (.html)</option>
+                                <option value="txt">Plain Text (.txt)</option>
+                            </select>
+                        </div>
+                        <button id="convert-btn" onclick="convertTextToDoc()" 
+                                class="px-12 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-cyan-900/20 active:scale-[0.98] flex items-center justify-center gap-3">
                             <span>Export Document</span>
+                            <i class="fas fa-arrow-right text-[10px]"></i>
                         </button>
                     </div>
                 </div>
             </div>
-        `;
+
+            <div id="result-display" class="hidden animate-fadeIn"></div>
+        </div>
+    `;
+
+          // 3. RE-INITIALIZE ENGINE
           setTimeout(() => {
+            // Force system defaults for the contentEditable area
             document.execCommand("defaultParagraphSeparator", false, "p");
             document.execCommand("styleWithCSS", false, true);
-            attachEditorListeners();
-            updateToolbarState();
+
+            // Attach all high-level logic handlers
+            if (typeof attachEditorListeners === "function")
+              attachEditorListeners();
+            if (typeof updateToolbarState === "function") updateToolbarState();
+
+            // Finalize UI Polish
+            const editor = document.getElementById("text-input");
+            if (editor) {
+              editor.focus();
+              // Place cursor at the end of the initial text
+              const range = document.createRange();
+              const sel = window.getSelection();
+              range.selectNodeContents(editor);
+              range.collapse(false);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
           }, 100);
-        } else if (
+        } // =============================================================
+        // 4. PREMIUM TOOLS (LOCKED/PRO)
+        // =============================================================
+        else if (
           ["pdf-tools", "image-edit", "voice-clone", "text-to-speech"].includes(
             id,
           )
@@ -1529,7 +1920,6 @@
           let icon = "fa-lock";
           let badge = "";
 
-          // Contextual labeling per tool
           if (id === "image-edit") {
             title = "AI Image Editor";
             icon = "fa-edit";
@@ -1544,52 +1934,33 @@
             icon = "fa-file-pdf";
           }
 
-          // THE SMART CHECK (Updated for a more premium "Studio" feel)
           if (!loggedIn) {
-            // STATE: GUEST - Focus on "Unlocking" and "Performance"
             desc = `Unlock the full potential of <b>${title}</b>. Create a free account to access our high-performance neural engines and save your projects.`;
             btnText = "Sign in to Unlock";
             btnAction = "showLogin()";
-            badge = `<span class="bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-cyan-500/20 backdrop-blur-md">
-                <i class="fas fa-unlock-alt mr-1"></i> Member Access
-            </span>`;
+            badge = `<span class="bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-cyan-500/20 backdrop-blur-md"><i class="fas fa-unlock-alt mr-1"></i> Member Access</span>`;
           } else {
-            // STATE: LOGGED IN (BUT FREE TIER) - Focus on "Professional" and "Unlimited"
             desc = `You've reached the limit for the free tier. Upgrade to <b>MediaLab Pro</b> for unlimited ${title} exports and priority GPU processing.`;
             btnText = "Upgrade to Studio Pro";
             btnAction = "upgradePlan()";
-            icon = "fa-crown"; // This stays as a gold crown
-            badge = `<span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-amber-500/20 backdrop-blur-md">
-                <i class="fas fa-sparkles mr-1"></i> Pro Feature
-            </span>`;
+            icon = "fa-crown";
+            badge = `<span class="bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border border-amber-500/20 backdrop-blur-md"><i class="fas fa-sparkles mr-1"></i> Pro Feature</span>`;
           }
 
           html = `
             <div class="max-w-3xl mx-auto py-12 animate-fadeIn">
                 <div class="bg-gray-900/50 border border-gray-800 rounded-[3rem] p-16 text-center shadow-2xl relative overflow-hidden group">
-                    
-                    <div class="absolute -top-24 -left-24 w-80 h-80 ${loggedIn ? "bg-yellow-500/5" : "bg-cyan-500/5"} rounded-full blur-3xl group-hover:opacity-100 opacity-50 transition-all duration-700"></div>
-                    <div class="absolute -bottom-24 -right-24 w-80 h-80 ${loggedIn ? "bg-yellow-500/5" : "bg-cyan-500/5"} rounded-full blur-3xl group-hover:opacity-100 opacity-50 transition-all duration-700"></div>
-                    
+                    <div class="absolute -top-24 -left-24 w-80 h-80 ${loggedIn ? "bg-yellow-500/5" : "bg-cyan-500/5"} rounded-full blur-3xl opacity-50 transition-all"></div>
                     <div class="mb-6">${badge}</div>
-                    
-                    <div class="w-24 h-24 ${loggedIn ? "bg-yellow-500/10" : "bg-cyan-500/10"} rounded-3xl flex items-center justify-center mx-auto mb-8 transform group-hover:rotate-6 transition-transform duration-500 border border-white/5 shadow-inner">
+                    <div class="w-24 h-24 ${loggedIn ? "bg-yellow-500/10" : "bg-cyan-500/10"} rounded-3xl flex items-center justify-center mx-auto mb-8 transform group-hover:rotate-6 transition-all border border-white/5 shadow-inner">
                         <i class="fas ${icon} text-4xl ${loggedIn ? "text-yellow-500" : "text-cyan-400"}"></i>
                     </div>
-                    
                     <h3 class="text-3xl font-bold text-white mb-4 tracking-tighter">${title}</h3>
                     <p class="text-gray-400 text-lg mb-10 max-w-sm mx-auto leading-relaxed">${desc}</p>
-                    
-                    <button onclick="${btnAction}" class="group/btn relative px-12 py-5 ${loggedIn ? "bg-yellow-500" : "bg-white"} text-gray-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.03] active:scale-[0.98] transition-all shadow-2xl flex items-center gap-3 mx-auto">
+                    <button onclick="${btnAction}" class="relative px-12 py-5 ${loggedIn ? "bg-yellow-500" : "bg-white"} text-gray-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.03] active:scale-[0.98] transition-all shadow-2xl flex items-center gap-3 mx-auto">
                         <span>${btnText}</span>
-                        <i class="fas fa-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
+                        <i class="fas fa-arrow-right"></i>
                     </button>
-                    
-                    <div class="mt-12 pt-8 border-t border-gray-800/50 flex justify-center items-center gap-8 opacity-20 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                        <i class="fab fa-node-js text-3xl"></i>
-                        <i class="fab fa-python text-3xl"></i>
-                        <i class="fas fa-microchip text-2xl"></i>
-                    </div>
                 </div>
             </div>
         `;
@@ -1598,6 +1969,7 @@
         area.innerHTML = html;
       }
 
+      // ====================== HELPER: RENDER HISTORY ITEMS ======================
       function handleDragOver(e) {
         e.preventDefault();
         e.currentTarget.classList.add("dragover");
@@ -1799,16 +2171,37 @@
       let finalPdfBlob = null;
 
       async function convertImagesToPDF() {
-        if (currentImages.length === 0) return alert("Add some images first!");
+        if (currentImages.length === 0)
+          return alert("Please add images first!");
 
+        // 1. UI Elements
         const btn = document.getElementById("convert-btn");
         const dropZone = document.getElementById("drop-zone-image");
         const previewArea = document.getElementById("img-preview");
+        const clearBtn = document.getElementById("clear-all-btn");
+        const toolArea = document.getElementById("tool-display"); // Target the main display area
 
-        showLoading(
-          `Merging ${currentImages.length} images into a document...`,
-        );
+        // Universal Progress Elements
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
+
+        // 2. THE "CLEAR STAGE" LOGIC
         btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner animate-spin mr-2"></i> Processing Engine...`;
+
+        // Smoothly hide inputs to focus user on the progress bar
+        if (dropZone) dropZone.classList.add("hidden");
+        if (previewArea) previewArea.classList.add("hidden");
+        if (clearBtn) clearBtn.classList.add("hidden");
+        btn.classList.add("hidden"); // Hide main button during processing
+
+        // 3. Initialize Universal Progress
+        progressDiv.classList.remove("hidden");
+        statusText.innerText = "🚀 Initializing PDF Engine...";
+        bar.style.width = "10%";
+        percentLabel.innerText = "10%";
 
         try {
           const { jsPDF } = window.jspdf;
@@ -1816,6 +2209,9 @@
           const pageWidth = doc.internal.pageSize.getWidth();
           const pageHeight = doc.internal.pageSize.getHeight();
           const margin = 10;
+
+          // Step 2: Processing Loop
+          statusText.innerText = "🎨 Rendering High-Resolution Pages...";
 
           for (let i = 0; i < currentImages.length; i++) {
             const imgData = await readFileAsDataURL(currentImages[i]);
@@ -1825,7 +2221,6 @@
 
             const maxW = pageWidth - margin * 2;
             const maxH = pageHeight - margin * 2;
-
             let width = imgProps.width;
             let height = imgProps.height;
             const ratio = width / height;
@@ -1841,52 +2236,83 @@
 
             const x = (pageWidth - width) / 2;
             const y = (pageHeight - height) / 2;
-
             doc.addImage(imgData, "JPEG", x, y, width, height);
+
+            // Progress Calculation (10% to 90%)
+            let loopPercent =
+              10 + Math.floor(((i + 1) / currentImages.length) * 80);
+            bar.style.width = loopPercent + "%";
+            percentLabel.innerText = loopPercent + "%";
           }
 
-          finalPdfBlob = doc.output("blob");
+          // Step 3: Finalizing
+          statusText.innerText = "✨ Optimizing Final Document...";
+          bar.style.width = "95%";
+          percentLabel.innerText = "95%";
 
           setTimeout(() => {
-            hideLoading();
-            if (dropZone) dropZone.classList.add("hidden");
-            if (previewArea) previewArea.classList.add("hidden");
+            const pdfBlob = doc.output("blob");
+            const url = URL.createObjectURL(pdfBlob);
 
-            const resultDisplay = document.getElementById("result-display");
-            resultDisplay.classList.remove("hidden");
-            resultDisplay.innerHTML = `
-                      <div class="bg-gray-900 border border-cyan-500/20 rounded-3xl p-10 text-center shadow-2xl animate-fadeIn">
-                          <i class="fas fa-file-pdf text-6xl text-cyan-400 mb-4"></i>
-                          <h3 class="text-xl font-bold text-white">Project Compiled</h3>
-                          <p class="text-gray-400 mt-1">${currentImages.length} Images Ready</p>
-                          <button onclick="resetImageTool()" class="mt-6 text-[10px] text-gray-500 hover:text-cyan-400 uppercase tracking-widest font-bold">
-                              <i class="fas fa-plus mr-1"></i> New Project
-                          </button>
-                      </div>
-                  `;
+            // SUCCESS STATE: UPDATE PROGRESS BAR
+            statusText.innerText = "✅ Compilation Successful!";
+            bar.style.width = "100%";
+            percentLabel.innerText = "100%";
+            bar.classList.replace("bg-cyan-500", "bg-green-500");
+            bar.classList.add("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
 
-            btn.disabled = false;
-            btn.classList.remove("bg-cyan-500", "hover:bg-cyan-400");
-            btn.classList.add("bg-green-600", "hover:bg-green-500");
-            btn.innerHTML = `<i class="fas fa-download mr-2"></i> Save PDF to Device`;
+            // SUCCESS STATE: INJECT THE RESULT CARD
+            toolArea.innerHTML = `
+                <div class="max-w-2xl mx-auto py-10 animate-fadeIn">
+                    <div class="bg-gray-900 border border-green-500/20 rounded-[3rem] p-12 text-center shadow-2xl">
+                        <div class="w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-green-500/20">
+                            <i class="fas fa-check text-4xl text-green-400"></i>
+                        </div>
+                        <h3 class="text-3xl font-bold text-white mb-2 tracking-tighter">PDF is Ready!</h3>
+                        <p class="text-gray-400 mb-10">Your ${currentImages.length} images have been successfully compiled into a professional document.</p>
+                        
+                        <div class="flex flex-col gap-4">
+                            <a href="${url}" download="MediaLab_Export_${Date.now()}.pdf" 
+                               class="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98]">
+                                <i class="fas fa-download"></i>
+                                <span>Download Document</span>
+                            </a>
+                            
+                            <button onclick="resetImageTool()" 
+                                    class="text-sm font-black text-gray-500 hover:text-cyan-400 uppercase tracking-widest transition-all mt-4">
+                                <i class="fas fa-plus mr-2"></i> Start New Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            btn.onclick = function () {
-              const url = URL.createObjectURL(finalPdfBlob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = `MediaLab_Export_${Date.now()}.pdf`;
-              link.click();
-              setTimeout(() => URL.revokeObjectURL(url), 100);
-            };
+            // Save to local/cloud history
+            saveProjectToHistory({
+              toolType: "Image → PDF",
+              fileName: `MediaLab_PDF_${Date.now()}.pdf`,
+              fileUrl: url,
+            });
+
+            // Auto-hide progress after 4 seconds
+            setTimeout(() => {
+              progressDiv.classList.add("hidden");
+              bar.style.width = "0%";
+              bar.classList.replace("bg-green-500", "bg-cyan-500");
+              bar.classList.remove("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+            }, 4000);
           }, 1200);
         } catch (error) {
-          hideLoading();
+          console.error(error);
+          statusText.innerText = "❌ Engine Error";
+          // Restore UI on error so they can try again
+          if (dropZone) dropZone.classList.remove("hidden");
+          if (previewArea) previewArea.classList.remove("hidden");
+          btn.classList.remove("hidden");
           btn.disabled = false;
-          alert("Error creating PDF.");
+          btn.innerHTML = `Try Again`;
         }
       }
-
-      // Helpers
       function getImageDimensions(dataUrl) {
         return new Promise((resolve) => {
           const img = new Image();
@@ -1925,33 +2351,75 @@
       }
 
       function resetImageTool() {
+        // 1. Memory Cleanup: Reset image array and revoke the previous PDF URL to save memory
+        if (finalPdfBlob) {
+          URL.revokeObjectURL(finalPdfBlob);
+          finalPdfBlob = null;
+        }
         currentImages = [];
-        finalPdfBlob = null;
 
-        // Refresh the current tool
-        const clearBtn = document.getElementById("clear-all-btn");
-        if (clearBtn) clearBtn.classList.add("hidden");
-
-        const preview = document.getElementById("img-preview");
-        if (preview) preview.innerHTML = "";
-
+        // 2. Target UI Elements
+        const area = document.getElementById("tool-display");
         const dropZone = document.getElementById("drop-zone-image");
-        if (dropZone) dropZone.classList.remove("hidden");
-
-        const resultDisplay = document.getElementById("result-display");
-        if (resultDisplay) resultDisplay.classList.add("hidden");
-
-        // Reset convert button
+        const previewArea = document.getElementById("img-preview");
         const btn = document.getElementById("convert-btn");
+        const clearBtn = document.getElementById("clear-all-btn");
+
+        // 3. Handle the "Success Card" State
+        // If the tool is currently showing the Success Result Card, we need to re-render the tool base HTML
+        if (!dropZone) {
+          // This triggers a fresh render of the Image Tool UI from your switcher
+          switchTool("image-pdf");
+          return;
+        }
+
+        // 4. Reset Visibility States (Standard Reset)
+        if (dropZone) {
+          dropZone.classList.remove("hidden");
+          dropZone.classList.remove("dragover"); // Ensure no stuck hover states
+        }
+
+        if (previewArea) {
+          previewArea.innerHTML = "";
+          previewArea.classList.remove("hidden");
+        }
+
+        if (clearBtn) {
+          clearBtn.classList.add("hidden");
+        }
+
+        // 5. Restore Professional Button State
         if (btn) {
-          btn.classList.remove("bg-green-600", "hover:bg-green-500");
-          btn.classList.add("bg-cyan-500", "hover:bg-cyan-400");
+          btn.disabled = false;
+
+          // Remove success/download colors and restore original action colors
+          btn.classList.remove(
+            "bg-green-600",
+            "hover:bg-green-500",
+            "animate-bounce",
+          );
+          btn.classList.add("bg-cyan-600", "hover:bg-cyan-500");
+
+          // Restore original icon and text
           btn.innerHTML = `
-      <span id="btn-text">Convert to PDF</span>
-      <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-    `;
+            <span>Compile to PDF</span>
+            <i class="fas fa-file-pdf group-hover:rotate-12 transition-transform"></i>
+        `;
+
+          // Re-attach the conversion logic
           btn.onclick = convertImagesToPDF;
         }
+
+        // 6. Reset Universal Progress (if visible)
+        const progressDiv = document.getElementById("universal-progress");
+        const bar = document.getElementById("universal-bar");
+        if (progressDiv) progressDiv.classList.add("hidden");
+        if (bar) {
+          bar.style.width = "0%";
+          bar.classList.replace("bg-green-500", "bg-cyan-500");
+        }
+
+        console.log("📂 Image tool state has been hard-reset.");
       }
       // Helper Function: Resets the tool
       function cloneVoice() {
@@ -1997,112 +2465,114 @@
         const formatType = document.getElementById("format-select").value;
         const btn = document.getElementById("convert-btn");
         const toolWrapper = document.getElementById("text-tool-wrapper");
-        const resultDisplay = document.getElementById("result-display");
+        const toolArea = document.getElementById("tool-display");
+        const wordCountBadge = document.getElementById("word-count");
 
-        // Validation
-        if (!editor || !editor.innerText.trim()) {
-          return alert("Please enter some text before exporting.");
-        }
+        // Universal Progress UI Elements
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
 
-        // Disable button and show progress
+        // 1. Validation
+        if (!editor || !editor.innerText.trim())
+          return alert("The document is empty!");
+
+        // 2. THE "STAGE WIPE": Hide the workspace to focus on the conversion engine
         btn.disabled = true;
-        btn.classList.add("opacity-50", "cursor-not-allowed");
+        if (toolWrapper) toolWrapper.classList.add("hidden");
+        if (wordCountBadge) wordCountBadge.classList.add("hidden");
 
-        const progressContainer = document.getElementById(
-          "upload-progress-text",
-        );
-        const progressBar = document.getElementById("progress-bar-text");
-        const progressText = document.getElementById("progress-text-text");
-        const progressStatus = document.getElementById("progress-status-text");
+        // 3. Initialize Universal Progress with Engine Steps
+        progressDiv.classList.remove("hidden");
+        statusText.innerText = "🔍 Parsing Document Structure...";
+        bar.style.width = "15%";
+        percentLabel.innerText = "15%";
 
-        if (progressContainer) {
-          progressContainer.classList.remove("hidden");
-          progressBar.style.width = "0%";
-          progressBar.classList.remove(
-            "bg-green-500",
-            "shadow-[0_0_20px_rgba(34,197,94,0.4)]",
-          );
-          progressBar.classList.add("bg-cyan-500");
-          progressStatus.textContent = "Compiling document...";
-          progressText.textContent = "0%";
+        try {
+          // Step 2 Simulation: Metadata and Style Compilation
+          setTimeout(() => {
+            statusText.innerText = `📄 Mapping ${formatType.toUpperCase()} Styles & Layout...`;
+            bar.style.width = "45%";
+            percentLabel.innerText = "45%";
+          }, 600);
+
+          setTimeout(async () => {
+            statusText.innerText = `✨ Finalizing Document Encoding...`;
+            bar.style.width = "85%";
+            percentLabel.innerText = "85%";
+
+            // Perform the physical export (This calls your createPDF or createOtherFormat logic)
+            await executeFinalExport(editor, formatType);
+
+            // 4. SUCCESS STATE: UPDATE PROGRESS BAR
+            statusText.innerText = "✅ Document Exported Successfully!";
+            bar.style.width = "100%";
+            percentLabel.innerText = "100%";
+            bar.classList.replace("bg-cyan-500", "bg-green-500");
+            bar.classList.add("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+
+            // 5. SUCCESS STATE: INJECT THE RESULT CARD
+            const currentWords = editor.innerText.trim().split(/\s+/).length;
+
+            toolArea.innerHTML = `
+                <div class="max-w-2xl mx-auto py-10 animate-fadeIn">
+                    <div class="bg-gray-900 border border-green-500/20 rounded-[3rem] p-12 text-center shadow-2xl relative">
+                        <div class="w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-green-500/20">
+                            <i class="fas fa-file-export text-4xl text-green-400"></i>
+                        </div>
+                        
+                        <h3 class="text-3xl font-bold text-white mb-2 tracking-tighter">Export Ready!</h3>
+                        <p class="text-gray-400 mb-2">Your document has been processed into a high-fidelity <b>.${formatType.toUpperCase()}</b> file.</p>
+                        <div class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-10 bg-gray-800/50 inline-block px-4 py-1 rounded-full">
+                           Stats: ${currentWords} Words • ${formatType.toUpperCase()} Format
+                        </div>
+                        
+                        <div class="flex flex-col gap-4">
+                            <button onclick="downloadExportedFile()" 
+                               class="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-3 active:scale-[0.98]">
+                                <i class="fas fa-cloud-download-alt"></i>
+                                <span>Save .${formatType.toUpperCase()} to Device</span>
+                            </button>
+                            
+                            <button onclick="switchTool('text-doc')" 
+                                    class="text-sm font-black text-gray-500 hover:text-cyan-400 uppercase tracking-widest transition-all mt-4">
+                                <i class="fas fa-plus mr-2"></i> Create New Document
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Auto-save to history logic
+            const fileName = `Document_${Date.now()}.${formatType}`;
+            const historyUrl = finalExportBlob
+              ? URL.createObjectURL(finalExportBlob)
+              : "#";
+
+            saveProjectToHistory({
+              toolType: `Text → ${formatType.toUpperCase()}`,
+              fileName: fileName,
+              fileUrl: historyUrl,
+            });
+
+            // 6. Final UI Cleanup: Auto-hide progress bar after a short delay
+            setTimeout(() => {
+              progressDiv.classList.add("hidden");
+              bar.style.width = "0%";
+              bar.classList.replace("bg-green-500", "bg-cyan-500");
+              bar.classList.remove("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+            }, 4000);
+          }, 1500);
+        } catch (error) {
+          console.error("Export Engine Error:", error);
+          statusText.innerText = "❌ Export Failed";
+          // Restore Editor on Error
+          if (toolWrapper) toolWrapper.classList.remove("hidden");
+          btn.disabled = false;
+          btn.innerHTML = `Try Export Again`;
         }
-
-        // Simulate professional progress
-        let percent = 0;
-        const progressInterval = setInterval(async () => {
-          percent += Math.floor(Math.random() * 11) + 7;
-
-          if (percent >= 100) {
-            percent = 100;
-            clearInterval(progressInterval);
-
-            // Success progress state
-            if (progressBar) {
-              progressBar.classList.replace("bg-cyan-500", "bg-green-500");
-              progressBar.classList.add(
-                "shadow-[0_0_20px_rgba(34,197,94,0.4)]",
-              );
-            }
-            if (progressStatus)
-              progressStatus.textContent = "Compilation Complete!";
-            if (progressText)
-              progressText.innerHTML = '<i class="fas fa-check"></i>';
-
-            // === ACTUAL EXPORT ===
-            try {
-              await executeFinalExport(editor, formatType);
-
-              // Hide tool and show success screen
-              if (toolWrapper) toolWrapper.classList.add("hidden");
-
-              if (resultDisplay) {
-                resultDisplay.classList.remove("hidden");
-                resultDisplay.innerHTML = `
-            <div class="bg-gray-900 border border-cyan-500/20 rounded-3xl p-12 text-center shadow-2xl animate-fadeIn">
-              <div class="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-check text-3xl text-green-400"></i>
-              </div>
-              <h3 class="text-2xl font-bold text-white">Document Exported Successfully</h3>
-              <p class="text-gray-400 mt-2">Your <b>.${formatType.toUpperCase()}</b> file has been generated.</p>
-              <button onclick="resetTextTool()" 
-                      class="mt-8 text-[10px] text-gray-500 hover:text-cyan-400 uppercase font-black tracking-widest transition-all">
-                <i class="fas fa-redo mr-2"></i> Create New Document
-              </button>
-            </div>
-          `;
-              }
-
-              // Transform button to "Download Again"
-              btn.disabled = false;
-              btn.classList.remove(
-                "opacity-50",
-                "cursor-not-allowed",
-                "bg-cyan-500",
-                "hover:bg-cyan-400",
-              );
-              btn.classList.add("bg-green-600", "hover:bg-green-500");
-              btn.innerHTML = `<i class="fas fa-download mr-3"></i> Download .${formatType.toUpperCase()}`;
-
-              // Attach download handler
-              btn.onclick = () => downloadExportedFile();
-            } catch (error) {
-              console.error("Export failed:", error);
-              alert("Export failed. Please try again.");
-
-              // Reset button on error
-              btn.disabled = false;
-              btn.classList.remove("opacity-50", "cursor-not-allowed");
-              btn.innerHTML = `<i class="fas fa-file-export"></i> Export Document`;
-              btn.onclick = convertTextToDoc;
-            }
-          } else {
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            if (progressText) progressText.textContent = `${percent}%`;
-          }
-        }, 65);
       }
-
-      // ====================== CORE EXPORT LOGIC ======================
       async function executeFinalExport(editor, formatType) {
         currentExportFormat = formatType;
         const timestamp = Date.now();
@@ -2454,6 +2924,108 @@
           "color:#22d3ee; font-weight:bold",
         );
       };
+      // Listen for granular steps from Socket.io
+      socket.on("process-step", (data) => {
+        const progressDiv = document.getElementById("universal-progress");
+        const statusText = document.getElementById("universal-status-text");
+        const bar = document.getElementById("universal-bar");
+        const percentLabel = document.getElementById("universal-percent");
+
+        if (!progressDiv || !statusText || !bar) return;
+
+        progressDiv.classList.remove("hidden");
+        statusText.innerText = data.message;
+
+        if (data.percent) {
+          bar.style.width = data.percent + "%";
+          percentLabel.innerText = data.percent + "%";
+        }
+
+        // CRITICAL: Handle the 100% finish line
+        if (data.percent >= 100) {
+          bar.classList.replace("bg-cyan-500", "bg-green-500");
+          bar.classList.add("shadow-[0_0_20px_rgba(34,197,94,0.6)]");
+
+          // Give the user a moment to see 100% before hiding the bar
+          setTimeout(() => {
+            progressDiv.classList.add("hidden");
+            // Reset for next time
+            bar.style.width = "0%";
+            bar.classList.replace("bg-green-500", "bg-cyan-500");
+          }, 3000);
+        }
+      });
+      // Function to render projects in the sidebar
+      function updateSidebarHistory(projects) {
+        const list = document.getElementById("project-history-list");
+        if (!projects || projects.length === 0) return;
+
+        list.innerHTML = projects
+          .map(
+            (p) => `
+    <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700 group hover:border-cyan-500 transition-all cursor-pointer">
+      <div class="flex justify-between items-start">
+        <span class="text-[10px] text-cyan-400 font-bold uppercase">${p.toolType}</span>
+        <span class="text-[9px] text-gray-500">${new Date(p.createdAt).toLocaleDateString()}</span>
+      </div>
+      <p class="text-xs text-gray-300 truncate mt-1">${p.fileName}</p>
+      <a href="${p.fileUrl}" download class="hidden group-hover:block text-[10px] text-white mt-2 underline">Download again</a>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      function updateSidebarHistory(projects) {
+        const list = document.getElementById("project-history-list");
+        if (!list) return;
+
+        // If guest, ensure projects are pulled from localStorage
+        const displayProjects =
+          projects ||
+          JSON.parse(localStorage.getItem("medialab_guest_history") || "[]");
+
+        if (displayProjects.length === 0) {
+          list.innerHTML = `<p class="text-[10px] text-gray-600 italic px-5">No recent projects.</p>`;
+          return;
+        }
+
+        list.innerHTML = [...displayProjects]
+          .reverse()
+          .slice(0, 5)
+          .map(
+            (p) => `
+        <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700 group hover:border-cyan-500 transition-all cursor-pointer">
+          <div class="flex justify-between items-start">
+            <span class="text-[10px] text-cyan-400 font-bold uppercase">${p.toolType}</span>
+          </div>
+          <p class="text-xs text-gray-300 truncate mt-1">${p.fileName}</p>
+          <a href="${p.fileUrl}" download class="hidden group-hover:block text-[10px] text-white mt-2 underline">Download</a>
+        </div>
+    `,
+          )
+          .join("");
+      }
+
+      // This function saves new projects (call this when a conversion finishes)
+      function saveProjectToHistory(project) {
+        if (!loggedIn) {
+          let guestHistory = JSON.parse(
+            localStorage.getItem("medialab_guest_history") || "[]",
+          );
+          guestHistory.push({
+            ...project,
+            createdAt: new Date().toISOString(),
+            isGuest: true,
+          });
+          localStorage.setItem(
+            "medialab_guest_history",
+            JSON.stringify(guestHistory),
+          );
+        }
+        // Refresh the sidebar automatically
+        updateSidebarHistory(currentUser ? currentUser.projects : null);
+      }
     </script>
   </body>
 </html>

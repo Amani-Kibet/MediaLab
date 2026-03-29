@@ -1,15 +1,30 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
-  googleId: { type: String, unique: true, sparse: true },
-  appleId: { type: String, unique: true, sparse: true },
-  name: { type: String },
-  email: { type: String, unique: true, sparse: true },
-  profilePicture: { type: String },
-  provider: { type: String, enum: ["google", "apple", "local"] },
+const ProjectSchema = new mongoose.Schema({
+  toolType: { type: String, required: true }, // e.g., "Video to Audio", "Text to Doc"
+  fileName: { type: String, required: true },
+  fileUrl: { type: String, required: true }, // URL from Cloudinary or your S3 bucket
+  status: { type: String, default: "completed" },
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date, default: Date.now },
 });
 
-const User = mongoose.model("User", UserSchema);
-export default User;
+const UserSchema = new mongoose.Schema({
+  googleId: { type: String, unique: true, sparse: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String },
+  name: { type: String, required: true },
+  profilePicture: { type: String },
+
+  // --- PROJECT HISTORY ---
+  // This stores the last 10-20 projects for the sidebar
+  projects: [ProjectSchema],
+
+  // --- PRO FEATURES & LIMITS ---
+  isPro: { type: Boolean, default: false },
+  dailyUsageCount: { type: Number, default: 0 },
+  lastUsageDate: { type: Date, default: Date.now },
+
+  createdAt: { type: Date, default: Date.now },
+});
+
+export default mongoose.model("User", UserSchema);

@@ -10,14 +10,12 @@ dotenv.config();
 const router = express.Router();
 
 // --- 1. THE CLOUD-PROOF API SENDER ---
-// This uses HTTPS (Port 443) instead of SMTP to bypass Render's firewall.
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Helper function for sending the welcome email
 const sendWelcomeEmail = async (userEmail, userName) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: "MediaLab <onboarding@resend.dev>", // Once you have a domain, change this to your email
+      from: "MediaLab <onboarding@resend.dev>",
       to: userEmail,
       subject: "Welcome to MediaLab Studio! 🚀",
       html: `
@@ -37,12 +35,8 @@ const sendWelcomeEmail = async (userEmail, userName) => {
       `,
     });
 
-    if (error) {
-      return console.error("❌ Resend API Error:", error.message);
-    }
-    console.log(
-      `✅ API Email sent successfully to ${userEmail}. ID: ${data.id}`,
-    );
+    if (error) return console.error("❌ Resend API Error:", error.message);
+    console.log(`✅ API Email sent to ${userEmail}. ID: ${data.id}`);
   } catch (error) {
     console.error("❌ System Error:", error.message);
   }
@@ -59,7 +53,7 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// --- 3. GOOGLE STRATEGY ---
+// --- 3. GOOGLE STRATEGY (DUPLICATE CHECK LOGIC) ---
 passport.use(
   new GoogleStrategy(
     {
@@ -69,24 +63,47 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        const profileEmail = profile.emails?.[0]?.value;
+
+        // Step 1: Check if user exists with this Google ID
         let user = await User.findOne({ googleId: profile.id });
 
+        // Step 2: If not, check if a user exists with this Email
+        if (!user && profileEmail) {
+          user = await User.findOne({ email: profileEmail });
+
+          if (user) {
+            // Found existing email user; Link their Google ID
+            user.googleId = profile.id;
+            if (!user.profilePicture)
+              user.profilePicture = profile.photos?.[0]?.value;
+            await user.save();
+            console.log(
+              `🔗 Linked Google ID to existing email account: ${profileEmail}`,
+            );
+          }
+        }
+
+        // Step 3: If still no user, create a new one
         if (!user) {
           user = await User.create({
             googleId: profile.id,
             name: profile.displayName,
-            email: profile.emails?.[0]?.value,
+            email: profileEmail,
             profilePicture: profile.photos?.[0]?.value,
             provider: "google",
           });
 
+          // Send welcome email only for brand new accounts
           if (user.email) {
             sendWelcomeEmail(user.email, user.name);
           }
         } else {
+          // Returning user: Update last login
           user.lastLogin = new Date();
           await user.save();
         }
+
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -117,22 +134,22 @@ router.get("/logout", (req, res) => {
 router.get("/me", (req, res) => {
   if (req.isAuthenticated()) {
     res.json({ success: true, user: req.user });
-  } else res.json({ success: false });
+  } else {
+    res.json({ success: false });
+  }
 });
 
+// --- 5. TEST ROUTE ---
 router.get("/test-email", async (req, res) => {
   try {
     const { data, error } = await resend.emails.send({
       from: "MediaLab <onboarding@resend.dev>",
       to: "amanikbt1@gmail.com",
       subject: "Final Cloud Bypass Test ✅",
-      text: "This email was sent via the Resend API (HTTPS). Render cannot block this!",
+      text: "Sent via Resend API (HTTPS). Render firewall bypassed!",
     });
-
     if (error) throw error;
-    res.send(
-      "<h1>✅ Success!</h1><p>Check your amanikbt1@gmail.com inbox!</p>",
-    );
+    res.send("<h1>✅ Success!</h1><p>Check your inbox!</p>");
   } catch (error) {
     res.status(500).send(`<h1>❌ Failed</h1><p>Error: ${error.message}</p>`);
   }
