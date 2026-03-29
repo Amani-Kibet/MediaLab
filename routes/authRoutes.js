@@ -9,17 +9,22 @@ dotenv.config();
 
 const router = express.Router();
 
+// --- 1. THE "NEVER-FAIL" TRANSPORTER CONFIG ---
+// We use Port 465 + Family 4 to bypass Render's IPv6 routing issues.
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // Must be false for port 587
+  port: 465,
+  secure: true, // true for 465
   auth: {
     user: process.env.MY_EMAIL,
     pass: process.env.GOOGLE_APP_PASSWORD,
   },
-  tls: {
-    rejectUnauthorized: false, // Helps bypass certain cloud restrictions
-  },
+  // CRITICAL: Forces IPv4 to prevent 'ENETUNREACH' on Render
+  family: 4,
+  // Safety timeouts
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
 });
 
 // Helper function for sending the welcome email
@@ -36,7 +41,7 @@ const sendWelcomeEmail = async (userEmail, userName) => {
         <h1 style="font-size: 28px; margin-bottom: 10px;">Welcome, ${userName}!</h1>
         <p style="color: #9ca3af; font-size: 16px; margin-bottom: 30px;">Your ultimate AI creative studio is ready. Start converting and editing today.</p>
         <a href="https://your-medialab-url.com" 
-           style="background-color: #22d3ee; color: #000; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold;">
+           style="background-color: #22d3ee; color: #000; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold; display: inline-block;">
            Open Studio
         </a>
       </div>
@@ -47,7 +52,7 @@ const sendWelcomeEmail = async (userEmail, userName) => {
     await transporter.sendMail(mailOptions);
     console.log(`✅ Welcome email sent to ${userEmail}`);
   } catch (error) {
-    console.error("❌ Welcome email failed:", error);
+    console.error("❌ Welcome email failed:", error.message);
   }
 };
 
@@ -75,7 +80,6 @@ passport.use(
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-          // New User signup
           user = await User.create({
             googleId: profile.id,
             name: profile.displayName,
@@ -84,12 +88,11 @@ passport.use(
             provider: "google",
           });
 
-          // Trigger Welcome Email (Don't await, let it run in background)
+          // Send welcome email in the background
           if (user.email) {
             sendWelcomeEmail(user.email, user.name);
           }
         } else {
-          // Existing User login
           user.lastLogin = new Date();
           await user.save();
         }
@@ -147,29 +150,19 @@ router.get("/test-email", async (req, res) => {
     subject: "Test Email from MediaLab",
     html: `
       <div style="font-family: sans-serif; padding: 20px;">
-        <h2 style="color: #22d3ee;">✅ This is a test email</h2>
-        <p>Hello, this email was sent from your MediaLab server at <b>${new Date().toLocaleString()}</b>.</p>
-        <p>If you received this, your email setup is working correctly.</p>
+        <h2 style="color: #22d3ee;">✅ IPv4 Test Successful</h2>
+        <p>Sent from MediaLab at <b>${new Date().toLocaleString()}</b>.</p>
+        <p>Your SMTP is now correctly routing through IPv4 on Render.</p>
       </div>
     `,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Test email sent successfully to ${testEmail}`);
-    res.send(
-      `<h1>✅ Test email sent to ${testEmail}</h1><p>Check inbox and spam folder.</p> Test Details: ${process.env.GOOGLE_APP_PASSWORD} and ${process.env.MY_EMAIL}`,
-    );
+    res.send(`<h1>✅ Success!</h1><p>Test email sent to ${testEmail}.</p>`);
   } catch (error) {
-    console.error(
-      `❌ Email failed: Test Details: ${process.env.GOOGLE_APP_PASSWORD} and ${process.env.MY_EMAIL}`,
-      error,
-    );
-    res
-      .status(500)
-      .send(
-        `<h1>❌ Failed to send email</h1><p>Error:Test Details: ${process.env.GOOGLE_APP_PASSWORD} and ${process.env.MY_EMAIL} ${error.message}</p>`,
-      );
+    console.error("❌ Debug Test Failed:", error.message);
+    res.status(500).send(`<h1>❌ Failed</h1><p>Error: ${error.message}</p>`);
   }
 });
 
