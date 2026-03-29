@@ -124,7 +124,7 @@ router.get("/test-email", async (req, res) => {
   try {
     const { data, error } = await resend.emails.send({
       from: "MediaLab <onboarding@resend.dev>",
-      to: "amanikbt2@gmail.com",
+      to: "amanikbt1@gmail.com",
       subject: "Final Cloud Bypass Test ✅",
       text: "This email was sent via the Resend API (HTTPS). Render cannot block this!",
     });
