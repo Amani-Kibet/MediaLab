@@ -180,7 +180,7 @@
           <div class="text-2xl">🖼️</div>
           <div class="flex-1">
             <p class="font-semibold">Image Compressor</p>
-            <p class="text-xs text-zinc-400">PNG • JPG • 90% smaller</p>
+            <p class="text-xs text-zinc-400">PNG • png • 90% smaller</p>
           </div>
         </div>
 
@@ -275,7 +275,7 @@
           <div class="max-w-4xl mx-auto">
             <h1 class="text-4xl font-semibold mb-1">Image Compressor</h1>
             <p class="text-zinc-400 mb-8">
-              PNG &amp; JPG • Real compression with Canvas
+              PNG &amp; png • Real compression with Canvas
             </p>
 
             <div
@@ -292,7 +292,7 @@
               />
               <div class="text-7xl mb-4">📸</div>
               <p class="font-semibold text-2xl">Drop your image</p>
-              <p class="text-zinc-400">PNG or JPG • Max 30 MB</p>
+              <p class="text-zinc-400">PNG or png • Max 30 MB</p>
             </div>
 
             <div
@@ -784,7 +784,7 @@
         const a = document.createElement("a");
         a.href = btn.dataset.dataurl;
         a.download =
-          "resized-" + (currentImageFile ? currentImageFile.name : "image.jpg");
+          "resized-" + (currentImageFile ? currentImageFile.name : "image.png");
         a.click();
       }
 

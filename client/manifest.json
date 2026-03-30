@@ -1,0 +1,78 @@
+{
+  "name": "MediaLab AI Creative Studio",
+  "short_name": "MediaLab",
+  "id": "medialab-app-v1",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#06b6d4",
+  "description": "Professional AI Workspace: Convert Image to PDF, Video to Audio, Voice Cloning, and Web Building.",
+  "orientation": "any",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "categories": ["productivity", "utilities", "graphics"],
+  "lang": "en-US",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/mediafiles/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/mediafiles/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/mediafiles/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/mediafiles/sr_1280x720.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "MediaLab Desktop Studio"
+    },
+    {
+      "src": "/mediafiles/sr_720x1280.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "MediaLab Mobile Workflow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Web Builder",
+      "short_name": "Builder",
+      "url": "/?tool=web-builder",
+      "icons": [
+        {
+          "src": "/mediafiles/favicon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Image to PDF",
+      "short_name": "PDF",
+      "url": "/?tool=image-pdf",
+      "icons": [
+        {
+          "src": "/mediafiles/favicon.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

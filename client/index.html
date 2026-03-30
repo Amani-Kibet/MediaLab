@@ -9,7 +9,8 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
-    <link rel="icon" href="/client/favicon.jpg" type="image/png" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
     <script
       async
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8914021980453978"
@@ -40,6 +41,7 @@
         "sameAs": ["https://github.com/Amani-Kibet"]
       }
     </script>
+
     <style>
       body {
         font-family: "Inter", system-ui, sans-serif;
@@ -702,6 +704,51 @@
             class="hover:text-cyan-400 transition-colors"
             >Support</a
           >
+        </div>
+      </div>
+
+      <div
+        id="pwa-install-banner"
+        class="hidden fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:w-96 z-[9999] animate-fadeIn"
+      >
+        <div
+          class="bg-gray-900 border border-cyan-500/30 rounded-[2.5rem] p-6 shadow-2xl backdrop-blur-xl"
+        >
+          <div class="flex items-center gap-4 mb-4">
+            <div
+              class="w-12 h-12 bg-cyan-500 rounded-2xl flex items-center justify-center font-bold text-gray-950 text-xl shadow-lg"
+            >
+              M
+            </div>
+            <div>
+              <h4 class="text-white font-bold tracking-tight">
+                Install MediaLab
+              </h4>
+              <p class="text-gray-400 text-xs">
+                Add to home screen for a better experience.
+              </p>
+            </div>
+            <button
+              onclick="hideInstallBanner()"
+              class="ml-auto text-gray-500 hover:text-white transition-colors"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="flex gap-3">
+            <button
+              id="btn-pwa-install"
+              class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-cyan-900/20"
+            >
+              Install App
+            </button>
+            <button
+              onclick="hideInstallBanner()"
+              class="px-6 py-3 bg-gray-800 text-gray-400 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-700 transition-all"
+            >
+              Later
+            </button>
+          </div>
         </div>
       </div>
     </footer>
@@ -1606,36 +1653,58 @@
         // =============================================================
         // 1. IMAGE → PDF CONVERTER
         // =============================================================
-        else if (id === "image-pdf") {
-          html = `
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
-                <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Image → PDF</h2>
-                <button id="clear-all-btn" onclick="resetImageTool()"
-                        class="${currentImages.length > 0 ? "" : "hidden"} text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-all">
-                    <i class="fas fa-trash-sweep mr-2"></i>Clear Project
-                </button>
-            </div>
-            <div id="result-display" class="hidden mb-8 animate-fadeIn"></div>
-            <div id="drop-zone-image"
-                 onclick="document.getElementById('img-input').click()"
-                 class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-12 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group">
-                <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <i class="fas fa-images text-4xl text-gray-600 group-hover:text-cyan-400"></i>
-                </div>
-                <p class="text-lg font-medium text-gray-200">Drag & drop images here</p>
-                <p class="text-sm text-gray-500 mt-1">PNG, JPG, or WEBP supported</p>
-                <input type="file" id="img-input" multiple accept="image/*" class="hidden"
-                       onclick="event.stopPropagation()" onchange="handleImages(this.files)">
-            </div>
-            <div id="img-preview" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8"></div>
-            <button id="convert-btn" onclick="convertImagesToPDF()"
-                    class="mt-12 w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-lg font-bold transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-x-3 group">
-                <span>Compile to PDF</span>
-                <i class="fas fa-file-pdf group-hover:rotate-12 transition-transform"></i>
-            </button>`;
-        }
         // =============================================================
-        // 2. WEB BUILDER (THE STAGE)
+        // 1. IMAGE → PDF CONVERTER (GATED)
+        // =============================================================
+        else if (id === "image-pdf") {
+          if (!loggedIn) {
+            // SHOW LOCK SCREEN IF NOT LOGGED IN
+            html = `
+      <div class="max-w-2xl mx-auto py-20 animate-fadeIn text-center">
+          <div class="bg-gray-900/50 border border-gray-800 rounded-[3rem] p-16 shadow-2xl relative overflow-hidden group">
+              <div class="w-24 h-24 bg-cyan-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-inner">
+                  <i class="fas fa-lock text-4xl text-cyan-400"></i>
+              </div>
+              <h3 class="text-3xl font-bold text-white mb-4 tracking-tighter">Login Required</h3>
+              <p class="text-gray-400 text-lg mb-10 leading-relaxed">
+                  To access high-resolution **Image → PDF** compilation and cloud storage, please sign in to your MediaLab account.
+              </p>
+              <button onclick="showLogin()" class="px-12 py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-2xl flex items-center gap-3 mx-auto active:scale-95">
+                  <span>Sign In to Unlock</span>
+                  <i class="fas fa-arrow-right"></i>
+              </button>
+          </div>
+      </div>`;
+          } else {
+            // SHOW ACTUAL TOOL IF LOGGED IN
+            html = `
+      <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 animate-fadeIn">
+          <h2 class="text-3xl sm:text-4xl font-semibold text-white tracking-tighter">Image → PDF</h2>
+          <button id="clear-all-btn" onclick="resetImageTool()"
+                  class="${currentImages.length > 0 ? "" : "hidden"} text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-all">
+              <i class="fas fa-trash-sweep mr-2"></i>Clear Project
+          </button>
+      </div>
+      <div id="result-display" class="hidden mb-8 animate-fadeIn"></div>
+      <div id="drop-zone-image"
+           onclick="document.getElementById('img-input').click()"
+           class="drop-zone border-2 border-dashed border-gray-700 hover:border-cyan-400 rounded-3xl p-12 text-center cursor-pointer bg-gray-900/50 transition-all shadow-inner group">
+          <div class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+              <i class="fas fa-images text-4xl text-gray-600 group-hover:text-cyan-400"></i>
+          </div>
+          <p class="text-lg font-medium text-gray-200">Drag & drop images here</p>
+          <p class="text-sm text-gray-500 mt-1">PNG, png, or WEBP supported</p>
+          <input type="file" id="img-input" multiple accept="image/*" class="hidden"
+                 onclick="event.stopPropagation()" onchange="handleImages(this.files)">
+      </div>
+      <div id="img-preview" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8"></div>
+      <button id="convert-btn" onclick="convertImagesToPDF()"
+              class="mt-12 w-full py-5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-lg font-bold transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-x-3 group">
+          <span>Compile to PDF</span>
+          <i class="fas fa-file-pdf group-hover:rotate-12 transition-transform"></i>
+      </button>`;
+          }
+        }
         // =============================================================
         else if (id === "web-builder") {
           html = `
@@ -2766,6 +2835,98 @@
         // Refresh the sidebar automatically
         updateSidebarHistory(currentUser ? currentUser.projects : null);
       }
+
+      // ====================== MEDIALAB PWA ENGINE ======================
+      let deferredPrompt = null;
+      const installBanner = document.getElementById("pwa-install-banner");
+      const installBtn = document.getElementById("btn-pwa-install");
+
+      // Configuration
+      const INSTALL_DELAY = 3000; // 3 seconds after load
+      const DISMISS_COOLDOWN = 24 * 60 * 60 * 1000; // Wait 24 hours if dismissed
+
+      // 1. Service Worker Registration
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => console.log("🚀 SW Active"))
+          .catch((err) => console.error("❌ SW Failed", err));
+      }
+
+      // 2. Installation Checkers
+      function isInstalled() {
+        return (
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.navigator.standalone === true
+        ); // For iOS Safari
+      }
+
+      function canShowInstall() {
+        const lastDismiss = localStorage.getItem("pwaDismissTime");
+        if (!lastDismiss) return true;
+        // Check if cooldown period has passed
+        return Date.now() - Number(lastDismiss) > DISMISS_COOLDOWN;
+      }
+
+      // 3. The "Installable" Detector
+      window.addEventListener("beforeinstallprompt", (e) => {
+        // Stop the default browser banner
+        e.preventDefault();
+
+        // Check if we should actually show our custom one
+        if (isInstalled() || !canShowInstall()) return;
+
+        deferredPrompt = e;
+
+        // Show the professional popup after a short delay
+        setTimeout(() => {
+          if (deferredPrompt && installBanner) {
+            installBanner.classList.remove("hidden");
+            installBanner.classList.add("animate-fadeIn");
+          }
+        }, INSTALL_DELAY);
+      });
+
+      // 4. Handle Install Button Action
+      if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+          if (!deferredPrompt) return;
+
+          // Show the native prompt
+          deferredPrompt.prompt();
+
+          const choice = await deferredPrompt.userChoice;
+          if (choice.outcome === "accepted") {
+            console.log("✅ User installed MediaLab");
+            if (installBanner) installBanner.classList.add("hidden");
+          } else {
+            console.log("❌ User dismissed install");
+            hideInstallBanner(); // Saves dismiss time to localStorage
+          }
+          deferredPrompt = null;
+        });
+      }
+
+      // 5. Utility: Hide and Set Cooldown
+      function hideInstallBanner() {
+        if (installBanner) installBanner.classList.add("hidden");
+        localStorage.setItem("pwaDismissTime", Date.now());
+      }
+
+      // 6. Global Event: Successful Installation
+      window.addEventListener("appinstalled", () => {
+        console.log("✨ MediaLab installed successfully!");
+        if (installBanner) installBanner.classList.add("hidden");
+        localStorage.setItem("pwaInstalled", "true");
+      });
+
+      // 7. Auto-cleanup for Uninstalls
+      window.addEventListener("DOMContentLoaded", () => {
+        if (!isInstalled() && localStorage.getItem("pwaInstalled")) {
+          localStorage.removeItem("pwaInstalled");
+          localStorage.removeItem("pwaDismissTime");
+        }
+      });
       // ====================== FULL WEB DRAG & DROP BUILDER ======================
       // ====================== WEB BUILDER CORE ======================
       // ====================== 1. GLOBAL STATE & DICTIONARIES ======================
