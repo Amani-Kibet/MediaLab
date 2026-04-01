@@ -158,13 +158,530 @@
         user-select: text;
       }
       #web-canvas.builder-grid {
-        background-image:
-          linear-gradient(to right, rgba(15, 23, 42, 0.08) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
         background-size: 20px 20px;
       }
       .canvas-element {
         touch-action: none;
+        cursor: default;
+      }
+      .canvas-element.locked .drag-handle,
+      .canvas-element.locked .resizer {
+        display: none !important;
+      }
+      .resizer.tl,
+      .resizer.br {
+        cursor: nwse-resize;
+      }
+      .resizer.tr,
+      .resizer.bl {
+        cursor: nesw-resize;
+      }
+      .resizer.mt,
+      .resizer.mb {
+        cursor: ns-resize;
+      }
+      .resizer.ml,
+      .resizer.mr {
+        cursor: ew-resize;
+      }
+      .resizer.tl {
+        top: -4px;
+        left: -4px;
+      }
+      .resizer.tr {
+        top: -4px;
+        right: -4px;
+      }
+      .resizer.bl {
+        bottom: -4px;
+        left: -4px;
+      }
+      .resizer.br {
+        bottom: -4px;
+        right: -4px;
+      }
+      .resizer.mt {
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .resizer.mb {
+        bottom: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .resizer.ml {
+        left: -4px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .resizer.mr {
+        right: -4px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .canvas-element.locked::after {
+        content: "\f023";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        top: -12px;
+        right: -4px;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #020617;
+        color: #f8fafc;
+        font-size: 11px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+        z-index: 80;
+      }
+      .canvas-element.selected-premium {
+        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.8),
+          0 0 0 8px rgba(34, 211, 238, 0.12);
+      }
+      .canvas-element.selected-secondary {
+        box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.65),
+          0 0 0 6px rgba(148, 163, 184, 0.08);
+      }
+      .canvas-element.selected-premium .resizer,
+      .canvas-element.selected-secondary .resizer,
+      .canvas-element.selected-premium > .absolute,
+      .canvas-element.selected-secondary > .absolute {
+        opacity: 1 !important;
+      }
+      .builder-guide {
+        position: absolute;
+        background: rgba(34, 211, 238, 0.95);
+        pointer-events: none;
+        z-index: 140;
+        box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+      }
+      .builder-guide-x {
+        height: 1px;
+        width: 100%;
+      }
+      .builder-guide-y {
+        width: 1px;
+        height: 100%;
+      }
+      .builder-selection-box {
+        position: absolute;
+        border: 1px dashed rgba(34, 211, 238, 0.95);
+        background: rgba(34, 211, 238, 0.12);
+        pointer-events: none;
+        z-index: 145;
+        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12);
+      }
+      .studio-menu-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        width: min(92vw, 340px);
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(2, 6, 23, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 28px 90px rgba(2, 6, 23, 0.45);
+        backdrop-filter: blur(24px);
+      }
+      .studio-menu-panel.hidden {
+        display: none !important;
+      }
+      .draft-card {
+        width: 100%;
+        text-align: left;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+        transition: all 0.2s ease;
+      }
+      .draft-card:hover {
+        background: rgba(34, 211, 238, 0.12);
+        border-color: rgba(34, 211, 238, 0.2);
+      }
+      .ribbon-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .ribbon-tag {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #64748b;
+        width: 100%;
+        padding: 0 4px 2px;
+      }
+      .code-mode-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+        height: 100%;
+      }
+      .builder-tabbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        overflow-x: auto;
+        padding: 4px;
+        scrollbar-width: none;
+      }
+      .builder-tabbar::-webkit-scrollbar {
+        display: none;
+      }
+      .builder-tab {
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.04);
+        color: #cbd5e1;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+      }
+      .builder-tab:hover,
+      .builder-tab.active {
+        background: rgba(34, 211, 238, 0.14);
+        color: #ecfeff;
+        border-color: rgba(34, 211, 238, 0.28);
+      }
+      .builder-popover {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        width: min(92vw, 760px);
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(2, 6, 23, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.4);
+        backdrop-filter: blur(24px);
+      }
+      .builder-popover-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+      }
+      .builder-cmd {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+        transition: all 0.2s ease;
+      }
+      .builder-cmd:hover {
+        background: rgba(34, 211, 238, 0.12);
+        border-color: rgba(34, 211, 238, 0.18);
+      }
+      .builder-cmd small {
+        display: block;
+        color: #64748b;
+        font-size: 10px;
+        margin-top: 2px;
+      }
+      .code-editor-shell {
+        position: relative;
+        width: min(100%, 1180px);
+        margin: 0 auto;
+        min-height: min(70vh, 760px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 34%),
+          linear-gradient(180deg, #020617 0%, #0f172a 100%);
+        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.4);
+      }
+      .code-editor-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .code-window-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .code-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+      .code-file-tabs {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.025);
+      }
+      .code-file-tabs-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .code-file-tab {
+        padding: 8px 12px;
+        border-radius: 12px 12px 0 0;
+        background: rgba(15, 23, 42, 0.88);
+        color: #e2e8f0;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom-color: transparent;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .code-file-meta {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .code-editor-stage {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        min-height: min(62vh, 650px);
+        max-height: min(62vh, 650px);
+        overflow: hidden;
+      }
+      .code-line-gutter {
+        margin: 0;
+        padding: 20px 10px 20px 0;
+        text-align: right;
+        color: #475569;
+        font: 12px/1.55 "Courier New", monospace;
+        background: rgba(15, 23, 42, 0.88);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        user-select: none;
+        overflow: hidden;
+      }
+      .code-editor-pane {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.18)),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0, rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 100%);
+        background-size: auto, 28px 28px;
+      }
+      .code-editor-highlight,
+      .code-editor-input {
+        margin: 0;
+        width: 100%;
+        min-height: min(62vh, 650px);
+        max-height: min(62vh, 650px);
+        padding: 20px 22px;
+        font: 13px/1.55 "Courier New", monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        tab-size: 2;
+        overflow: auto;
+        overflow-x: hidden;
+      }
+      .code-editor-highlight {
+        color: #cbd5e1;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.16) 0%, rgba(2, 6, 23, 0.08) 100%);
+      }
+      .code-editor-input {
+        position: absolute;
+        inset: 0;
+        resize: none;
+        border: 0;
+        background: transparent;
+        color: transparent;
+        caret-color: #f8fafc;
+        outline: none;
+        overflow: auto;
+        overflow-x: hidden;
+      }
+      .code-token-tag {
+        color: #7dd3fc;
+      }
+      .code-token-attr {
+        color: #f9a8d4;
+      }
+      .code-token-string {
+        color: #86efac;
+      }
+      .code-token-comment {
+        color: #64748b;
+      }
+      .code-token-bracket {
+        color: #f8fafc;
+      }
+      .code-token-doctype {
+        color: #c084fc;
+      }
+      .code-token-selector {
+        color: #fcd34d;
+      }
+      .code-token-property {
+        color: #93c5fd;
+      }
+      .code-token-value {
+        color: #fdba74;
+      }
+      .code-token-keyword {
+        color: #67e8f9;
+      }
+      .builder-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 3200;
+        background: rgba(2, 6, 23, 0.84);
+        backdrop-filter: blur(18px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      .builder-modal-card {
+        width: min(100%, 460px);
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 34%),
+          rgba(2, 6, 23, 0.96);
+        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.45);
+      }
+      .feedback-stars {
+        display: flex;
+        gap: 10px;
+      }
+      .feedback-star {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: #64748b;
+        transition: all 0.2s ease;
+      }
+      .feedback-star.active,
+      .feedback-star:hover {
+        color: #facc15;
+        border-color: rgba(250, 204, 21, 0.26);
+        background: rgba(250, 204, 21, 0.12);
+      }
+      @media (max-width: 640px) {
+        .code-editor {
+        }
+        .builder-popover {
+          width: calc(100vw - 16px);
+          left: -4px;
+          border-radius: 18px;
+          padding: 10px;
+        }
+        .studio-menu-panel {
+          width: calc(100vw - 16px);
+          left: -4px;
+          border-radius: 18px;
+          padding: 10px;
+        }
+        .code-editor-shell {
+          border-radius: 20px;
+          min-height: min(68vh, 620px);
+        }
+        .code-file-tabs {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .code-file-meta {
+          font-size: 9px;
+        }
+        .code-editor-stage {
+          grid-template-columns: 42px minmax(0, 1fr);
+          min-height: min(58vh, 560px);
+          max-height: min(58vh, 560px);
+        }
+        .code-line-gutter {
+          padding: 16px 8px 16px 0;
+          font-size: 11px;
+        }
+        .code-editor-highlight,
+        .code-editor-input {
+          min-height: min(58vh, 560px);
+          max-height: min(58vh, 560px);
+        }
+        .code-editor-highlight,
+        .code-editor-input {
+          padding: 16px 16px 16px 14px;
+          font-size: 12px;
+        }
+        .builder-modal-card {
+          border-radius: 22px;
+        }
+        #smart-inspector {
+          align-items: flex-start;
+          justify-content: center;
+          padding: 10.75rem 0.75rem 1rem;
+          background: rgba(2, 6, 23, 0.45);
+          backdrop-filter: blur(8px);
+        }
+        #smart-inspector > div {
+          max-width: calc(100vw - 1.5rem);
+          border-radius: 1.6rem;
+        }
+      }
+      body.builder-mode {
+        overflow: hidden;
+      }
+      body.builder-mode #studio-container {
+        position: fixed;
+        inset: 0;
+        z-index: 2500;
+        height: 100vh;
+        width: 100vw;
+      }
+      body.builder-mode #studio-workspace {
+        display: flex !important;
+      }
+      body.builder-mode #editor-welcome {
+        display: none !important;
+      }
+      body.builder-mode nav,
+      body.builder-mode #landing,
+      body.builder-mode footer,
+      body.builder-mode #login-modal,
+      body.builder-mode #loading,
+      body.builder-mode #pwa-install-banner,
+      body.builder-mode #studio > .lg\:hidden {
+        visibility: hidden;
+      }
+      @media (max-width: 640px) {
+        body.builder-mode #studio-container {
+          inset: 0;
+        }
       }
     </style>
   </head>
@@ -683,6 +1200,68 @@
             class="h-full bg-cyan-400 w-1/3 rounded-3xl animate-[progress_1.5s_linear_infinite]"
           ></div>
         </div>
+      </div>
+    </div>
+    <div id="builder-confirm-modal" class="hidden builder-modal-backdrop" onclick="if (event.target === this) closeBuilderConfirmModal();">
+      <div class="builder-modal-card p-6 sm:p-8" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400">Studio Confirmation</p>
+            <h3 id="builder-confirm-title" class="text-2xl font-black text-white mt-2">Clear canvas?</h3>
+          </div>
+          <button onclick="closeBuilderConfirmModal()" class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"><i class="fas fa-times"></i></button>
+        </div>
+        <p id="builder-confirm-message" class="text-sm text-slate-400 leading-relaxed mb-6">This will remove all current objects from the current builder canvas.</p>
+        <div class="flex flex-wrap justify-end gap-3">
+          <button onclick="closeBuilderConfirmModal()" class="px-4 py-3 rounded-2xl bg-white/5 text-sm font-bold text-slate-300 hover:bg-white/10 transition-all">Cancel</button>
+          <button id="builder-confirm-action" onclick="runBuilderConfirmAction()" class="px-5 py-3 rounded-2xl bg-red-500 text-sm font-black text-white hover:bg-red-400 transition-all">Confirm</button>
+        </div>
+      </div>
+    </div>
+    <div id="feedback-modal" class="hidden builder-modal-backdrop" onclick="if (event.target === this) closeFeedbackModal();">
+      <div class="builder-modal-card p-6 sm:p-8" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400">Community</p>
+            <h3 class="text-2xl font-black text-white mt-2">Rate the builder</h3>
+            <p id="feedback-identity" class="text-sm text-slate-400 mt-2">Signed in feedback will include your account details.</p>
+          </div>
+          <button onclick="closeFeedbackModal()" class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 mb-3">Your Rating</p>
+            <div class="feedback-stars">
+              <button type="button" class="feedback-star" onclick="setFeedbackRating(1)"><i class="fas fa-star"></i></button>
+              <button type="button" class="feedback-star" onclick="setFeedbackRating(2)"><i class="fas fa-star"></i></button>
+              <button type="button" class="feedback-star" onclick="setFeedbackRating(3)"><i class="fas fa-star"></i></button>
+              <button type="button" class="feedback-star" onclick="setFeedbackRating(4)"><i class="fas fa-star"></i></button>
+              <button type="button" class="feedback-star" onclick="setFeedbackRating(5)"><i class="fas fa-star"></i></button>
+            </div>
+          </div>
+          <label class="block">
+            <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Suggestion</span>
+            <textarea id="feedback-text" placeholder="Tell us what should improve next..." class="w-full mt-3 min-h-[150px] rounded-[1.4rem] bg-white/5 border border-white/10 text-white text-sm leading-relaxed p-4 outline-none focus:border-cyan-500 resize-none"></textarea>
+          </label>
+          <div class="flex flex-wrap justify-end gap-3">
+            <button onclick="closeFeedbackModal()" class="px-4 py-3 rounded-2xl bg-white/5 text-sm font-bold text-slate-300 hover:bg-white/10 transition-all">Cancel</button>
+            <button id="feedback-submit-btn" onclick="submitCommunityFeedback()" class="px-5 py-3 rounded-2xl bg-cyan-600 text-sm font-black text-white hover:bg-cyan-500 transition-all">Send Feedback</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="design-modal" class="hidden builder-modal-backdrop" onclick="if (event.target === this) closeDesignModal();">
+      <div class="builder-modal-card p-6 sm:p-8" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400">Page Design</p>
+            <h3 id="design-modal-title" class="text-2xl font-black text-white mt-2">Background Templates</h3>
+            <p id="design-modal-subtitle" class="text-sm text-slate-400 mt-2">Apply professional page backgrounds without losing grid visibility.</p>
+          </div>
+          <button onclick="closeDesignModal()" class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="design-modal-body" class="space-y-4"></div>
+        <input type="file" id="canvas-bg-file-input" accept="image/*" class="hidden" onchange="handleCanvasBackgroundImageFile(this.files[0])">
       </div>
     </div>
     <footer class="bg-gray-950 border-t border-gray-900 py-4">
@@ -1727,36 +2306,152 @@
             <p class="text-gray-400 max-w-sm mb-10 text-sm leading-relaxed">Experience edge-to-edge professional design with the MediaLab 100% Boss Engine.</p>
             <button onclick="launchBossMode()" class="px-14 py-5 bg-white text-black rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all">Initialize Workspace</button>
         </div>
-        <div id="studio-workspace" class="hidden absolute inset-0 bg-[#080808] flex flex-col">
-            <div class="sticky top-0 z-[110] px-4 pt-4">
-                <div class="bg-gray-900/75 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-3 flex flex-wrap items-center justify-between gap-4 shadow-[0_25px_80px_rgba(0,0,0,0.6)] ring-1 ring-white/5">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <button onclick="toggleElementPicker()" class="flex items-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg shadow-cyan-900/40">
-                            <i class="fas fa-plus-circle"></i><span>Insert Element</span>
-                        </button>
-                        <div class="w-px h-6 bg-white/10 mx-2"></div>
-                        <button onclick="builderUndo()" class="p-3 text-gray-500 hover:text-cyan-400 transition-colors" title="Undo"><i class="fas fa-undo"></i></button>
-                        <button onclick="builderRedo()" class="p-3 text-gray-500 hover:text-cyan-400 transition-colors" title="Redo"><i class="fas fa-redo"></i></button>
-                        <button id="builder-snap-toggle" onclick="toggleBuilderSnap()" class="px-4 py-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase tracking-[0.25em] text-gray-300 hover:bg-white/10 transition-all" title="Toggle grid snap">Snap On</button>
+        <div id="studio-workspace" class="hidden absolute inset-0 bg-[#06080d] flex flex-col">
+            <div class="sticky top-0 z-[110] px-2 sm:px-4 pt-2 sm:pt-4">
+                <div id="builder-toolbar-shell" class="bg-gray-950/85 backdrop-blur-3xl border border-white/10 rounded-[1.2rem] sm:rounded-[1.6rem] px-2 py-2 sm:px-3 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-[0_25px_80px_rgba(0,0,0,0.6)] ring-1 ring-white/5 relative">
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <button id="studio-menu-toggle" onclick="toggleStudioMenu(event)" class="w-9 h-9 flex items-center justify-center text-gray-300 hover:text-white border border-white/5 rounded-xl bg-white/5 transition-colors">
+                                <i class="fas fa-bars text-sm"></i>
+                            </button>
+                            <div id="studio-menu-panel" class="studio-menu-panel hidden">
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button onclick="newBuilderProject(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-file-circle-plus text-cyan-400"></i><span>New Project<small>Clear canvas and start fresh</small></span></button>
+                                        <button onclick="saveBuilderDraft(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-floppy-disk text-cyan-400"></i><span>Save Draft<small>Store current project locally</small></span></button>
+                                    </div>
+                                    <button onclick="switchTool('history'); exitStudio(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-clock-rotate-left text-cyan-400"></i><span>Project History<small>Open MediaLab history library</small></span></button>
+                                    <button onclick="exitStudio(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-down-left-and-up-right-to-center text-cyan-400"></i><span>Exit Full Screen<small>Leave studio takeover mode</small></span></button>
+                                    <div>
+                                        <p class="text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 px-1 mb-2">Draft Projects</p>
+                                        <div id="builder-drafts-list" class="space-y-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="builder-tabbar">
+                        <button id="tab-insert" onclick="toggleBuilderTab('insert', event)" class="builder-tab">Insert</button>
+                        <button id="tab-file" onclick="toggleBuilderTab('file', event)" class="builder-tab">File</button>
+                        <button id="tab-edit" onclick="toggleBuilderTab('edit', event)" class="builder-tab">Edit</button>
+                        <button id="tab-arrange" onclick="toggleBuilderTab('arrange', event)" class="builder-tab">Arrange</button>
+                        <button id="tab-design" onclick="toggleBuilderTab('design', event)" class="builder-tab">Design</button>
+                        <button id="tab-templates" onclick="toggleBuilderTab('templates', event)" class="builder-tab">Templates</button>
+                        <button id="tab-community" onclick="toggleBuilderTab('community', event)" class="builder-tab">Community</button>
+                        <button id="builder-code-toggle" onclick="toggleBuilderCodeMode()" class="builder-tab">Code</button>
+                        <button onclick="downloadBuilderHtmlFile()" class="builder-tab">HTML</button>
                     </div>
-                    <div class="flex flex-wrap items-center gap-4">
+                    </div>
+                    <div class="flex items-center gap-2">
                         <div class="hidden md:flex flex-col items-end">
                             <span class="text-[8px] font-black text-cyan-500 uppercase tracking-widest">Studio Engine v3.0</span>
                             <span id="builder-status" class="text-[7px] text-gray-500 font-bold uppercase tracking-widest">Freeform Builder Ready</span>
                         </div>
-                        <button onclick="duplicateSelectedElement()" class="px-5 py-3 rounded-2xl bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-300 hover:bg-white/10 transition-all">Duplicate</button>
-                        <button onclick="removeSelectedElement()" class="px-5 py-3 rounded-2xl bg-red-500/10 text-[10px] font-black uppercase tracking-[0.2em] text-red-300 hover:bg-red-500/20 transition-all">Delete</button>
-                        <button onclick="downloadBuilderCode()" class="px-5 py-3 rounded-2xl bg-emerald-500/10 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300 hover:bg-emerald-500/20 transition-all">Code Pack</button>
-                        <button onclick="exportCanvasToHTML()" class="bg-white text-black px-8 py-3 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:bg-cyan-400 transition-all active:scale-95">Publish</button>
-                        <button onclick="exitStudio()" class="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-red-500 transition-colors"><i class="fas fa-times text-lg"></i></button>
+                    </div>
+                    <div id="builder-panel-insert" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="toggleElementPicker(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-plus-circle text-cyan-400"></i><span>Elements<small>Open element library</small></span></button>
+                            <button onclick="insertStarterBlock('hero'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-wand-magic-sparkles text-cyan-400"></i><span>Hero Block<small>Premium landing hero</small></span></button>
+                            <button onclick="insertStarterBlock('feature'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-layer-group text-cyan-400"></i><span>Feature Row<small>Three-card section</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-file" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="newBuilderProject(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-file-circle-plus text-cyan-400"></i><span>New Project<small>Reset current canvas</small></span></button>
+                            <button onclick="saveBuilderDraft(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-floppy-disk text-cyan-400"></i><span>Save Draft<small>Keep work locally</small></span></button>
+                            <button onclick="document.getElementById('builder-file-input').click(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-file-import text-cyan-400"></i><span>Import HTML<small>Open local project code</small></span></button>
+                            <button onclick="downloadBuilderHtmlFile(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-file-export text-cyan-400"></i><span>Export HTML<small>Download polished page file</small></span></button>
+                            <button onclick="downloadBuilderStylesTxt(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-file-lines text-cyan-400"></i><span>Export TXT<small>Download full code as text</small></span></button>
+                            <button onclick="requestCanvasClear(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-trash-can text-red-400"></i><span>Clear Canvas<small>Remove all current elements</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-edit" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="builderUndo(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-undo text-cyan-400"></i><span>Undo<small>Reverse last change</small></span></button>
+                            <button onclick="builderRedo(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-redo text-cyan-400"></i><span>Redo<small>Restore change</small></span></button>
+                            <button id="multi-select-toggle" onclick="toggleMultiSelectMode(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-object-group text-cyan-400"></i><span>Multi Select<small>Select many objects</small></span></button>
+                            <button id="builder-snap-toggle" onclick="toggleBuilderSnap(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-border-all text-cyan-400"></i><span>Snap Grid<small>Precision placement</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-arrange" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="duplicateSelectedElement(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-clone text-cyan-400"></i><span>Duplicate<small>Clone selected object</small></span></button>
+                            <button onclick="groupSelectedElements(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-object-group text-cyan-400"></i><span>Group<small>Combine selection</small></span></button>
+                            <button onclick="ungroupSelectedElements(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-object-ungroup text-cyan-400"></i><span>Ungroup<small>Break selected group</small></span></button>
+                            <button onclick="toggleSelectedLock(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-lock text-cyan-400"></i><span>Lock<small>Protect placement</small></span></button>
+                            <button onclick="removeSelectedElement(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-trash-alt text-red-400"></i><span>Delete<small>Remove selection</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-design" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="openDesignModal('templates'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-swatchbook text-cyan-400"></i><span>Templates<small>Professional page background presets</small></span></button>
+                            <button onclick="openDesignModal('color'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-fill-drip text-cyan-400"></i><span>Color<small>Pick a clean custom page color</small></span></button>
+                            <button onclick="openDesignModal('image'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-image text-cyan-400"></i><span>Upload Image<small>Use a real page background image</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-templates" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="insertStarterBlock('hero'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-panorama text-cyan-400"></i><span>Landing Hero<small>Marketing homepage</small></span></button>
+                            <button onclick="insertStarterBlock('feature'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-th-large text-cyan-400"></i><span>Features Section<small>Service showcase</small></span></button>
+                            <button onclick="insertStarterBlock('login'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-right-to-bracket text-cyan-400"></i><span>Login Form<small>Auth page starter</small></span></button>
+                            <button onclick="insertStarterBlock('contact'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-envelope text-cyan-400"></i><span>Contact Form<small>Lead capture layout</small></span></button>
+                            <button onclick="insertStarterBlock('pricing'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-tags text-cyan-400"></i><span>Pricing Cards<small>Product pricing section</small></span></button>
+                            <button onclick="insertStarterBlock('dashboard'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard Hero<small>SaaS product starter</small></span></button>
+                        </div>
+                    </div>
+                    <div id="builder-panel-community" class="builder-popover hidden">
+                        <div class="builder-popover-grid">
+                            <button onclick="openFeedbackModal(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-star text-cyan-400"></i><span>Give Feedback<small>Rate the studio and share improvement ideas</small></span></button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div id="canvas-container" onclick="deselectAll(event)" class="flex-1 overflow-auto flex justify-center items-start px-4 pt-4 pb-4 cursor-crosshair custom-scrollbar">
-                <div id="web-canvas" class="builder-grid bg-white w-[calc(100vw-2rem)] min-h-[calc(100vh-7.5rem)] relative shadow-[0_60px_150px_rgba(0,0,0,0.55)] rounded-[2rem] overflow-hidden transition-transform duration-500">
+            <div id="code-mode-panel" class="hidden flex-1 px-2 sm:px-4 pt-2 sm:pt-4 pb-2 sm:pb-4">
+                <div class="code-mode-shell w-full max-w-[1680px] mx-auto">
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-1">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Live Code</p>
+                            <p class="text-xs text-gray-400">Edit exact HTML and CSS in a focused mini editor. Valid changes sync back to the visual canvas.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="refreshBuilderCodeMode()" class="px-4 py-2.5 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-[0.16em] text-gray-300 hover:bg-white/10 transition-all">Refresh</button>
+                            <button onclick="applyCodeModeToCanvas()" class="px-4 py-2.5 rounded-xl bg-cyan-600 text-[10px] font-black uppercase tracking-[0.16em] text-white hover:bg-cyan-500 transition-all">Apply to Canvas</button>
+                            <button onclick="toggleBuilderCodeMode()" class="px-4 py-2.5 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-[0.16em] text-gray-300 hover:bg-white/10 transition-all">Visual Mode</button>
+                        </div>
                     </div>
+                    <div class="code-editor-shell">
+                        <div class="code-editor-toolbar">
+                            <div class="code-window-dots">
+                                <span class="code-dot bg-red-400"></span>
+                                <span class="code-dot bg-yellow-400"></span>
+                                <span class="code-dot bg-green-400"></span>
+                            </div>
+                            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">medialab-page.html</div>
+                        </div>
+                        <div class="code-editor-stage">
+                            <pre id="builder-code-lines" class="code-line-gutter"></pre>
+                            <div class="code-editor-pane">
+                                <pre id="builder-code-highlight" class="code-editor-highlight"></pre>
+                                <textarea id="builder-code-editor" class="code-editor-input" spellcheck="false" wrap="soft" oninput="handleBuilderCodeInput()" onscroll="syncCodeEditorScroll()"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="element-picker" class="hidden fixed top-24 left-1/2 -translate-x-1/2 z-[120] bg-gray-950/90 backdrop-blur-2xl border border-white/10 rounded-[3rem] shadow-2xl p-6 w-[360px] animate-fadeIn ring-1 ring-cyan-500/20">
+            <div id="canvas-container" onclick="deselectAll(event)" class="flex-1 overflow-auto flex justify-center items-start px-2 sm:px-4 pt-2 sm:pt-4 pb-2 sm:pb-4 cursor-default custom-scrollbar">
+                <div class="w-full max-w-[1680px]">
+                    <div class="px-1 sm:px-2 pb-2 flex items-center justify-between">
+                        <div class="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Desktop Canvas</div>
+                        <div class="hidden sm:flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                            <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/5">Precision Drag</span>
+                            <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/5">Semantic Export</span>
+                            <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/5">Mobile Safe</span>
+                        </div>
+                    </div>
+                    <div id="web-canvas" data-page-background="#ffffff" class="builder-grid bg-white w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-w-[1680px] min-h-[calc(100vh-5.2rem)] sm:min-h-[calc(100vh-7.2rem)] relative shadow-[0_60px_150px_rgba(0,0,0,0.55)] rounded-[1.2rem] sm:rounded-[2rem] overflow-hidden transition-transform duration-500">
+                    </div>
+                </div>
+            </div>
+            <div id="element-picker" class="hidden fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[120] bg-gray-950/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] sm:rounded-[3rem] shadow-2xl p-4 sm:p-6 w-[92vw] max-w-[360px] animate-fadeIn ring-1 ring-cyan-500/20">
                 <p class="text-[9px] font-black text-gray-500 uppercase tracking-[0.3em] mb-5 text-center">UI Component Library</p>
                 <div class="grid grid-cols-3 gap-3">
                     ${[
@@ -1798,21 +2493,24 @@
                       .join("")}
                 </div>
                 <input type="file" id="local-img-input" accept="image/*" class="hidden" onchange="handleLocalImage(this.files[0])">
+                <input type="file" id="builder-file-input" accept=".html,.htm,.txt" class="hidden" onchange="handleBuilderFileImport(this.files[0])">
             </div>
             <div id="smart-inspector" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-[150] flex items-center justify-center p-4">
-                <div onclick="event.stopPropagation()" class="bg-[#0b0c10] border border-white/10 w-full max-w-[420px] rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.9)] ring-1 ring-white/10 scale-in">
+                <div onclick="event.stopPropagation()" class="bg-[#0b0c10] border border-white/10 w-full max-w-[360px] sm:max-w-[380px] rounded-[2rem] sm:rounded-[2.4rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.9)] ring-1 ring-white/10 scale-in">
                    
-                    <div class="h-32 bg-black flex items-center justify-center border-b border-white/5 relative overflow-hidden pattern-grid">
-                         <div id="inspector-preview" class="transition-all duration-500 shadow-2xl"></div>
+                    <div class="h-36 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_45%),linear-gradient(180deg,#020617_0%,#0b1120_100%)] flex items-center justify-center border-b border-white/5 relative overflow-hidden">
+                         <div class="absolute inset-0 opacity-40" style="background-image:linear-gradient(rgba(148,163,184,0.12) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.12) 1px,transparent 1px);background-size:24px 24px;transform:perspective(700px) rotateX(68deg) scale(1.4);transform-origin:center top;"></div>
+                         <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_42%,rgba(2,6,23,0.78)_100%)]"></div>
+                         <div id="inspector-preview" class="relative transition-all duration-500 shadow-[0_30px_60px_rgba(15,23,42,0.65)]"></div>
                     </div>
-                    <div class="p-7">
-                        <div id="inspector-controls" class="min-h-[320px] max-h-[58vh] overflow-y-auto pr-1 flex flex-col justify-center gap-4">
+                    <div class="p-5 sm:p-6">
+                        <div id="inspector-controls" class="min-h-[210px] max-h-[48vh] overflow-y-auto pr-1 flex flex-col justify-center gap-3">
                             </div>
                        
                         <div class="mt-6 pt-5 border-t border-white/5">
                             <div class="flex justify-between items-center mb-5 px-1">
                                 <button onclick="changeInspectorPage(-1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
-                                <span id="page-title" class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em] flex-1 text-center">Identity</span>
+                                <span id="page-title" class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em] flex-1 text-center">Content</span>
                                 <button onclick="changeInspectorPage(1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
                             </div>
                             <div class="flex gap-2">
@@ -2944,18 +3642,33 @@
       // ====================== 1. GLOBAL STATE & DICTIONARIES ======================
       const inspectorPages = [
         "Content",
+        "Layout",
         "Background",
         "Typography",
-        "Box Model",
+        "Border",
         "Effects",
+        "Position",
         "Advanced",
       ];
       let inspectorPageIndex = 0;
       let historyStack = [];
       let historyIndex = -1;
       let selectedEl = null;
+      let selectedElements = [];
       let builderSnapEnabled = true;
+      let multiSelectMode = false;
+      let builderCodeMode = false;
+      let activeBuilderPanel = null;
+      let codeApplyTimer = null;
+      let builderPanelIdleTimer = null;
+      let selectionBoxEl = null;
+      let builderConfirmAction = null;
+      let feedbackRating = 5;
+      let activeDesignModalMode = "templates";
+      const BUILDER_DRAFTS_KEY = "medialab_builder_drafts_v1";
       const BUILDER_GRID_SIZE = 20;
+      let guideXEl = null;
+      let guideYEl = null;
       let currentInspectorState = {
         type: null,
         targetEl: null,
@@ -2966,12 +3679,14 @@
       function launchBossMode() {
         const doc = document.documentElement;
         if (doc.requestFullscreen) doc.requestFullscreen();
+        document.body.classList.add("builder-mode");
         document.getElementById("editor-welcome").classList.add("hidden");
         document.getElementById("studio-workspace").classList.remove("hidden");
         initCanvasLogic();
       }
       function exitStudio() {
         if (document.fullscreenElement) document.exitFullscreen();
+        document.body.classList.remove("builder-mode");
         document.getElementById("studio-workspace").classList.add("hidden");
         document.getElementById("editor-welcome").classList.remove("hidden");
       }
@@ -2979,16 +3694,376 @@
         const canvas = document.getElementById("web-canvas");
         if (canvas) {
           canvas.innerHTML = "";
+          applyCanvasDesignPreset("clean", true);
+          ensureBuilderGuides(canvas);
+          initCanvasSelection(canvas);
           canvas.onclick = (e) => {
             if (e.target.id === "web-canvas") deselectAll();
           };
         }
         historyStack = [];
         historyIndex = -1;
+        selectedElements = [];
+        selectedEl = null;
+        builderCodeMode = false;
         saveToHistory();
         updateBuilderUI();
         document.addEventListener("contextmenu", handleRightClick);
       }
+      function getCanvasPageStyleState(canvas = document.getElementById("web-canvas")) {
+        if (!canvas) {
+          return {
+            background: "#ffffff",
+          };
+        }
+        return {
+          background: canvas.dataset.pageBackground || "#ffffff",
+        };
+      }
+      function applyCanvasPageBackground(background, silent = false) {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        const nextBackground = background || "#ffffff";
+        canvas.dataset.pageBackground = nextBackground;
+        refreshCanvasBackground();
+        if (!silent) saveToHistory();
+      }
+      function refreshCanvasBackground() {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        const pageBackground = canvas.dataset.pageBackground || "#ffffff";
+        const gridOverlay = builderSnapEnabled
+          ? [
+              "linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 1px)",
+              "linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 1px)",
+              "linear-gradient(to right, rgba(15,23,42,0.08) 1px, transparent 1px)",
+              "linear-gradient(to bottom, rgba(15,23,42,0.08) 1px, transparent 1px)",
+            ].join(", ")
+          : "";
+        canvas.style.background = gridOverlay
+          ? `${gridOverlay}, ${pageBackground}`
+          : pageBackground;
+        canvas.style.backgroundSize = builderSnapEnabled
+          ? "20px 20px, 20px 20px, 20px 20px, 20px 20px, auto"
+          : "auto";
+        canvas.style.backgroundPosition = builderSnapEnabled
+          ? "0 0, 0 0, 0 0, 0 0, center"
+          : "center";
+      }
+      function applyCanvasDesignPreset(kind, silent = false) {
+        const presets = {
+          clean: "#ffffff",
+          dark: "linear-gradient(160deg, #020617 0%, #111827 58%, #1f2937 100%)",
+          aurora: "radial-gradient(circle at top left, rgba(34,211,238,0.24), transparent 32%), radial-gradient(circle at top right, rgba(59,130,246,0.28), transparent 28%), linear-gradient(145deg, #f8fafc 0%, #dbeafe 48%, #eff6ff 100%)",
+          sunset: "radial-gradient(circle at top right, rgba(251,146,60,0.32), transparent 26%), radial-gradient(circle at bottom left, rgba(244,114,182,0.25), transparent 24%), linear-gradient(150deg, #fff7ed 0%, #fee2e2 52%, #faf5ff 100%)",
+          spotlight: "radial-gradient(circle at center, rgba(255,255,255,0.72), rgba(255,255,255,0.08) 34%, rgba(15,23,42,0.92) 100%), linear-gradient(180deg, #0f172a 0%, #111827 100%)",
+          ocean: "radial-gradient(circle at top right, rgba(14,165,233,0.32), transparent 26%), linear-gradient(145deg, #ecfeff 0%, #dbeafe 46%, #cffafe 100%)",
+          mesh: "radial-gradient(circle at 20% 20%, rgba(99,102,241,0.28), transparent 24%), radial-gradient(circle at 80% 10%, rgba(34,211,238,0.22), transparent 22%), radial-gradient(circle at 60% 75%, rgba(244,114,182,0.18), transparent 20%), linear-gradient(160deg, #f8fafc 0%, #eef2ff 52%, #ecfeff 100%)",
+          editorial: "linear-gradient(180deg, #fcfcfd 0%, #f8fafc 100%)",
+          graphite: "linear-gradient(145deg, #111827 0%, #0f172a 50%, #020617 100%)",
+        };
+        applyCanvasPageBackground(presets[kind] || presets.clean, silent);
+      }
+      function applyCanvasDesignColor(color) {
+        applyCanvasPageBackground(color || "#ffffff");
+      }
+      function applyCanvasDesignImage(url) {
+        const trimmed = String(url || "").trim();
+        if (!trimmed) {
+          applyCanvasDesignPreset("clean");
+          return;
+        }
+        applyCanvasPageBackground(`linear-gradient(rgba(15,23,42,0.12), rgba(15,23,42,0.12)), url("${trimmed}") center / cover no-repeat`);
+      }
+      function openDesignModal(mode = "templates") {
+        activeDesignModalMode = mode;
+        const modal = document.getElementById("design-modal");
+        modal?.classList.remove("hidden");
+        renderDesignModal();
+      }
+      function closeDesignModal() {
+        document.getElementById("design-modal")?.classList.add("hidden");
+      }
+      function renderDesignModal() {
+        const title = document.getElementById("design-modal-title");
+        const subtitle = document.getElementById("design-modal-subtitle");
+        const body = document.getElementById("design-modal-body");
+        if (!body) return;
+        if (activeDesignModalMode === "color") {
+          if (title) title.textContent = "Page Color";
+          if (subtitle) subtitle.textContent = "Pick a solid page color that still keeps the design grid visible.";
+          body.innerHTML = `
+            <label class="block">
+              <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Canvas Color</span>
+              <input type="color" value="#ffffff" oninput="applyCanvasDesignColor(this.value)" class="mt-3 w-full h-14 rounded-2xl bg-transparent border border-white/10 p-1">
+            </label>
+          `;
+          return;
+        }
+        if (activeDesignModalMode === "image") {
+          if (title) title.textContent = "Background Image";
+          if (subtitle) subtitle.textContent = "Upload a local image or paste a direct image URL for the page background.";
+          body.innerHTML = `
+            <button onclick="document.getElementById('canvas-bg-file-input').click()" class="w-full py-4 rounded-2xl bg-white/5 text-sm font-black uppercase tracking-[0.16em] text-white hover:bg-white/10 transition-all">Upload Local Image</button>
+            <label class="block">
+              <span class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Image URL</span>
+              <input type="text" placeholder="https://example.com/background.jpg" oninput="applyCanvasDesignImage(this.value)" class="mt-3 w-full bg-gray-800/90 p-3 rounded-2xl text-white text-sm border border-white/5 outline-none focus:border-cyan-500">
+            </label>
+          `;
+          return;
+        }
+        if (title) title.textContent = "Background Templates";
+        if (subtitle) subtitle.textContent = "Choose from polished studio-grade page backgrounds.";
+        body.innerHTML = `
+          <div class="grid grid-cols-2 gap-3">
+            ${[
+              ["clean", "Clean White"],
+              ["editorial", "Editorial"],
+              ["aurora", "Aurora"],
+              ["sunset", "Sunset"],
+              ["spotlight", "Spotlight"],
+              ["ocean", "Ocean"],
+              ["mesh", "Mesh"],
+              ["dark", "Dark Studio"],
+              ["graphite", "Graphite"],
+            ]
+              .map(
+                ([id, label]) => `<button onclick="applyCanvasDesignPreset('${id}')" class="builder-cmd justify-center text-center"><span>${label}<small>Apply page look</small></span></button>`,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+      function handleCanvasBackgroundImageFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          applyCanvasDesignImage(e.target?.result || "");
+        };
+        reader.readAsDataURL(file);
+      }
+      function initCanvasSelection(canvas) {
+        canvas.onpointerdown = (e) => {
+          if (e.target !== canvas) return;
+          if (builderCodeMode) return;
+          const rect = canvas.getBoundingClientRect();
+          const startX = e.clientX - rect.left + canvas.scrollLeft;
+          const startY = e.clientY - rect.top + canvas.scrollTop;
+          let moved = false;
+          deselectAll();
+          if (!selectionBoxEl) return;
+          selectionBoxEl.classList.remove("hidden");
+          Object.assign(selectionBoxEl.style, {
+            left: `${startX}px`,
+            top: `${startY}px`,
+            width: "0px",
+            height: "0px",
+          });
+          const onMove = (ev) => {
+            moved = true;
+            const currentX = ev.clientX - rect.left + canvas.scrollLeft;
+            const currentY = ev.clientY - rect.top + canvas.scrollTop;
+            const left = Math.min(startX, currentX);
+            const top = Math.min(startY, currentY);
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            Object.assign(selectionBoxEl.style, {
+              left: `${left}px`,
+              top: `${top}px`,
+              width: `${width}px`,
+              height: `${height}px`,
+            });
+          };
+          const onUp = () => {
+            document.removeEventListener("pointermove", onMove);
+            document.removeEventListener("pointerup", onUp);
+            selectionBoxEl.classList.add("hidden");
+            if (!moved) return;
+            const box = {
+              left: parseFloat(selectionBoxEl.style.left || "0"),
+              top: parseFloat(selectionBoxEl.style.top || "0"),
+              right:
+                parseFloat(selectionBoxEl.style.left || "0") +
+                parseFloat(selectionBoxEl.style.width || "0"),
+              bottom:
+                parseFloat(selectionBoxEl.style.top || "0") +
+                parseFloat(selectionBoxEl.style.height || "0"),
+            };
+            multiSelectMode = true;
+            Array.from(canvas.querySelectorAll(":scope > .canvas-element")).forEach((el) => {
+              const elBox = {
+                left: el.offsetLeft,
+                top: el.offsetTop,
+                right: el.offsetLeft + el.offsetWidth,
+                bottom: el.offsetTop + el.offsetHeight,
+              };
+              const intersects =
+                elBox.left < box.right &&
+                elBox.right > box.left &&
+                elBox.top < box.bottom &&
+                elBox.bottom > box.top;
+              if (intersects) toggleElementSelection(el);
+            });
+            updateBuilderUI();
+          };
+          document.addEventListener("pointermove", onMove);
+          document.addEventListener("pointerup", onUp);
+        };
+      }
+      function ensureBuilderGuides(canvas) {
+        if (!canvas) return;
+        if (!guideXEl) {
+          guideXEl = document.createElement("div");
+          guideXEl.className = "builder-guide builder-guide-x hidden";
+          canvas.appendChild(guideXEl);
+        }
+        if (!guideYEl) {
+          guideYEl = document.createElement("div");
+          guideYEl.className = "builder-guide builder-guide-y hidden";
+          canvas.appendChild(guideYEl);
+        }
+        if (!selectionBoxEl) {
+          selectionBoxEl = document.createElement("div");
+          selectionBoxEl.className = "builder-selection-box hidden";
+          canvas.appendChild(selectionBoxEl);
+        }
+      }
+      function showBuilderGuides(x, y) {
+        if (guideXEl) {
+          guideXEl.style.top = `${y}px`;
+          guideXEl.classList.remove("hidden");
+        }
+        if (guideYEl) {
+          guideYEl.style.left = `${x}px`;
+          guideYEl.classList.remove("hidden");
+        }
+      }
+      function hideBuilderGuides() {
+        guideXEl?.classList.add("hidden");
+        guideYEl?.classList.add("hidden");
+      }
+      function hideBuilderPanels() {
+        activeBuilderPanel = null;
+        clearTimeout(builderPanelIdleTimer);
+        ["insert", "file", "edit", "arrange", "design", "templates", "community"].forEach((name) => {
+          document
+            .getElementById(`builder-panel-${name}`)
+            ?.classList.add("hidden");
+          document.getElementById(`tab-${name}`)?.classList.remove("active");
+        });
+      }
+      function queueBuilderPanelAutoHide() {
+        clearTimeout(builderPanelIdleTimer);
+        builderPanelIdleTimer = setTimeout(() => {
+          hideBuilderPanels();
+          hideStudioMenu();
+        }, 15000);
+      }
+      function toggleStudioMenu(event) {
+        event?.stopPropagation();
+        const panel = document.getElementById("studio-menu-panel");
+        if (!panel) return;
+        const nextHidden = !panel.classList.contains("hidden");
+        panel.classList.toggle("hidden", nextHidden);
+        if (!nextHidden) {
+          renderBuilderDrafts();
+          queueBuilderPanelAutoHide();
+        }
+      }
+      function hideStudioMenu() {
+        document.getElementById("studio-menu-panel")?.classList.add("hidden");
+      }
+      function openFeedbackModal() {
+        const identity = document.getElementById("feedback-identity");
+        const feedbackText = document.getElementById("feedback-text");
+        if (identity) {
+          identity.textContent =
+            loggedIn && currentUser
+              ? `Feedback will be saved as ${currentUser.name || "User"} (${currentUser.email || "no email"}).`
+              : "You are not logged in, so this feedback will be saved anonymously.";
+        }
+        if (feedbackText) feedbackText.value = "";
+        setFeedbackRating(5);
+        hideStudioMenu();
+        hideBuilderPanels();
+        document.getElementById("feedback-modal")?.classList.remove("hidden");
+      }
+      function closeFeedbackModal() {
+        document.getElementById("feedback-modal")?.classList.add("hidden");
+      }
+      function setFeedbackRating(value) {
+        feedbackRating = value;
+        document.querySelectorAll(".feedback-star").forEach((star, index) => {
+          star.classList.toggle("active", index < value);
+        });
+      }
+      async function submitCommunityFeedback() {
+        const feedbackField = document.getElementById("feedback-text");
+        const submitBtn = document.getElementById("feedback-submit-btn");
+        const feedbackText = feedbackField?.value?.trim();
+        if (!feedbackText) {
+          alert("Please write a short suggestion before sending.");
+          return;
+        }
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Saving...";
+        }
+        try {
+          const res = await fetch("/api/community-feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              rating: feedbackRating,
+              feedback: feedbackText,
+              source: "web-builder",
+            }),
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.message || "Feedback could not be saved.");
+          closeFeedbackModal();
+          alert("Thank you. Your feedback has been saved.");
+        } catch (error) {
+          alert(error.message || "Could not save feedback right now.");
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Send Feedback";
+          }
+        }
+      }
+      function toggleBuilderTab(name, event) {
+        event?.stopPropagation();
+        const panel = document.getElementById(`builder-panel-${name}`);
+        const tab = document.getElementById(`tab-${name}`);
+        const isOpen = activeBuilderPanel === name && panel && !panel.classList.contains("hidden");
+        hideBuilderPanels();
+        if (isOpen || !panel) return;
+        panel.classList.remove("hidden");
+        tab?.classList.add("active");
+        activeBuilderPanel = name;
+        queueBuilderPanelAutoHide();
+      }
+      document.addEventListener("mousedown", (e) => {
+        const toolbarShell = document.getElementById("builder-toolbar-shell");
+        if (toolbarShell && !toolbarShell.contains(e.target)) {
+          hideBuilderPanels();
+        }
+        if (toolbarShell && toolbarShell.contains(e.target)) {
+          queueBuilderPanelAutoHide();
+        }
+        const studioMenu = document.getElementById("studio-menu-panel");
+        const studioToggle = document.getElementById("studio-menu-toggle");
+        if (
+          studioMenu &&
+          !studioMenu.contains(e.target) &&
+          studioToggle &&
+          !studioToggle.contains(e.target)
+        ) {
+          hideStudioMenu();
+        }
+      });
       // Global UI: Close Picker on outside click
       document.addEventListener("mousedown", (e) => {
         const picker = document.getElementById("element-picker");
@@ -2998,6 +4073,11 @@
           !e.target.closest('button[onclick*="toggleElementPicker"]')
         ) {
           picker.classList.add("hidden");
+        }
+      });
+      document.addEventListener("keydown", () => {
+        if (activeBuilderPanel || !document.getElementById("studio-menu-panel")?.classList.contains("hidden")) {
+          queueBuilderPanelAutoHide();
         }
       });
       // ====================== 3. COMPONENT INJECTION ======================
@@ -3020,46 +4100,47 @@
         };
         reader.readAsDataURL(file);
       }
-      function addObject(type, styles, attrs) {
-        const canvas = document.getElementById("web-canvas");
-        const wrap = document.createElement("div");
-        wrap.id = attrs.id || `wrapper_${Date.now()}`;
-        wrap.setAttribute("data-type", type);
-        wrap.className =
-          "canvas-element absolute group p-2 transition-shadow active:cursor-grabbing";
-        // 8-Point Resizer Matrix
-        const handles = ["tl", "tr", "bl", "br", "mt", "mb", "ml", "mr"];
-        let handlesHTML = handles
-          .map(
-            (h) =>
-              `<div class="resizer ${h} absolute w-2 h-2 bg-cyan-500 border border-white rounded-full opacity-0 group-hover:opacity-100 z-50"></div>`,
-          )
-          .join("");
-        wrap.innerHTML = `
-        ${handlesHTML}
-        <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
-            <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
-            <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
-            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
-        </div>
-        <div class="element-body w-full h-full flex items-center justify-center overflow-hidden"></div>
-    `;
-        const body = wrap.querySelector(".element-body");
+      function getDefaultElementAttributes(type) {
+        switch (type) {
+          case "text":
+            return {
+              text: "Add Text",
+            };
+          case "button":
+            return {
+              text: "Get Started",
+            };
+          case "a":
+            return {
+              text: "Learn More",
+              href: "#",
+            };
+          case "input":
+            return {
+              placeholder: "Type your message",
+            };
+          case "textarea":
+            return {
+              placeholder: "Write something beautiful",
+            };
+          default:
+            return {};
+        }
+      }
+      function populateElementBody(body, type, attrs) {
         let component;
-        const normalizedStyles = normalizeBuilderStyles(styles, type);
-        // Component Factory
         switch (type) {
           case "img":
             body.innerHTML = `<img src="${attrs.src}" class="w-full h-full object-cover pointer-events-none">`;
             break;
           case "text":
-            body.innerHTML = `<div contenteditable="true" class="outline-none w-full h-full font-medium">${attrs.text || "Typography"}</div>`;
+            body.innerHTML = `<div contenteditable="true" class="outline-none w-full h-full font-medium">${attrs.text || "Add Text"}</div>`;
             break;
           case "button":
-            body.innerHTML = `<button class="w-full h-full font-bold pointer-events-none">${attrs.text || "Action"}</button>`;
+            body.innerHTML = `<button class="w-full h-full font-bold pointer-events-none">${attrs.text || "Get Started"}</button>`;
             break;
           case "a":
-            body.innerHTML = `<a href="${attrs.href || "#"}" class="w-full h-full flex items-center justify-center font-semibold no-underline pointer-events-none">${attrs.text || "Visit Link"}</a>`;
+            body.innerHTML = `<a href="${attrs.href || "#"}" class="w-full h-full flex items-center justify-center font-semibold no-underline pointer-events-none">${attrs.text || "Learn More"}</a>`;
             break;
           case "input":
           case "textarea":
@@ -3082,22 +4163,402 @@
             component.className = "w-6 h-6 accent-cyan-500 pointer-events-none";
             body.appendChild(component);
             break;
-          default: // Div
+          default:
             body.classList.add("w-full", "h-full");
         }
+      }
+      function addObject(type, styles, attrs) {
+        const canvas = document.getElementById("web-canvas");
+        ensureBuilderGuides(canvas);
+        const wrap = document.createElement("div");
+        wrap.id = attrs.id || `wrapper_${Date.now()}`;
+        wrap.setAttribute("data-type", type);
+        wrap.className =
+          "canvas-element absolute group transition-shadow active:cursor-grabbing";
+        // 8-Point Resizer Matrix
+        const handles = ["tl", "tr", "bl", "br", "mt", "mb", "ml", "mr"];
+        let handlesHTML = handles
+          .map(
+            (h) =>
+              `<div class="resizer ${h} absolute w-2 h-2 bg-cyan-500 border border-white rounded-full opacity-0 group-hover:opacity-100 z-50"></div>`,
+          )
+          .join("");
+        wrap.innerHTML = `
+        ${handlesHTML}
+        <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
+            <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
+            <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
+            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
+        </div>
+        <div class="element-body w-full h-full overflow-visible"></div>
+    `;
+        const body = wrap.querySelector(".element-body");
+        const normalizedStyles = normalizeBuilderStyles(styles, type);
+        const mergedAttrs = {
+          ...getDefaultElementAttributes(type),
+          ...attrs,
+        };
+        populateElementBody(body, type, mergedAttrs);
         Object.assign(wrap.style, {
           width: normalizedStyles.width || "260px",
           height: normalizedStyles.height || "100px",
           left: "150px",
           top: "150px",
           zIndex: "10",
-          ...normalizedStyles,
+          opacity: normalizedStyles.opacity,
+          mixBlendMode: normalizedStyles.mixBlendMode,
+          transform: `rotate(${normalizedStyles.rotate})`,
         });
-        applyElementContentStyles(wrap, type, normalizedStyles, attrs);
+        applyElementContentStyles(wrap, type, normalizedStyles, mergedAttrs);
         hydrateCanvasElement(wrap);
         canvas.appendChild(wrap);
         saveToHistory();
         selectElement(wrap);
+      }
+      function getBuilderDrafts() {
+        return JSON.parse(localStorage.getItem(BUILDER_DRAFTS_KEY) || "[]");
+      }
+      function renderBuilderDrafts() {
+        const list = document.getElementById("builder-drafts-list");
+        if (!list) return;
+        const drafts = getBuilderDrafts();
+        if (!drafts.length) {
+          list.innerHTML = `<div class="text-[11px] text-slate-500 px-2 py-3">No saved drafts yet.</div>`;
+          return;
+        }
+        list.innerHTML = drafts
+          .slice()
+          .reverse()
+          .map(
+            (draft, index) => `
+            <button class="draft-card" onclick="loadBuilderDraftByIndex(${drafts.length - 1 - index}); hideStudioMenu();">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-bold text-white">${draft.name}</div>
+                  <div class="text-[10px] uppercase tracking-[0.18em] text-slate-500 mt-1">${new Date(draft.savedAt).toLocaleString()}</div>
+                </div>
+                <i class="fas fa-chevron-right text-slate-500"></i>
+              </div>
+            </button>`,
+          )
+          .join("");
+      }
+      function saveBuilderDraft() {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        const drafts = getBuilderDrafts();
+        const draftName = `Builder Draft ${drafts.length + 1}`;
+        drafts.push({
+          name: draftName,
+          savedAt: Date.now(),
+          canvasHtml: canvas.innerHTML,
+          pageBackground: getCanvasPageStyleState(canvas).background,
+        });
+        localStorage.setItem(BUILDER_DRAFTS_KEY, JSON.stringify(drafts.slice(-12)));
+        if (typeof saveProjectToHistory === "function") {
+          saveProjectToHistory({
+            title: draftName,
+            tool: "Web Builder",
+            fileUrl: "#builder-draft",
+            createdAt: new Date().toISOString(),
+          });
+        }
+        renderBuilderDrafts();
+      }
+      function loadBuilderDraftByIndex(index) {
+        const drafts = getBuilderDrafts();
+        const draft = drafts[index];
+        const canvas = document.getElementById("web-canvas");
+        if (!draft || !canvas) return;
+        canvas.innerHTML = draft.canvasHtml || draft.canvasState?.html || "";
+        applyCanvasPageBackground(draft.pageBackground || draft.canvasState?.pageBackground || "#ffffff", true);
+        ensureBuilderGuides(canvas);
+        initCanvasSelection(canvas);
+        hydrateCanvasElements();
+        deselectAll();
+        saveToHistory();
+      }
+      function newBuilderProject() {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        canvas.innerHTML = "";
+        applyCanvasDesignPreset("clean", true);
+        ensureBuilderGuides(canvas);
+        initCanvasSelection(canvas);
+        deselectAll();
+        saveToHistory();
+      }
+      function requestCanvasClear() {
+        openBuilderConfirmModal(
+          "Clear canvas?",
+          "This will permanently remove all objects from the current builder canvas.",
+          "Clear Canvas",
+          () => newBuilderProject(),
+        );
+      }
+      function openBuilderConfirmModal(title, message, actionLabel, action) {
+        builderConfirmAction = action;
+        const titleNode = document.getElementById("builder-confirm-title");
+        const messageNode = document.getElementById("builder-confirm-message");
+        const actionNode = document.getElementById("builder-confirm-action");
+        if (titleNode) titleNode.textContent = title;
+        if (messageNode) messageNode.textContent = message;
+        if (actionNode) actionNode.textContent = actionLabel;
+        document.getElementById("builder-confirm-modal")?.classList.remove("hidden");
+      }
+      function closeBuilderConfirmModal() {
+        builderConfirmAction = null;
+        document.getElementById("builder-confirm-modal")?.classList.add("hidden");
+      }
+      function runBuilderConfirmAction() {
+        if (typeof builderConfirmAction === "function") builderConfirmAction();
+        closeBuilderConfirmModal();
+      }
+      function handleBuilderFileImport(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const text = e.target?.result;
+          const editor = document.getElementById("builder-code-editor");
+          if (typeof text !== "string" || !editor) return;
+          builderCodeMode = true;
+          updateBuilderUI();
+          editor.value = text;
+          handleBuilderCodeInput();
+          applyCodeModeToCanvas();
+        };
+        reader.readAsText(file);
+      }
+      function insertStarterBlock(kind) {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        if (kind === "hero") {
+          addObject(
+            "div",
+            {
+              width: "min(900px, calc(100vw - 5rem))",
+              height: "340px",
+              left: "40px",
+              top: "60px",
+              backgroundColor: "#0f172a",
+              backgroundColorSecondary: "#1d4ed8",
+              padding: "40px",
+              borderRadius: "36px",
+              boxShadow: "0 40px 120px rgba(15, 23, 42, 0.28)",
+            },
+            { id: `hero_${Date.now()}` },
+          );
+          addObject(
+            "text",
+            {
+              width: "580px",
+              height: "120px",
+              left: "88px",
+              top: "118px",
+              color: "#ffffff",
+              fontSize: "56px",
+              fontWeight: "800",
+              lineHeight: "0.96",
+              letterSpacing: "-0.05em",
+            },
+            { text: "Build world-class pages with confidence." },
+          );
+          addObject(
+            "text",
+            {
+              width: "520px",
+              height: "70px",
+              left: "92px",
+              top: "248px",
+              color: "#cbd5e1",
+              fontSize: "18px",
+              fontWeight: "500",
+              lineHeight: "1.45",
+            },
+            { text: "A sharper visual builder with cleaner defaults, stronger export, and more professional layout control." },
+          );
+          addObject(
+            "button",
+            {
+              width: "190px",
+              height: "58px",
+              left: "690px",
+              top: "230px",
+            },
+            { text: "Start Building" },
+          );
+          return;
+        }
+        if (kind === "feature") {
+          const top = 80 + canvas.querySelectorAll(".canvas-element").length * 18;
+          [
+            { left: 60, title: "Reliable" },
+            { left: 360, title: "Responsive" },
+            { left: 660, title: "Exportable" },
+          ].forEach((item, index) => {
+            addObject(
+              "div",
+              {
+                width: "260px",
+                height: "220px",
+                left: `${item.left}px`,
+                top: `${top}px`,
+                backgroundColor: index === 1 ? "#082f49" : "#ffffff",
+                backgroundColorSecondary: index === 1 ? "#155e75" : "#f8fafc",
+                color: index === 1 ? "#ecfeff" : "#0f172a",
+                borderRadius: "28px",
+                padding: "26px",
+                borderWidth: "1px",
+                borderColor: index === 1 ? "rgba(255,255,255,0.08)" : "#e2e8f0",
+                boxShadow: "0 24px 60px rgba(15, 23, 42, 0.10)",
+                backgroundMode: index === 1 ? "gradient" : "solid",
+              },
+              { id: `feature_${index}_${Date.now()}` },
+            );
+            addObject(
+              "text",
+              {
+                width: "200px",
+                height: "42px",
+                left: `${item.left + 28}px`,
+                top: `${top + 34}px`,
+                color: index === 1 ? "#ffffff" : "#0f172a",
+                fontSize: "26px",
+                fontWeight: "700",
+                lineHeight: "1.1",
+              },
+              { text: item.title },
+            );
+            addObject(
+              "text",
+              {
+                width: "200px",
+                height: "92px",
+                left: `${item.left + 28}px`,
+                top: `${top + 94}px`,
+                color: index === 1 ? "#cffafe" : "#475569",
+                fontSize: "15px",
+                fontWeight: "500",
+                lineHeight: "1.5",
+              },
+              { text: "Clean defaults, excellent spacing, and export that developers can actually work with." },
+            );
+          });
+          return;
+        }
+        if (kind === "login") {
+          addObject(
+            "div",
+            {
+              width: "440px",
+              height: "470px",
+              left: "80px",
+              top: "80px",
+              backgroundMode: "gradient",
+              backgroundColor: "#ffffff",
+              backgroundColorSecondary: "#eff6ff",
+              borderRadius: "34px",
+              padding: "34px",
+              borderWidth: "1px",
+              borderColor: "#e2e8f0",
+              boxShadow: "0 40px 100px rgba(15, 23, 42, 0.16)",
+            },
+            { id: `login_${Date.now()}` },
+          );
+          addObject("text", { width: "300px", height: "56px", left: "120px", top: "118px", fontSize: "34px", fontWeight: "800" }, { text: "Welcome back" });
+          addObject("text", { width: "300px", height: "44px", left: "122px", top: "176px", fontSize: "15px", color: "#64748b", fontWeight: "500" }, { text: "Sign in to continue to your workspace." });
+          addObject("input", { width: "320px", height: "56px", left: "118px", top: "246px", borderRadius: "18px", backgroundColor: "#ffffff" }, { placeholder: "Username" });
+          addObject("input", { width: "320px", height: "56px", left: "118px", top: "320px", borderRadius: "18px", backgroundColor: "#ffffff" }, { placeholder: "Password" });
+          addObject("button", { width: "320px", height: "58px", left: "118px", top: "398px" }, { text: "Log In" });
+          addObject("a", { width: "160px", height: "36px", left: "198px", top: "462px", backgroundMode: "solid", backgroundColor: "transparent", backgroundColorSecondary: "transparent", boxShadow: "none", color: "#2563eb" }, { text: "Forgot password?", href: "#" });
+          return;
+        }
+        if (kind === "contact") {
+          addObject(
+            "div",
+            {
+              width: "520px",
+              height: "420px",
+              left: "80px",
+              top: "90px",
+              backgroundColor: "#ffffff",
+              backgroundColorSecondary: "#ffffff",
+              backgroundMode: "solid",
+              borderRadius: "32px",
+              padding: "32px",
+              borderWidth: "1px",
+              borderColor: "#e2e8f0",
+              boxShadow: "0 40px 100px rgba(15, 23, 42, 0.14)",
+            },
+            { id: `contact_${Date.now()}` },
+          );
+          addObject("text", { width: "320px", height: "52px", left: "120px", top: "130px", fontSize: "34px", fontWeight: "800" }, { text: "Let’s work together" });
+          addObject("text", { width: "320px", height: "42px", left: "122px", top: "184px", fontSize: "15px", color: "#64748b", fontWeight: "500" }, { text: "Tell us about your project and we’ll reply quickly." });
+          addObject("input", { width: "360px", height: "54px", left: "118px", top: "246px" }, { placeholder: "Your name" });
+          addObject("input", { width: "360px", height: "54px", left: "118px", top: "314px" }, { placeholder: "Your email" });
+          addObject("textarea", { width: "360px", height: "96px", left: "118px", top: "382px" }, { placeholder: "Project details" });
+          addObject("button", { width: "180px", height: "54px", left: "298px", top: "494px" }, { text: "Send Inquiry" });
+          return;
+        }
+        if (kind === "pricing") {
+          [
+            { left: 70, title: "Starter", price: "$19" },
+            { left: 380, title: "Growth", price: "$49" },
+            { left: 690, title: "Scale", price: "$99" },
+          ].forEach((plan, index) => {
+            addObject("div", {
+              width: "260px",
+              height: "320px",
+              left: `${plan.left}px`,
+              top: "110px",
+              backgroundMode: index === 1 ? "gradient" : "solid",
+              backgroundColor: index === 1 ? "#0f172a" : "#ffffff",
+              backgroundColorSecondary: index === 1 ? "#1d4ed8" : "#ffffff",
+              color: index === 1 ? "#ffffff" : "#0f172a",
+              borderRadius: "30px",
+              padding: "28px",
+              borderWidth: "1px",
+              borderColor: index === 1 ? "rgba(255,255,255,0.08)" : "#e2e8f0",
+              boxShadow: "0 26px 70px rgba(15, 23, 42, 0.12)",
+            }, { id: `pricing_${index}_${Date.now()}` });
+            addObject("text", { width: "180px", height: "40px", left: `${plan.left + 36}px`, top: "142px", color: index === 1 ? "#ffffff" : "#0f172a", fontSize: "24px", fontWeight: "700" }, { text: plan.title });
+            addObject("text", { width: "140px", height: "60px", left: `${plan.left + 36}px`, top: "194px", color: index === 1 ? "#67e8f9" : "#2563eb", fontSize: "42px", fontWeight: "800" }, { text: plan.price });
+            addObject("text", { width: "180px", height: "72px", left: `${plan.left + 36}px`, top: "258px", color: index === 1 ? "#cbd5e1" : "#64748b", fontSize: "15px", fontWeight: "500", lineHeight: "1.5" }, { text: "Professional product-ready essentials with reliable export and clean editing." });
+            addObject("button", { width: "180px", height: "52px", left: `${plan.left + 36}px`, top: "348px", backgroundMode: index === 1 ? "solid" : "gradient", backgroundColor: index === 1 ? "#ffffff" : "#06b6d4", backgroundColorSecondary: index === 1 ? "#ffffff" : "#2563eb", color: index === 1 ? "#0f172a" : "#ffffff" }, { text: "Choose Plan" });
+          });
+          return;
+        }
+        if (kind === "dashboard") {
+          addObject("div", {
+            width: "960px",
+            height: "520px",
+            left: "60px",
+            top: "80px",
+            backgroundMode: "solid",
+            backgroundColor: "#0f172a",
+            backgroundColorSecondary: "#0f172a",
+            borderRadius: "36px",
+            padding: "28px",
+            boxShadow: "0 40px 120px rgba(15, 23, 42, 0.28)",
+          }, { id: `dashboard_${Date.now()}` });
+          addObject("text", { width: "320px", height: "54px", left: "98px", top: "118px", color: "#ffffff", fontSize: "34px", fontWeight: "800" }, { text: "Revenue Dashboard" });
+          addObject("text", { width: "280px", height: "36px", left: "100px", top: "170px", color: "#94a3b8", fontSize: "15px", fontWeight: "500" }, { text: "Track product growth in real time." });
+          [0,1,2].forEach((i) => {
+            addObject("div", {
+              width: "250px",
+              height: "150px",
+              left: `${100 + i * 274}px`,
+              top: "234px",
+              backgroundMode: "gradient",
+              backgroundColor: i === 0 ? "#0ea5e9" : i === 1 ? "#8b5cf6" : "#10b981",
+              backgroundColorSecondary: "#0f172a",
+              borderRadius: "26px",
+              padding: "24px",
+              boxShadow: "0 22px 60px rgba(15, 23, 42, 0.24)",
+            }, { id: `dashboard_card_${i}_${Date.now()}` });
+          });
+          return;
+        }
       }
       // ====================== 4. CONTEXTUAL MICRO-INSPECTOR ======================
       function openSmartInspector(type, existingEl = null) {
@@ -3115,18 +4576,24 @@
                 id: existingEl.id,
                 text:
                   existingEl.querySelector(".element-body")?.innerText?.trim() ||
+                  getDefaultElementAttributes(type).text ||
                   "New Element",
                 placeholder:
                   existingEl.querySelector("input, textarea")?.placeholder || "",
                 href: existingEl.querySelector("a")?.getAttribute("href") || "#",
                 src: existingEl.querySelector("img")?.getAttribute("src") || "",
+                className: Array.from(existingEl.classList)
+                  .filter((cls) => !["canvas-element", "absolute", "group", "transition-shadow", "active:cursor-grabbing", "ring-4", "ring-cyan-400"].includes(cls))
+                  .join(" "),
               }
             : {
                 id: `el_${Date.now()}`,
-                text: "New Element",
-                placeholder: "Type here...",
+                text: getDefaultElementAttributes(type).text || "New Element",
+                placeholder:
+                  getDefaultElementAttributes(type).placeholder || "Type here...",
                 href: "#",
                 src: "",
+                className: "",
               },
         };
         renderInspectorControls(type);
@@ -3141,6 +4608,22 @@
             );
           closeSmartInspector();
         };
+        if (window.innerWidth <= 640) {
+          const picker = document.getElementById("element-picker");
+          const inspectorCard = modal.querySelector("div[onclick='event.stopPropagation()']");
+          if (picker && !picker.classList.contains("hidden") && inspectorCard) {
+            const rect = picker.getBoundingClientRect();
+            modal.style.alignItems = "flex-start";
+            modal.style.justifyContent = "center";
+            modal.style.paddingTop = `${rect.bottom + 12}px`;
+          } else {
+            modal.style.removeProperty("padding-top");
+          }
+        } else {
+          modal.style.removeProperty("padding-top");
+          modal.style.removeProperty("align-items");
+          modal.style.removeProperty("justify-content");
+        }
       }
       function renderInspectorControls(type) {
         const container = document.getElementById("inspector-controls");
@@ -3176,12 +4659,26 @@
                 "updateAttr('href', this.value)",
               );
             }
+            break;
+          case 1:
             h += `<div class="grid grid-cols-2 gap-3">
               ${renderBuilderInput("Width", "text", s.width, "updateStyle('width', normalizeCssSize(this.value, '260px'))")}
               ${renderBuilderInput("Height", "text", s.height, "updateStyle('height', normalizeCssSize(this.value, '100px'))")}
             </div>`;
+            h += renderBuilderInput(
+              "Padding",
+              "text",
+              s.padding,
+              "updateStyle('padding', this.value || '16px')",
+            );
+            h += renderBuilderInput(
+              "Border Radius",
+              "text",
+              s.borderRadius,
+              "updateStyle('borderRadius', normalizeCssSize(this.value, '18px'))",
+            );
             break;
-          case 1:
+          case 2:
             h += renderBuilderSelect(
               "Background Type",
               "backgroundMode",
@@ -3222,7 +4719,7 @@
               "updateStyle('backgroundImageUrl', this.value)",
             );
             break;
-          case 2:
+          case 3:
             h += `<div class="grid grid-cols-2 gap-3">
               ${renderBuilderInput("Text Color", "color", s.color, "updateStyle('color', this.value)")}
               ${renderBuilderInput("Font Size", "text", s.fontSize, "updateStyle('fontSize', normalizeCssSize(this.value, '18px'))")}
@@ -3263,11 +4760,7 @@
               `min="100" max="900" step="100"`,
             );
             break;
-          case 3:
-            h += `<div class="grid grid-cols-2 gap-3">
-              ${renderBuilderInput("Padding", "text", s.padding, "updateStyle('padding', this.value || '16px')")}
-              ${renderBuilderInput("Border Radius", "text", s.borderRadius, "updateStyle('borderRadius', normalizeCssSize(this.value, '18px'))")}
-            </div>`;
+          case 4:
             h += `<div class="grid grid-cols-2 gap-3">
               ${renderBuilderInput("Border Width", "text", s.borderWidth, "updateStyle('borderWidth', normalizeCssSize(this.value, '1px'))")}
               ${renderBuilderInput("Border Color", "color", s.borderColor, "updateStyle('borderColor', this.value)")}
@@ -3295,7 +4788,7 @@
               "updateStyle('outlineOffset', normalizeCssSize(this.value, '0px'))",
             );
             break;
-          case 4:
+          case 5:
             h += renderBuilderInput(
               "Opacity",
               "range",
@@ -3322,7 +4815,7 @@
               "updateStyle('rotate', normalizeCssSize(this.value, '0deg'))",
             );
             break;
-          case 5:
+          case 6:
             h += `<div class="grid grid-cols-2 gap-3">
               ${renderBuilderInput("Top", "text", s.top, "updateStyle('top', normalizeCssSize(this.value, '150px'))")}
               ${renderBuilderInput("Left", "text", s.left, "updateStyle('left', normalizeCssSize(this.value, '150px'))")}
@@ -3331,6 +4824,8 @@
               ${renderBuilderInput("Z-Index", "number", String(parseInt(s.zIndex || "10", 10)), "updateStyle('zIndex', this.value || '10')")}
               ${renderBuilderInput("Mix Blend", "text", s.mixBlendMode, "updateStyle('mixBlendMode', this.value || 'normal')")}
             </div>`;
+            break;
+          case 7:
             h += renderBuilderInput(
               "Custom CSS Class",
               "text",
@@ -3345,12 +4840,21 @@
       // ====================== 5. INTERACTION ENGINE ======================
       function handleObjectInteraction(e, el) {
         if (e.button !== undefined && e.button !== 0) return;
+        if (el.classList.contains("locked")) return;
         if (e.target.isContentEditable) return;
         e.stopPropagation();
         e.preventDefault();
-        selectElement(el);
         const isResizer = e.target.classList.contains("resizer");
         const isDragHandle = e.target.closest(".drag-handle");
+        if (multiSelectMode && !isResizer && !isDragHandle) {
+          if (!selectedElements.includes(el)) {
+            addElementSelection(el);
+            return;
+          }
+        }
+        if (!multiSelectMode || selectedElements.length <= 1 || !selectedElements.includes(el)) {
+          selectElement(el);
+        }
         if (!isResizer && !isDragHandle) return;
         const startX = e.clientX,
           startY = e.clientY;
@@ -3358,8 +4862,20 @@
           startH = el.offsetHeight;
         const startL = el.offsetLeft,
           startT = el.offsetTop;
+        const movingSelection =
+          !isResizer &&
+          selectedElements.length > 1 &&
+          selectedElements.includes(el);
+        const selectionStarts = movingSelection
+          ? selectedElements.map((item) => ({
+              el: item,
+              left: item.offsetLeft,
+              top: item.offsetTop,
+            }))
+          : [];
         const rType = e.target.classList[1];
         const canvas = document.getElementById("web-canvas");
+        ensureBuilderGuides(canvas);
         const snap = (value) =>
           builderSnapEnabled
             ? Math.round(value / BUILDER_GRID_SIZE) * BUILDER_GRID_SIZE
@@ -3399,21 +4915,40 @@
               el.style.height = Math.max(30, startH + (startT - nextTop)) + "px";
             }
           } else {
-            const nextLeft = clamp(
-              snap(startL + dx),
-              0,
-              canvas.clientWidth - el.offsetWidth,
-            );
-            const nextTop = clamp(
-              snap(startT + dy),
-              0,
-              canvas.scrollHeight - el.offsetHeight,
-            );
-            el.style.left = nextLeft + "px";
-            el.style.top = nextTop + "px";
+            if (movingSelection) {
+              selectionStarts.forEach((item) => {
+                const nextLeft = clamp(
+                  snap(item.left + dx),
+                  0,
+                  canvas.clientWidth - item.el.offsetWidth,
+                );
+                const nextTop = clamp(
+                  snap(item.top + dy),
+                  0,
+                  canvas.scrollHeight - item.el.offsetHeight,
+                );
+                item.el.style.left = nextLeft + "px";
+                item.el.style.top = nextTop + "px";
+              });
+            } else {
+              const nextLeft = clamp(
+                snap(startL + dx),
+                0,
+                canvas.clientWidth - el.offsetWidth,
+              );
+              const nextTop = clamp(
+                snap(startT + dy),
+                0,
+                canvas.scrollHeight - el.offsetHeight,
+              );
+              el.style.left = nextLeft + "px";
+              el.style.top = nextTop + "px";
+            }
           }
+          showBuilderGuides(el.offsetLeft, el.offsetTop);
         };
         const onPointerUp = () => {
+          hideBuilderGuides();
           saveToHistory();
           document.removeEventListener("pointermove", onPointerMove);
           document.removeEventListener("pointerup", onPointerUp);
@@ -3448,35 +4983,140 @@
         return trimmed;
       }
       function normalizeBuilderStyles(styles = {}, type = "div") {
+        const defaults = {
+          div: {
+            width: "320px",
+            height: "180px",
+            padding: "24px",
+            borderRadius: "28px",
+            backgroundMode: "gradient",
+            backgroundColor: "#0f172a",
+            backgroundColorSecondary: "#1d4ed8",
+            color: "#f8fafc",
+            borderWidth: "0px",
+            borderStyle: "solid",
+            borderColor: "transparent",
+            boxShadow: "0 28px 80px rgba(15, 23, 42, 0.22)",
+          },
+          text: {
+            width: "340px",
+            height: "120px",
+            padding: "0px",
+            borderRadius: "0px",
+            backgroundMode: "solid",
+            backgroundColor: "transparent",
+            backgroundColorSecondary: "transparent",
+            color: "#0f172a",
+            fontSize: "32px",
+            fontWeight: "700",
+            lineHeight: "1.15",
+            letterSpacing: "-0.03em",
+            borderWidth: "0px",
+            borderColor: "transparent",
+            outlineWidth: "0px",
+            boxShadow: "none",
+          },
+          button: {
+            width: "220px",
+            height: "64px",
+            padding: "18px 24px",
+            borderRadius: "999px",
+            backgroundMode: "gradient",
+            backgroundColor: "#06b6d4",
+            backgroundColorSecondary: "#2563eb",
+            color: "#ffffff",
+            fontSize: "16px",
+            fontWeight: "700",
+            borderWidth: "0px",
+            borderColor: "transparent",
+            boxShadow: "0 20px 50px rgba(37, 99, 235, 0.35)",
+            textAlign: "center",
+          },
+          a: {
+            width: "220px",
+            height: "56px",
+            padding: "16px 22px",
+            borderRadius: "999px",
+            backgroundMode: "solid",
+            backgroundColor: "#eff6ff",
+            backgroundColorSecondary: "#eff6ff",
+            color: "#1d4ed8",
+            fontSize: "15px",
+            fontWeight: "700",
+            borderWidth: "0px",
+            borderStyle: "solid",
+            borderColor: "transparent",
+            boxShadow: "0 18px 40px rgba(59, 130, 246, 0.16)",
+            textAlign: "center",
+          },
+          input: {
+            width: "320px",
+            height: "56px",
+            padding: "16px 18px",
+            borderRadius: "18px",
+            backgroundMode: "solid",
+            backgroundColor: "#ffffff",
+            backgroundColorSecondary: "#ffffff",
+            color: "#0f172a",
+            fontSize: "15px",
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: "#cbd5e1",
+            boxShadow: "0 14px 30px rgba(15, 23, 42, 0.08)",
+          },
+          textarea: {
+            width: "340px",
+            height: "140px",
+            padding: "18px",
+            borderRadius: "20px",
+            backgroundMode: "solid",
+            backgroundColor: "#ffffff",
+            backgroundColorSecondary: "#ffffff",
+            color: "#0f172a",
+            fontSize: "15px",
+            borderWidth: "1px",
+            borderStyle: "solid",
+            borderColor: "#cbd5e1",
+            boxShadow: "0 16px 34px rgba(15, 23, 42, 0.08)",
+          },
+        };
+        const typeDefaults = defaults[type] || defaults.div;
         return {
-          width: styles.width || (type === "text" ? "320px" : "260px"),
-          height: styles.height || (type === "text" ? "120px" : "100px"),
+          width: styles.width || typeDefaults.width || "260px",
+          height: styles.height || typeDefaults.height || "100px",
           top: styles.top || "150px",
           left: styles.left || "150px",
           zIndex: styles.zIndex || "10",
-          padding: styles.padding || "16px",
-          borderRadius: styles.borderRadius || "18px",
-          backgroundMode: styles.backgroundMode || (type === "text" ? "solid" : "gradient"),
-          backgroundColor: styles.backgroundColor || "#22d3ee",
-          backgroundColorSecondary: styles.backgroundColorSecondary || "#0f172a",
+          padding: styles.padding || typeDefaults.padding || "16px",
+          borderRadius: styles.borderRadius || typeDefaults.borderRadius || "18px",
+          backgroundMode:
+            styles.backgroundMode || typeDefaults.backgroundMode || "gradient",
+          backgroundColor:
+            styles.backgroundColor || typeDefaults.backgroundColor || "#22d3ee",
+          backgroundColorSecondary:
+            styles.backgroundColorSecondary ||
+            typeDefaults.backgroundColorSecondary ||
+            "#0f172a",
           backgroundImageUrl: styles.backgroundImageUrl || "",
           backgroundSize: styles.backgroundSize || "cover",
           gradientAngle: styles.gradientAngle || "135deg",
-          color: styles.color || (type === "button" ? "#020617" : "#0f172a"),
-          fontSize: styles.fontSize || "18px",
-          fontWeight: styles.fontWeight || (type === "text" ? "500" : "700"),
+          color: styles.color || typeDefaults.color || "#0f172a",
+          fontSize: styles.fontSize || typeDefaults.fontSize || "18px",
+          fontWeight: styles.fontWeight || typeDefaults.fontWeight || "700",
           fontFamily: styles.fontFamily || "Inter, system-ui, sans-serif",
-          textAlign: styles.textAlign || "left",
-          lineHeight: styles.lineHeight || "1.4",
-          letterSpacing: styles.letterSpacing || "0px",
-          borderWidth: styles.borderWidth || "1px",
-          borderStyle: styles.borderStyle || "solid",
-          borderColor: styles.borderColor || "#cbd5e1",
+          textAlign: styles.textAlign || typeDefaults.textAlign || "left",
+          lineHeight: styles.lineHeight || typeDefaults.lineHeight || "1.4",
+          letterSpacing:
+            styles.letterSpacing || typeDefaults.letterSpacing || "0px",
+          borderWidth: styles.borderWidth || typeDefaults.borderWidth || "1px",
+          borderStyle: styles.borderStyle || typeDefaults.borderStyle || "solid",
+          borderColor: styles.borderColor || typeDefaults.borderColor || "#cbd5e1",
           outlineWidth: styles.outlineWidth || "0px",
           outlineColor: styles.outlineColor || "#38bdf8",
           outlineOffset: styles.outlineOffset || "0px",
           boxShadow:
             styles.boxShadow ||
+            typeDefaults.boxShadow ||
             "0 24px 60px rgba(15, 23, 42, 0.16)",
           opacity: styles.opacity ?? "1",
           backdropFilterBlur: styles.backdropFilterBlur || "0px",
@@ -3499,6 +5139,18 @@
       function applyElementContentStyles(el, type, styles, attrs = {}) {
         const inner = getElementInnerNode(el);
         if (!inner) return;
+        Object.assign(el.style, {
+          background: "transparent",
+          borderRadius: "0px",
+          border: "none",
+          outline: "none",
+          outlineOffset: "0px",
+          boxShadow: "none",
+          opacity: styles.opacity,
+          mixBlendMode: styles.mixBlendMode,
+          transform: `rotate(${styles.rotate})`,
+          padding: "0px",
+        });
         const sharedTextStyles = {
           color: styles.color,
           fontSize: styles.fontSize,
@@ -3517,20 +5169,41 @@
               ? "none"
               : `${styles.outlineWidth} solid ${styles.outlineColor}`,
           outlineOffset: styles.outlineOffset,
-          boxShadow: styles.boxShadow,
           backdropFilter: `blur(${styles.backdropFilterBlur})`,
           padding: styles.padding,
+          width: "100%",
+          height: "100%",
+          boxSizing: "border-box",
+          boxShadow: styles.boxShadow,
         };
         if (type === "text") {
           Object.assign(inner.style, sharedTextStyles, {
             width: "100%",
             height: "100%",
             display: "block",
+            padding: styles.padding,
+            background: computeBackground(styles),
+            border:
+              styles.borderWidth === "0px"
+                ? "none"
+                : `${styles.borderWidth} ${styles.borderStyle} ${styles.borderColor}`,
+            outline:
+              styles.outlineWidth === "0px"
+                ? "none"
+                : `${styles.outlineWidth} solid ${styles.outlineColor}`,
+            outlineOffset: styles.outlineOffset,
+            boxShadow: styles.boxShadow,
+            borderRadius: styles.borderRadius,
+            boxSizing: "border-box",
           });
-          el.style.background = computeBackground(styles);
         } else if (type === "img") {
-          inner.style.borderRadius = styles.borderRadius;
-          el.style.background = computeBackground(styles);
+          Object.assign(inner.style, {
+            width: "100%",
+            height: "100%",
+            borderRadius: styles.borderRadius,
+            display: "block",
+            boxShadow: styles.boxShadow,
+          });
         } else {
           Object.assign(inner.style, sharedTextStyles, sharedBoxStyles);
         }
@@ -3539,6 +5212,7 @@
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            textDecoration: "none",
           });
         }
         if (type === "a") {
@@ -3546,13 +5220,31 @@
         }
         if (type === "input" || type === "textarea") {
           inner.placeholder = attrs.placeholder || "Enter text...";
+          Object.assign(inner.style, {
+            padding: styles.padding,
+            borderRadius: styles.borderRadius,
+            color: styles.color,
+            fontSize: styles.fontSize,
+            fontFamily: styles.fontFamily,
+            border: "none",
+            outline: "none",
+            boxSizing: "border-box",
+          });
         }
-        if (type === "text") inner.textContent = attrs.text || "Typography";
-        if (type === "button" || type === "a") inner.textContent = attrs.text || "Action";
-        el.className = `canvas-element absolute group transition-shadow active:cursor-grabbing ${attrs.className || ""}`.trim();
+        if (type === "text") inner.textContent = attrs.text || "Add Text";
+        if (type === "button") inner.textContent = attrs.text || "Get Started";
+        if (type === "a") inner.textContent = attrs.text || "Learn More";
+        if (el.dataset.preview === "true") {
+          el.className = "relative";
+        } else {
+          el.className = `canvas-element absolute group transition-shadow active:cursor-grabbing ${attrs.className || ""}`.trim();
+        }
       }
       function hydrateCanvasElement(el) {
         el.onpointerdown = (e) => handleObjectInteraction(e, el);
+        el.onclick = (e) => {
+          e.stopPropagation();
+        };
       }
       function hydrateCanvasElements() {
         document
@@ -3567,22 +5259,48 @@
         const snapButton = document.getElementById("builder-snap-toggle");
         const status = document.getElementById("builder-status");
         const canvas = document.getElementById("web-canvas");
+        const multiSelectButton = document.getElementById("multi-select-toggle");
+        const codeToggleButton = document.getElementById("builder-code-toggle");
+        const canvasContainer = document.getElementById("canvas-container");
+        const codePanel = document.getElementById("code-mode-panel");
         if (snapButton) {
           snapButton.textContent = builderSnapEnabled ? "Snap On" : "Snap Off";
         }
+        if (multiSelectButton) {
+          multiSelectButton.textContent = multiSelectMode ? "Multi On" : "Multi";
+          multiSelectButton.classList.toggle("bg-cyan-500/20", multiSelectMode);
+          multiSelectButton.classList.toggle("text-cyan-300", multiSelectMode);
+        }
+        if (codeToggleButton) {
+          codeToggleButton.textContent = builderCodeMode ? "Visual Mode" : "Code Mode";
+        }
         if (status) {
-          status.textContent = builderSnapEnabled
-            ? "Grid Snap Enabled"
-            : "Freeform Builder Ready";
+          status.textContent = builderCodeMode
+            ? "Code Editor Synchronized"
+            : builderSnapEnabled
+              ? "Grid Snap Enabled"
+              : "Freeform Builder Ready";
         }
         if (canvas) {
           canvas.classList.toggle("builder-grid", builderSnapEnabled);
+          refreshCanvasBackground();
         }
+        if (canvasContainer) canvasContainer.classList.toggle("hidden", builderCodeMode);
+        if (codePanel) codePanel.classList.toggle("hidden", !builderCodeMode);
       }
       function restoreCanvasSnapshot(index) {
         const canvas = document.getElementById("web-canvas");
         if (!canvas || !historyStack[index]) return;
-        canvas.innerHTML = historyStack[index];
+        const snapshot = historyStack[index];
+        if (snapshot && snapshot.html !== undefined) {
+          canvas.innerHTML = snapshot.html;
+          applyCanvasPageBackground(snapshot.pageBackground || "#ffffff", true);
+        } else {
+          canvas.innerHTML = snapshot;
+          applyCanvasPageBackground("#ffffff", true);
+        }
+        ensureBuilderGuides(canvas);
+        initCanvasSelection(canvas);
         hydrateCanvasElements();
         deselectAll();
         updateBuilderUI();
@@ -3598,22 +5316,160 @@
         restoreCanvasSnapshot(historyIndex);
       }
       function removeSelectedElement() {
-        if (!selectedEl) return;
-        selectedEl.remove();
+        if (selectedElements.length > 0) {
+          selectedElements.forEach((el) => el.remove());
+        } else if (selectedEl) {
+          selectedEl.remove();
+        } else {
+          return;
+        }
+        selectedElements = [];
         selectedEl = null;
         saveToHistory();
       }
-      function duplicateSelectedElement() {
-        if (!selectedEl) return;
-        const canvas = document.getElementById("web-canvas");
-        const clone = selectedEl.cloneNode(true);
-        clone.id = `${selectedEl.id || "element"}_${Date.now()}`;
-        clone.style.left = selectedEl.offsetLeft + BUILDER_GRID_SIZE + "px";
-        clone.style.top = selectedEl.offsetTop + BUILDER_GRID_SIZE + "px";
-        hydrateCanvasElement(clone);
-        canvas.appendChild(clone);
-        selectElement(clone);
+      function toggleSelectedLock() {
+        const targets =
+          selectedElements.length > 0 ? selectedElements : selectedEl ? [selectedEl] : [];
+        if (!targets.length) return;
+        targets.forEach((el) => el.classList.toggle("locked"));
         saveToHistory();
+      }
+      function duplicateSelectedElement() {
+        const targets =
+          selectedElements.length > 0 ? selectedElements : selectedEl ? [selectedEl] : [];
+        if (!targets.length) return;
+        const canvas = document.getElementById("web-canvas");
+        const clones = targets.map((target, index) => {
+          const clone = target.cloneNode(true);
+          clone.id = `${target.id || "element"}_${Date.now()}_${index}`;
+          clone.style.left = target.offsetLeft + BUILDER_GRID_SIZE + "px";
+          clone.style.top = target.offsetTop + BUILDER_GRID_SIZE + "px";
+          hydrateCanvasElement(clone);
+          canvas.appendChild(clone);
+          return clone;
+        });
+        if (clones.length === 1) selectElement(clones[0]);
+        else {
+          deselectAll();
+          clones.forEach((clone) => toggleElementSelection(clone));
+        }
+        saveToHistory();
+      }
+      function toggleMultiSelectMode() {
+        multiSelectMode = !multiSelectMode;
+        if (!multiSelectMode && selectedElements.length > 1) {
+          const keep = selectedElements[selectedElements.length - 1];
+          deselectAll();
+          if (keep) selectElement(keep);
+        }
+        updateBuilderUI();
+      }
+      function syncSelectedElementState() {
+        document.querySelectorAll("#web-canvas .canvas-element").forEach((item) => {
+          item.classList.remove("selected-premium", "selected-secondary");
+        });
+        selectedEl = selectedElements[selectedElements.length - 1] || null;
+        selectedElements.forEach((item, index) => {
+          item.classList.add(
+            index === selectedElements.length - 1
+              ? "selected-premium"
+              : "selected-secondary",
+          );
+        });
+      }
+      function addElementSelection(el) {
+        if (!selectedElements.includes(el)) {
+          selectedElements.push(el);
+        }
+        syncSelectedElementState();
+      }
+      function toggleElementSelection(el) {
+        const exists = selectedElements.includes(el);
+        if (exists) {
+          selectedElements = selectedElements.filter((item) => item !== el);
+        } else {
+          selectedElements.push(el);
+        }
+        syncSelectedElementState();
+      }
+      function groupSelectedElements() {
+        if (selectedElements.length < 2) return;
+        const canvas = document.getElementById("web-canvas");
+        const bounds = selectedElements.map((el) => ({
+          el,
+          left: el.offsetLeft,
+          top: el.offsetTop,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+        }));
+        const minLeft = Math.min(...bounds.map((item) => item.left));
+        const minTop = Math.min(...bounds.map((item) => item.top));
+        const maxRight = Math.max(...bounds.map((item) => item.left + item.width));
+        const maxBottom = Math.max(...bounds.map((item) => item.top + item.height));
+        const group = document.createElement("div");
+        group.id = `group_${Date.now()}`;
+        group.setAttribute("data-type", "div");
+        group.className = "canvas-element absolute group transition-shadow active:cursor-grabbing";
+        const handles = ["tl", "tr", "bl", "br", "mt", "mb", "ml", "mr"]
+          .map(
+            (h) =>
+              `<div class="resizer ${h} absolute w-2 h-2 bg-cyan-500 border border-white rounded-full opacity-0 group-hover:opacity-100 z-50"></div>`,
+          )
+          .join("");
+        group.innerHTML = `
+        ${handles}
+        <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
+            <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
+            <button onclick="openSmartInspector('div', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
+            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
+        </div>
+        <div class="element-body w-full h-full overflow-visible"></div>`;
+        Object.assign(group.style, {
+          left: `${minLeft}px`,
+          top: `${minTop}px`,
+          width: `${maxRight - minLeft}px`,
+          height: `${maxBottom - minTop}px`,
+          zIndex: "10",
+          background: "transparent",
+        });
+        const groupBody = group.querySelector(".element-body");
+        bounds.forEach(({ el, left, top }) => {
+          el.style.left = `${left - minLeft}px`;
+          el.style.top = `${top - minTop}px`;
+          groupBody.appendChild(el);
+        });
+        hydrateCanvasElement(group);
+        canvas.appendChild(group);
+        deselectAll();
+        selectElement(group);
+        saveToHistory();
+      }
+      function ungroupSelectedElements() {
+        const target = selectedEl;
+        if (!target) return;
+        const groupBody = target.querySelector(".element-body");
+        if (!groupBody) return;
+        const childElements = Array.from(groupBody.children).filter((child) =>
+          child.classList.contains("canvas-element"),
+        );
+        if (!childElements.length) return;
+        const canvas = document.getElementById("web-canvas");
+        const baseLeft = target.offsetLeft;
+        const baseTop = target.offsetTop;
+        childElements.forEach((child) => {
+          child.style.left = `${baseLeft + child.offsetLeft}px`;
+          child.style.top = `${baseTop + child.offsetTop}px`;
+          canvas.appendChild(child);
+          hydrateCanvasElement(child);
+        });
+        target.remove();
+        deselectAll();
+        saveToHistory();
+      }
+      function toggleBuilderCodeMode() {
+        builderCodeMode = !builderCodeMode;
+        if (builderCodeMode) refreshBuilderCodeMode();
+        updateBuilderUI();
       }
       function nudgeSelectedElement(dx, dy) {
         if (!selectedEl) return;
@@ -3638,41 +5494,92 @@
         const workspace = document.getElementById("studio-workspace");
         return workspace && !workspace.classList.contains("hidden");
       }
+      function formatCssDeclarationBlock(styleText = "", indent = "  ") {
+        return String(styleText)
+          .split(";")
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((part) => `${indent}${part};`)
+          .join("\n");
+      }
+      function formatCssRule(selector, styleText, indent = "") {
+        const body = formatCssDeclarationBlock(styleText, `${indent}  `);
+        return `${indent}${selector} {\n${body}\n${indent}}`;
+      }
+      function formatHtmlFragment(fragment = "", baseIndent = "    ") {
+        const normalized = fragment
+          .replace(/>\s+</g, ">\n<")
+          .replace(/\n{2,}/g, "\n")
+          .trim();
+        if (!normalized) return "";
+        let depth = 0;
+        return normalized
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => {
+            if (/^<\//.test(line)) depth = Math.max(depth - 1, 0);
+            const output = `${baseIndent}${"  ".repeat(depth)}${line}`;
+            if (
+              /^<[^!/][^>]*[^/]?>$/.test(line) &&
+              !/^<(meta|link|img|input|br|hr)\b/i.test(line) &&
+              !line.includes("</")
+            ) {
+              depth += 1;
+            }
+            return output;
+          })
+          .join("\n");
+      }
+      function extractBodyBackgroundFromDocument(doc) {
+        const inlineBackground = doc.body?.style?.background;
+        if (inlineBackground) return inlineBackground;
+        const styleText = Array.from(doc.querySelectorAll("style"))
+          .map((style) => style.textContent || "")
+          .join("\n");
+        const bodyMatch = styleText.match(/body\s*\{([\s\S]*?)\}/i);
+        const backgroundMatch = bodyMatch?.[1]?.match(/background\s*:\s*([^;]+);?/i);
+        return backgroundMatch?.[1]?.trim() || "#ffffff";
+      }
       function buildExportPayload(baseName = "medialab-page") {
         const canvas = document.getElementById("web-canvas");
         if (!canvas) return null;
-        const clone = canvas.cloneNode(true);
-        clone.classList.remove("builder-grid");
-        clone.querySelectorAll(".resizer").forEach((node) => node.remove());
-        clone.querySelectorAll(".drag-handle").forEach((node) => {
-          const toolbar = node.closest("div.absolute");
-          if (toolbar) toolbar.remove();
-        });
+        const pageBackground = getCanvasPageStyleState(canvas).background;
         const cssBlocks = [
-          `body { margin: 0; min-height: 100vh; background: #0f172a; font-family: Inter, system-ui, sans-serif; }`,
-          `.medialab-export-canvas { position: relative; width: 100vw; min-height: 100vh; overflow: hidden; background: #ffffff; }`,
+          formatCssRule("body", `margin: 0; min-height: 100vh; background: ${pageBackground}; font-family: Inter, system-ui, sans-serif; position: relative; overflow-x: hidden;`),
+          formatCssRule(".medialab-layer", "position: absolute; box-sizing: border-box;"),
+          formatCssRule(".medialab-layer .medialab-content", "box-sizing: border-box;"),
         ];
-        clone.querySelectorAll(".canvas-element").forEach((node, index) => {
-          node.className = "medialab-layer";
+        const exportNodes = [];
+        canvas.querySelectorAll(":scope > .canvas-element").forEach((sourceNode, index) => {
+          const node = sourceNode.cloneNode(true);
+          node.querySelectorAll(".resizer").forEach((resizer) => resizer.remove());
+          const toolbar = node.querySelector("div.absolute");
+          if (toolbar) toolbar.remove();
+          const type = node.getAttribute("data-type");
           if (!node.id) node.id = `medialab-layer-${index + 1}`;
           const inner = node.querySelector(".element-body > *");
           if (inner) inner.classList.add("medialab-content");
-          node.querySelectorAll("[contenteditable='true']").forEach((editable) => {
-            editable.setAttribute("contenteditable", "false");
-          });
-          cssBlocks.push(
-            `#${node.id} { ${node.getAttribute("style") || ""} }`,
+          node.querySelectorAll("[contenteditable='true']").forEach((editable) =>
+            editable.setAttribute("contenteditable", "false"),
           );
-          if (inner?.getAttribute("style")) {
-            cssBlocks.push(
-              `#${node.id} .medialab-content { ${inner.getAttribute("style")} }`,
-            );
+          if (type === "text" && inner) {
+            inner.classList.add("medialab-text");
           }
-          const toolbar = node.querySelector("div.absolute");
-          if (toolbar) toolbar.remove();
+          if (type === "button" && inner) {
+            inner.classList.add("medialab-button");
+          }
+          if (type === "a" && inner) {
+            inner.classList.add("medialab-link");
+          }
+          node.className = "medialab-layer";
+          cssBlocks.push(formatCssRule(`#${node.id}`, node.getAttribute("style") || ""));
+          if (inner?.getAttribute("style")) {
+            cssBlocks.push(formatCssRule(`#${node.id} .medialab-content`, inner.getAttribute("style")));
+          }
+          exportNodes.push(formatHtmlFragment(node.outerHTML, "    "));
         });
-        clone.className = "medialab-export-canvas";
-        const css = cssBlocks.join("\n");
+        const css = cssBlocks.join("\n\n");
         const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -3682,19 +5589,170 @@
     <link rel="stylesheet" href="${baseName}.css" />
   </head>
   <body>
-    ${clone.outerHTML}
+${exportNodes.join("\n")}
   </body>
 </html>`;
         return { html, css };
       }
-      function exportCanvasToHTML() {
+      function buildCodeModeDocument() {
         const payload = buildExportPayload("medialab-page");
-        if (!payload) return;
-        const standaloneHtml = payload.html.replace(
-          '<link rel="stylesheet" href="medialab-page.css" />',
-          `<style>\n${payload.css}\n</style>`,
+        if (!payload) return "";
+        return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaLab Page</title>
+    <style>
+${payload.css
+  .split("\n")
+  .map((line) => (line ? `      ${line}` : ""))
+  .join("\n")}
+    </style>
+  </head>
+  <body>
+${payload.html
+  .match(/<body>([\s\S]*)<\/body>/)?.[1]
+  ?.trim()
+  ?.split("\n")
+  .map((line) => line)
+  .join("\n") || ""}
+  </body>
+</html>`;
+      }
+      function refreshBuilderCodeMode() {
+        const editor = document.getElementById("builder-code-editor");
+        const highlight = document.getElementById("builder-code-highlight");
+        const lineGutter = document.getElementById("builder-code-lines");
+        if (!editor) return;
+        editor.value = buildCodeModeDocument();
+        if (highlight) highlight.innerHTML = highlightBuilderCode(editor.value);
+        if (lineGutter) lineGutter.textContent = buildCodeLineNumbers(editor.value);
+        syncCodeEditorScroll();
+      }
+      function buildCodeLineNumbers(code = "") {
+        const lineCount = Math.max(1, code.split("\n").length);
+        return Array.from({ length: lineCount }, (_, index) => String(index + 1)).join("\n");
+      }
+      function escapeCodeHtml(value = "") {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+      function highlightBuilderCode(code = "") {
+        let html = escapeCodeHtml(code);
+        html = html.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="code-token-comment">$1</span>');
+        html = html.replace(/(&lt;!doctype)(.*?&gt;)/gi, '<span class="code-token-doctype">$1$2</span>');
+        html = html.replace(/(&lt;\/?)([a-zA-Z0-9-]+)/g, '$1<span class="code-token-tag">$2</span>');
+        html = html.replace(/([a-zA-Z-:]+)=(&quot;.*?&quot;)/g, '<span class="code-token-attr">$1</span>=<span class="code-token-string">$2</span>');
+        html = html.replace(/(&lt;|&gt;|\/&gt;)/g, '<span class="code-token-bracket">$1</span>');
+        html = html.replace(/(^|\n)([.#]?[a-zA-Z0-9_:\-\s>,]+)(\s*\{)/g, '$1<span class="code-token-selector">$2</span><span class="code-token-bracket">$3</span>');
+        html = html.replace(/([a-zA-Z-]+)(:\s*)([^;\n]+)(;)/g, '<span class="code-token-property">$1</span>$2<span class="code-token-value">$3</span><span class="code-token-bracket">$4</span>');
+        html = html.replace(/\b(html|body|head|style|class|id)\b/g, '<span class="code-token-keyword">$1</span>');
+        return html;
+      }
+      function handleBuilderCodeInput() {
+        const editor = document.getElementById("builder-code-editor");
+        const highlight = document.getElementById("builder-code-highlight");
+        const lineGutter = document.getElementById("builder-code-lines");
+        if (!editor || !highlight) return;
+        highlight.innerHTML = highlightBuilderCode(editor.value);
+        if (lineGutter) lineGutter.textContent = buildCodeLineNumbers(editor.value);
+        highlight.scrollTop = editor.scrollTop;
+        highlight.scrollLeft = editor.scrollLeft;
+        if (lineGutter) lineGutter.scrollTop = editor.scrollTop;
+        clearTimeout(codeApplyTimer);
+        codeApplyTimer = setTimeout(() => {
+          try {
+            tryApplyCodeModeToCanvas(true);
+          } catch (error) {
+            return;
+          }
+        }, 500);
+      }
+      function syncCodeEditorScroll() {
+        const editor = document.getElementById("builder-code-editor");
+        const highlight = document.getElementById("builder-code-highlight");
+        const lineGutter = document.getElementById("builder-code-lines");
+        if (!editor || !highlight) return;
+        highlight.scrollTop = editor.scrollTop;
+        highlight.scrollLeft = editor.scrollLeft;
+        if (lineGutter) lineGutter.scrollTop = editor.scrollTop;
+      }
+      function buildEditorHandles(type) {
+        const handles = ["tl", "tr", "bl", "br", "mt", "mb", "ml", "mr"]
+          .map(
+            (h) =>
+              `<div class="resizer ${h} absolute w-2 h-2 bg-cyan-500 border border-white rounded-full opacity-0 group-hover:opacity-100 z-50"></div>`,
+          )
+          .join("");
+        return `
+        ${handles}
+        <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
+            <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
+            <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
+            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
+        </div>`;
+      }
+      function importCodeNodesToCanvas(nodes) {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return;
+        canvas.innerHTML = "";
+        ensureBuilderGuides(canvas);
+        initCanvasSelection(canvas);
+        nodes.forEach((node, index) => {
+          if (!(node instanceof HTMLElement)) return;
+          const type = node.getAttribute("data-type") || "div";
+          const wrapper = document.createElement("div");
+          wrapper.id = node.id || `imported_${Date.now()}_${index}`;
+          wrapper.setAttribute("data-type", type);
+          wrapper.className = "canvas-element absolute group transition-shadow active:cursor-grabbing";
+          wrapper.setAttribute("style", node.getAttribute("style") || "");
+          wrapper.innerHTML = `${buildEditorHandles(type)}<div class="element-body w-full h-full overflow-visible"></div>`;
+          const body = wrapper.querySelector(".element-body");
+          const importedBody = node.querySelector(".element-body");
+          if (importedBody) {
+            body.innerHTML = importedBody.innerHTML;
+          } else {
+            body.innerHTML = node.innerHTML;
+          }
+          hydrateCanvasElement(wrapper);
+          canvas.appendChild(wrapper);
+        });
+        deselectAll();
+        saveToHistory();
+        updateBuilderUI();
+      }
+      function tryApplyCodeModeToCanvas(silent = false) {
+        const editor = document.getElementById("builder-code-editor");
+        if (!editor) return;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(editor.value, "text/html");
+        applyCanvasPageBackground(extractBodyBackgroundFromDocument(doc), true);
+        const bodyChildren = Array.from(doc.body.children).filter(
+          (node) =>
+            node.classList.contains("medialab-layer") ||
+            node.classList.contains("canvas-element"),
         );
-        const blob = new Blob([standaloneHtml], { type: "text/html" });
+        if (!bodyChildren.length) {
+          if (!silent) return;
+          throw new Error("No builder nodes found");
+        }
+        bodyChildren.forEach((node) => {
+          if (node.classList.contains("medialab-layer")) {
+            node.className = "canvas-element absolute group transition-shadow active:cursor-grabbing";
+          }
+        });
+        importCodeNodesToCanvas(bodyChildren);
+      }
+      function applyCodeModeToCanvas() {
+        tryApplyCodeModeToCanvas(false);
+        builderCodeMode = false;
+        updateBuilderUI();
+      }
+      function exportCanvasToHTML() {
+        const blob = new Blob([buildCodeModeDocument()], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -3702,24 +5760,19 @@
         link.click();
         URL.revokeObjectURL(url);
       }
-      function downloadBuilderCode() {
-        const stamp = `medialab-page-${Date.now()}`;
-        const payload = buildExportPayload(stamp);
-        if (!payload) return;
-        const htmlBlob = new Blob([payload.html], { type: "text/html" });
-        const cssBlob = new Blob([payload.css], { type: "text/css" });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        const cssUrl = URL.createObjectURL(cssBlob);
-        const htmlLink = document.createElement("a");
-        htmlLink.href = htmlUrl;
-        htmlLink.download = `${stamp}.html`;
-        htmlLink.click();
-        const cssLink = document.createElement("a");
-        cssLink.href = cssUrl;
-        cssLink.download = `${stamp}.css`;
-        cssLink.click();
-        URL.revokeObjectURL(htmlUrl);
-        URL.revokeObjectURL(cssUrl);
+      function downloadBuilderHtmlFile() {
+        exportCanvasToHTML();
+      }
+      function downloadBuilderStylesTxt() {
+        const stamp = `medialab-code-${Date.now()}`;
+        const codeText = buildCodeModeDocument();
+        const codeBlob = new Blob([codeText], { type: "text/plain" });
+        const codeUrl = URL.createObjectURL(codeBlob);
+        const codeLink = document.createElement("a");
+        codeLink.href = codeUrl;
+        codeLink.download = `${stamp}.txt`;
+        codeLink.click();
+        URL.revokeObjectURL(codeUrl);
       }
       document.addEventListener("keydown", (e) => {
         if (!isBuilderActive()) return;
@@ -3739,6 +5792,27 @@
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
           e.preventDefault();
           duplicateSelectedElement();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          saveBuilderDraft();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
+          e.preventDefault();
+          if (e.shiftKey) ungroupSelectedElements();
+          else groupSelectedElements();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "m") {
+          e.preventDefault();
+          toggleMultiSelectMode();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+          e.preventDefault();
+          toggleBuilderCodeMode();
           return;
         }
         if (e.key === "Delete" || e.key === "Backspace") {
@@ -3770,32 +5844,74 @@
         const a = currentInspectorState.attributes;
         preview.innerHTML = "";
         Object.assign(preview.style, {
-          background: computeBackground(s),
-          borderRadius: s.borderRadius,
-          boxShadow: s.boxShadow,
-          opacity: s.opacity,
-          border: `${s.borderWidth || "0px"} ${s.borderStyle || "solid"} ${s.borderColor || "transparent"}`,
-          outline:
-            s.outlineWidth === "0px"
-              ? "none"
-              : `${s.outlineWidth} solid ${s.outlineColor}`,
-          outlineOffset: s.outlineOffset,
-          width: "180px",
-          height: "90px",
+          width: "220px",
+          minHeight: "110px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          transform: `rotate(${s.rotate})`,
+          padding: "18px",
+          background:
+            type === "text"
+              ? "#ffffff"
+              : "rgba(15,23,42,0.18)",
+          borderRadius: "28px",
         });
-        if (["text", "button", "a"].includes(type)) {
-          preview.innerHTML = `<span style="color:${s.color}; font-size:12px; font-weight:${s.fontWeight}; font-family:${s.fontFamily}; text-align:${s.textAlign};">${escapeAttr(
-            a.text || "Preview",
-          )}</span>`;
-        } else if (type === "range") {
-          preview.innerHTML = `<div class="w-16 h-1 bg-cyan-500 rounded-full"></div>`;
-        } else if (type === "img") {
-          preview.innerHTML = `<span style="color:#fff;font-size:11px;font-weight:700;">Image Block</span>`;
+        const previewShell = currentInspectorState.targetEl
+          ? currentInspectorState.targetEl.cloneNode(true)
+          : document.createElement("div");
+        previewShell.dataset.preview = "true";
+        previewShell.className = "relative";
+        Object.assign(previewShell.style, {
+          width:
+            currentInspectorState.targetEl?.style.width ||
+            (type === "text" ? "220px" : "200px"),
+          height:
+            currentInspectorState.targetEl?.style.height ||
+            (type === "textarea" ? "120px" : "88px"),
+          left: "0px",
+          top: "0px",
+          zIndex: "1",
+          transform: "none",
+        });
+        if (type === "text" && !currentInspectorState.targetEl) {
+          currentInspectorState.styles.color = currentInspectorState.styles.color || "#0f172a";
         }
+        previewShell.querySelectorAll(".resizer").forEach((node) => node.remove());
+        const previewToolbar = previewShell.querySelector("div.absolute");
+        if (previewToolbar) previewToolbar.remove();
+        if (!currentInspectorState.targetEl) {
+          previewShell.innerHTML =
+            '<div class="element-body w-full h-full overflow-visible"></div>';
+          const previewBody = previewShell.querySelector(".element-body");
+          populateElementBody(previewBody, type, {
+            ...getDefaultElementAttributes(type),
+            ...a,
+          });
+        }
+        applyElementContentStyles(previewShell, type, s, {
+          ...getDefaultElementAttributes(type),
+          ...a,
+        });
+        previewShell.className = "relative";
+        preview.appendChild(previewShell);
+      }
+      function resetSmartInspectorState() {
+        inspectorPageIndex = 0;
+        currentInspectorState = {
+          type: null,
+          targetEl: null,
+          styles: {},
+          attributes: {},
+        };
+        const preview = document.getElementById("inspector-preview");
+        if (preview) {
+          preview.innerHTML = "";
+          preview.removeAttribute("style");
+        }
+        const controls = document.getElementById("inspector-controls");
+        if (controls) controls.innerHTML = "";
+        const title = document.getElementById("page-title");
+        if (title) title.innerText = inspectorPages[0];
       }
       function applyStylesToExisting() {
         const el = currentInspectorState.targetEl;
@@ -3805,7 +5921,16 @@
             currentInspectorState.type,
           );
           el.id = currentInspectorState.attributes.id;
-          Object.assign(el.style, normalizedStyles);
+          Object.assign(el.style, {
+            width: normalizedStyles.width,
+            height: normalizedStyles.height,
+            top: normalizedStyles.top,
+            left: normalizedStyles.left,
+            zIndex: normalizedStyles.zIndex,
+            opacity: normalizedStyles.opacity,
+            mixBlendMode: normalizedStyles.mixBlendMode,
+            transform: `rotate(${normalizedStyles.rotate})`,
+          });
           applyElementContentStyles(
             el,
             currentInspectorState.type,
@@ -3817,30 +5942,63 @@
       }
       function saveToHistory() {
         const canvas = document.getElementById("web-canvas");
-        if (!canvas || historyStack[historyIndex] === canvas.innerHTML) return;
+        const snapshot = {
+          html: canvas?.innerHTML || "",
+          pageBackground: getCanvasPageStyleState(canvas).background,
+        };
+        if (!canvas) return;
+        if (
+          historyStack[historyIndex] &&
+          JSON.stringify(historyStack[historyIndex]) === JSON.stringify(snapshot)
+        ) {
+          return;
+        }
         historyStack = historyStack.slice(0, historyIndex + 1);
-        historyStack.push(canvas.innerHTML);
+        historyStack.push(snapshot);
         historyIndex++;
+        if (builderCodeMode) refreshBuilderCodeMode();
         updateBuilderUI();
       }
       function changeInspectorPage(dir) {
-        inspectorPageIndex = (inspectorPageIndex + dir + 10) % 10;
+        inspectorPageIndex =
+          (inspectorPageIndex + dir + inspectorPages.length) %
+          inspectorPages.length;
         renderInspectorControls(currentInspectorState.type);
       }
       function toggleElementPicker() {
         document.getElementById("element-picker")?.classList.toggle("hidden");
       }
       function closeSmartInspector() {
-        document.getElementById("smart-inspector").classList.add("hidden");
+        const modal = document.getElementById("smart-inspector");
+        modal.classList.add("hidden");
+        modal.style.removeProperty("padding-top");
+        modal.style.removeProperty("align-items");
+        modal.style.removeProperty("justify-content");
+        resetSmartInspectorState();
       }
       function deselectAll() {
-        if (selectedEl) selectedEl.classList.remove("ring-4", "ring-cyan-400");
+        selectedElements.forEach((el) =>
+          el.classList.remove(
+            "ring-4",
+            "ring-cyan-400",
+            "selected-premium",
+            "selected-secondary",
+          ),
+        );
+        if (selectedEl && !selectedElements.includes(selectedEl)) {
+          selectedEl.classList.remove(
+            "ring-4",
+            "ring-cyan-400",
+            "selected-premium",
+            "selected-secondary",
+          );
+        }
         selectedEl = null;
+        selectedElements = [];
       }
       function selectElement(el) {
-        deselectAll();
-        selectedEl = el;
-        el.classList.add("ring-4", "ring-cyan-400");
+        selectedElements = [el];
+        syncSelectedElementState();
       }
       function handleRightClick(e) {
         const el = e.target.closest(".canvas-element");

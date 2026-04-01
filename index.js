@@ -18,6 +18,7 @@ import { spawn } from "child_process";
 // Models & Routes
 import authRoutes from "./routes/authRoutes.js";
 import User from "./models/User.js";
+import Feedback from "./models/Feedback.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -218,6 +219,40 @@ app.post("/api/convert/voice-clone", (req, res) => {
       res.status(500).json({ error: "AI Engine Failed" });
     }
   });
+});
+
+app.post("/api/community-feedback", async (req, res) => {
+  try {
+    const rating = Number(req.body?.rating || 0);
+    const feedbackText = String(req.body?.feedback || "").trim();
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5." });
+    }
+    if (!feedbackText) {
+      return res.status(400).json({ success: false, message: "Feedback message is required." });
+    }
+
+    const isLoggedIn = Boolean(req.user);
+    const record = await Feedback.create({
+      userId: isLoggedIn ? req.user._id : null,
+      username: isLoggedIn ? req.user.name || "MediaLab User" : "Anonymous",
+      email: isLoggedIn ? req.user.email || "" : "",
+      rating,
+      feedback: feedbackText,
+      source: String(req.body?.source || "web-builder"),
+      isAnonymous: !isLoggedIn,
+    });
+
+    res.json({
+      success: true,
+      message: "Feedback saved successfully.",
+      feedbackId: record._id,
+    });
+  } catch (error) {
+    console.error("Feedback save failed:", error);
+    res.status(500).json({ success: false, message: "Could not save feedback right now." });
+  }
 });
 
 io.on("connection", (socket) => {
