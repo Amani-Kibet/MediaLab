@@ -1,2639 +1,4 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MediaLab</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    />
-    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8914021980453978"
-      crossorigin="anonymous"
-    ></script>
-    <script src="https://js.puter.com/v2/"></script>
-    <meta name="google-adsense-account" content="ca-pub-8914021980453978" />
-    <meta
-      name="description"
-      content="Convert your images into pdf, videos into audio, text to any type of document conversion, AI voice clonning, drag and drop website builder, text to speech and AI image editing."
-    />
-    <meta property="og:title" content="MediaLab | AI Creative Studio" />
-    <meta
-      property="og:description"
-      content="Convert, Clone, and Edit with AI."
-    />
-    <meta
-      property="og:image"
-      content="https://medialab-6b20.onrender.com/mediafiles/preview.png"
-    />
-    <meta property="og:url" content="https://medialab-6b20.onrender.com" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Amani K",
-        "url": "https://medialab-6b20.onrender.com",
-        "sameAs": ["https://github.com/Amani-Kibet"]
-      }
-    </script>
 
-    <style>
-      body {
-        font-family: "Inter", system-ui, sans-serif;
-        background-color: #030712; /* Matches bg-gray-950 */
-        color: #f3f4f6;
-      }
-      /* --- UI Animations --- */
-      .tool-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .tool-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 50px -12px rgb(0 212 255 / 0.15);
-      }
-      .toolbar-item {
-        transition: all 0.2s ease;
-      }
-      .toolbar-item:hover {
-        background-color: #27272a;
-        transform: scale(1.05);
-      }
-      .pro-avatar-ring {
-        box-shadow:
-          0 0 0 2px #0f172a,
-          0 0 0 4px #fbbf24,
-          0 0 0 7px #f97316,
-          0 0 0 10px #dc2626,
-          0 16px 30px rgba(220, 38, 38, 0.22);
-        filter: saturate(1.08);
-      }
-      .studio-tool-ribbon {
-        position: sticky;
-        top: 0;
-        z-index: 45;
-        background: rgba(3, 7, 18, 0.96);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-      }
-      .studio-tool-ribbon-track {
-        display: flex;
-        gap: 0.75rem;
-        overflow-x: auto;
-        white-space: nowrap;
-        scrollbar-width: none;
-      }
-      .studio-tool-ribbon-track::-webkit-scrollbar {
-        display: none;
-      }
-      .toolbar-item.active {
-        background: rgba(34, 211, 238, 0.14);
-        border-color: rgba(34, 211, 238, 0.25);
-        color: #ecfeff;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .animate-fadeIn {
-        animation: fadeIn 0.4s ease forwards;
-      }
-      /* --- Scrollbar Customization --- */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .sidebar-scroll::-webkit-scrollbar {
-        width: 6px;
-      }
-      .sidebar-scroll::-webkit-scrollbar-thumb {
-        background-color: #374151;
-        border-radius: 20px;
-      }
-      /* --- Drop Zone --- */
-      .drop-zone {
-        transition: all 0.3s ease;
-      }
-      .drop-zone.dragover {
-        border-color: #22d3ee;
-        background-color: #111827;
-      }
-      /* --- STUDIO WORD PROCESSOR (The Fixes) --- */
-      .word-processor-shell {
-        position: relative;
-        width: 100%;
-        height: calc(100vh - 140px);
-        overflow: hidden;
-      }
-      .word-processor-workspace {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        border-radius: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background:
-          radial-gradient(
-            circle at top,
-            rgba(34, 211, 238, 0.12),
-            transparent 28%
-          ),
-          linear-gradient(180deg, #0f172a 0%, #020617 100%);
-        box-shadow: 0 40px 120px rgba(2, 6, 23, 0.38);
-      }
-      .word-processor-workspace.ribbon-hidden #word-processor-ribbon-groups {
-        max-height: 0;
-        opacity: 0;
-        overflow: hidden;
-        transform: translateY(-10px);
-        pointer-events: none;
-        margin-top: 0;
-      }
-      .word-processor-toolbar-shell {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        padding: 8px 10px;
-        background: rgba(2, 6, 23, 0.9);
-        backdrop-filter: blur(24px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      }
-      .word-processor-tabs {
-        display: flex;
-        align-items: center;
-        flex: 1 1 auto;
-        min-width: 0;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 2px;
-        scrollbar-width: none;
-        white-space: nowrap;
-      }
-      .word-processor-tabs::-webkit-scrollbar {
-        display: none;
-      }
-      .word-processor-tab {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 36px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
-        color: #94a3b8;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        transition: all 0.2s ease;
-      }
-      .word-processor-tab.active,
-      .word-processor-tab:hover {
-        background: rgba(34, 211, 238, 0.14);
-        border-color: rgba(34, 211, 238, 0.24);
-        color: #ecfeff;
-      }
-      .word-processor-toolbar-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-      }
-      #word-processor-ribbon-groups {
-        margin-top: 8px;
-        max-height: 220px;
-        opacity: 1;
-        transform: translateY(0);
-        transition:
-          max-height 0.25s ease,
-          opacity 0.2s ease,
-          transform 0.2s ease,
-          margin-top 0.2s ease;
-      }
-      .word-processor-title-input {
-        width: min(100%, 260px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.04);
-        color: #f8fafc;
-        padding: 9px 12px;
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        outline: none;
-      }
-      .word-processor-title-input::placeholder {
-        color: #64748b;
-      }
-      .word-processor-top-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-      }
-      .word-processor-ribbon {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 2px;
-        scrollbar-width: none;
-        white-space: nowrap;
-      }
-      .word-processor-ribbon::-webkit-scrollbar {
-        display: none;
-      }
-      .word-toolbar-group {
-        display: flex;
-        align-items: center;
-        flex-wrap: nowrap;
-        gap: 6px;
-        padding: 8px 10px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
-        min-width: max-content;
-      }
-      .word-toolbar-label {
-        margin-right: 2px;
-        color: #64748b;
-        font-size: 9px;
-        font-weight: 900;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-      }
-      .word-toolbar-btn,
-      .word-toolbar-select {
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(15, 23, 42, 0.78);
-        color: #cbd5e1;
-        border-radius: 12px;
-        min-height: 36px;
-        padding: 0 10px;
-        font-size: 11px;
-        font-weight: 700;
-        transition: all 0.2s ease;
-      }
-      .word-toolbar-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        min-width: 40px;
-        white-space: nowrap;
-      }
-      .word-toolbar-btn:hover,
-      .word-toolbar-select:hover {
-        border-color: rgba(34, 211, 238, 0.24);
-        color: #ecfeff;
-      }
-      .word-toolbar-btn:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-      }
-      .word-toolbar-btn.word-toolbar-btn--accent {
-        background: rgba(34, 211, 238, 0.14);
-        color: #67e8f9;
-      }
-      .word-toolbar-btn.word-toolbar-btn--exit {
-        background: rgba(248, 113, 113, 0.12);
-        color: #fecaca;
-      }
-      .word-processor-body {
-        flex: 1;
-        min-height: 0;
-        padding: 10px;
-      }
-      .word-processor-canvas {
-        min-height: 0;
-        overflow: auto;
-        height: 100%;
-        border-radius: 22px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        background:
-          radial-gradient(
-            circle at top,
-            rgba(148, 163, 184, 0.08),
-            transparent 34%
-          ),
-          rgba(15, 23, 42, 0.42);
-        padding: 10px;
-      }
-      .word-processor-ruler {
-        display: grid;
-        grid-template-columns: repeat(12, minmax(0, 1fr));
-        gap: 6px;
-        margin: 0 auto 18px;
-        max-width: 920px;
-        padding: 0 24px;
-      }
-      .word-processor-ruler span {
-        height: 12px;
-        border-top: 2px solid rgba(148, 163, 184, 0.24);
-      }
-      #word-processor-page-shell {
-        display: flex;
-        justify-content: center;
-      }
-      .word-processor-page {
-        width: min(100%, 920px);
-        min-height: 1180px;
-        border-radius: 28px;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        box-shadow: 0 34px 100px rgba(15, 23, 42, 0.24);
-        position: relative;
-      }
-      #text-input {
-        outline: none;
-        min-height: 1080px;
-        padding: 72px 72px 110px;
-        line-height: 1.8;
-        color: #0f172a;
-        font-size: 17px;
-      }
-      #text-input h1,
-      #text-input h2,
-      #text-input h3 {
-        color: #020617;
-        letter-spacing: -0.04em;
-        font-weight: 900;
-        margin: 1.2em 0 0.55em;
-      }
-      #text-input h1 {
-        font-size: 2.5rem;
-      }
-      #text-input h2 {
-        font-size: 2rem;
-      }
-      #text-input h3 {
-        font-size: 1.45rem;
-      }
-      #text-input p {
-        margin-bottom: 1em;
-      }
-      #text-input blockquote {
-        margin: 1.25rem 0;
-        padding: 1rem 1.2rem;
-        border-left: 4px solid #22d3ee;
-        border-radius: 0 18px 18px 0;
-        background: rgba(34, 211, 238, 0.08);
-        color: #0f172a;
-      }
-      #text-input pre {
-        margin: 1.25rem 0;
-        padding: 1rem 1.2rem;
-        border-radius: 18px;
-        background: #0f172a;
-        color: #e2e8f0;
-        overflow: auto;
-      }
-      #text-input code {
-        font-family: "Courier New", monospace;
-      }
-      #text-input hr {
-        margin: 1.6rem 0;
-        border: none;
-        border-top: 2px dashed rgba(100, 116, 139, 0.38);
-      }
-      #text-input table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1.25rem 0;
-      }
-      #text-input th,
-      #text-input td {
-        border: 1px solid rgba(148, 163, 184, 0.4);
-        padding: 0.85rem;
-        text-align: left;
-      }
-      #text-input th {
-        background: rgba(226, 232, 240, 0.72);
-        font-weight: 800;
-      }
-      #text-input .checklist {
-        list-style: none !important;
-        margin-left: 0 !important;
-        padding-left: 0 !important;
-      }
-      #text-input .checklist li {
-        position: relative;
-        padding-left: 1.8rem;
-      }
-      #text-input .checklist li::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0.45rem;
-        width: 0.9rem;
-        height: 0.9rem;
-        border: 2px solid #22d3ee;
-        border-radius: 0.25rem;
-      }
-      /* Force display markers because Tailwind resets them to 'none' */
-      #text-input ul {
-        list-style-type: disc !important;
-        margin-left: 1.5rem;
-        margin-bottom: 1rem;
-        display: block !important;
-      }
-      #text-input ol {
-        list-style-type: decimal !important;
-        margin-left: 1.5rem;
-        margin-bottom: 1rem;
-        display: block !important;
-      }
-      #text-input li {
-        display: list-item !important;
-        margin-bottom: 0.25rem;
-        padding-left: 0.5rem;
-      }
-      /* Nested list logic */
-      #text-input ul ul,
-      #text-input ol ul {
-        list-style-type: circle !important;
-      }
-      #text-input ul ol,
-      #text-input ol ol {
-        list-style-type: lower-alpha !important;
-      }
-      /* Selection Highlight */
-      #text-input::selection {
-        background-color: rgba(6, 182, 212, 0.4);
-        color: #fff;
-      }
-      /* Progress Bar Glow */
-      #progress-bar-video.bg-green-500 {
-        box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
-        transition: all 0.5s ease-in-out;
-      }
-      /* Custom Green Success State for the Thin Line */
-      .bg-complete {
-        background-color: #10b981 !important; /* Green-500 */
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
-        transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-      }
-      #universal-status-text.complete {
-        color: #10b981;
-        transition: color 0.4s ease;
-      }
-      #web-canvas div {
-        user-select: none; /* Prevents text selection while dragging shapes */
-      }
-      #web-canvas div[contenteditable="true"] {
-        user-select: text;
-      }
-      #web-canvas.builder-grid {
-        background-size: 20px 20px;
-      }
-      .canvas-element {
-        touch-action: none;
-        cursor: default;
-      }
-      .canvas-element.locked .drag-handle,
-      .canvas-element.locked .resizer {
-        display: none !important;
-      }
-      .resizer.tl,
-      .resizer.br {
-        cursor: nwse-resize;
-      }
-      .resizer.tr,
-      .resizer.bl {
-        cursor: nesw-resize;
-      }
-      .resizer.mt,
-      .resizer.mb {
-        cursor: ns-resize;
-      }
-      .resizer.ml,
-      .resizer.mr {
-        cursor: ew-resize;
-      }
-      .resizer.tl {
-        top: -4px;
-        left: -4px;
-      }
-      .resizer.tr {
-        top: -4px;
-        right: -4px;
-      }
-      .resizer.bl {
-        bottom: -4px;
-        left: -4px;
-      }
-      .resizer.br {
-        bottom: -4px;
-        right: -4px;
-      }
-      .resizer.mt {
-        top: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      .resizer.mb {
-        bottom: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      .resizer.ml {
-        left: -4px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-      .resizer.mr {
-        right: -4px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-      .canvas-element.locked::after {
-        content: "\f023";
-        font-family: "Font Awesome 6 Free";
-        font-weight: 900;
-        position: absolute;
-        top: -12px;
-        right: -4px;
-        width: 26px;
-        height: 26px;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #020617;
-        color: #f8fafc;
-        font-size: 11px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
-        z-index: 80;
-      }
-      .canvas-element.selected-premium {
-        box-shadow:
-          0 0 0 1px rgba(34, 211, 238, 0.8),
-          0 0 0 8px rgba(34, 211, 238, 0.12);
-      }
-      .canvas-element.selected-secondary {
-        box-shadow:
-          0 0 0 1px rgba(148, 163, 184, 0.65),
-          0 0 0 6px rgba(148, 163, 184, 0.08);
-      }
-      .canvas-element.selected-premium .resizer,
-      .canvas-element.selected-secondary .resizer,
-      .canvas-element.selected-premium > .absolute,
-      .canvas-element.selected-secondary > .absolute {
-        opacity: 1 !important;
-      }
-      .builder-guide {
-        position: absolute;
-        background: rgba(34, 211, 238, 0.95);
-        pointer-events: none;
-        z-index: 140;
-        box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
-      }
-      .builder-guide-x {
-        height: 1px;
-        width: 100%;
-      }
-      .builder-guide-y {
-        width: 1px;
-        height: 100%;
-      }
-      .builder-selection-box {
-        position: absolute;
-        border: 1px dashed rgba(34, 211, 238, 0.95);
-        background: rgba(34, 211, 238, 0.12);
-        pointer-events: none;
-        z-index: 145;
-        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12);
-      }
-      .studio-menu-panel {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        width: min(92vw, 340px);
-        padding: 12px;
-        border-radius: 22px;
-        background: rgba(2, 6, 23, 0.96);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 28px 90px rgba(2, 6, 23, 0.45);
-        backdrop-filter: blur(24px);
-      }
-      .studio-menu-panel.hidden {
-        display: none !important;
-      }
-      .draft-card {
-        width: 100%;
-        text-align: left;
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        color: #e2e8f0;
-        transition: all 0.2s ease;
-      }
-      .draft-card:hover {
-        background: rgba(34, 211, 238, 0.12);
-        border-color: rgba(34, 211, 238, 0.2);
-      }
-      .ribbon-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-      .ribbon-tag {
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: #64748b;
-        width: 100%;
-        padding: 0 4px 2px;
-      }
-      .code-mode-shell {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 12px;
-        height: 100%;
-      }
-      .builder-tabbar {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 4px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
-        min-width: 0;
-        flex: 1 1 auto;
-      }
-      .builder-tabbar::-webkit-scrollbar {
-        display: none;
-      }
-      .builder-tab {
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.04);
-        color: #cbd5e1;
-        border-radius: 999px;
-        padding: 8px 12px;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        transition: all 0.2s ease;
-      }
-      .builder-tab:hover,
-      .builder-tab.active {
-        background: rgba(34, 211, 238, 0.14);
-        color: #ecfeff;
-        border-color: rgba(34, 211, 238, 0.28);
-      }
-      .builder-tab-exit {
-        background: rgba(248, 113, 113, 0.1);
-        color: #fecaca;
-        border-color: rgba(248, 113, 113, 0.28);
-      }
-      .builder-tab-exit:hover,
-      .builder-tab-exit.active {
-        background: rgba(248, 113, 113, 0.18);
-        color: #fff1f2;
-        border-color: rgba(248, 113, 113, 0.4);
-      }
-      .builder-popover {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        width: min(92vw, 760px);
-        max-height: min(72vh, 560px);
-        overflow-y: auto;
-        padding: 12px;
-        border-radius: 22px;
-        background: rgba(2, 6, 23, 0.94);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.4);
-        backdrop-filter: blur(24px);
-        -webkit-overflow-scrolling: touch;
-      }
-      .builder-popover-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 10px;
-      }
-      .builder-cmd {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 12px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        color: #e2e8f0;
-        transition: all 0.2s ease;
-      }
-      .builder-cmd:hover {
-        background: rgba(34, 211, 238, 0.12);
-        border-color: rgba(34, 211, 238, 0.18);
-      }
-      .builder-cmd small {
-        display: block;
-        color: #64748b;
-        font-size: 10px;
-        margin-top: 2px;
-      }
-      .code-editor-shell {
-        position: relative;
-        width: min(100%, 1180px);
-        margin: 0 auto;
-        min-height: min(70vh, 760px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 24px;
-        overflow: hidden;
-        background:
-          radial-gradient(
-            circle at top right,
-            rgba(34, 211, 238, 0.12),
-            transparent 34%
-          ),
-          linear-gradient(180deg, #020617 0%, #0f172a 100%);
-        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.4);
-      }
-      .code-editor-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 12px 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.03);
-      }
-      .code-window-dots {
-        display: flex;
-        gap: 8px;
-      }
-      .code-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-      }
-      .code-file-tabs {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.025);
-      }
-      .code-file-tabs-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-      }
-      .code-file-tab {
-        padding: 8px 12px;
-        border-radius: 12px 12px 0 0;
-        background: rgba(15, 23, 42, 0.88);
-        color: #e2e8f0;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-bottom-color: transparent;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .code-file-meta {
-        color: #64748b;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
-      .code-editor-stage {
-        display: grid;
-        grid-template-columns: 56px minmax(0, 1fr);
-        min-height: min(62vh, 650px);
-        max-height: min(62vh, 650px);
-        overflow: hidden;
-      }
-      .code-line-gutter {
-        margin: 0;
-        padding: 20px 10px 20px 0;
-        text-align: right;
-        color: #475569;
-        font:
-          12px/1.55 "Courier New",
-          monospace;
-        background: rgba(15, 23, 42, 0.88);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-        user-select: none;
-        overflow: hidden;
-      }
-      .code-editor-pane {
-        position: relative;
-        min-width: 0;
-        overflow: hidden;
-        background:
-          linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.18)),
-          linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.02) 0,
-            rgba(255, 255, 255, 0.02) 1px,
-            transparent 1px,
-            transparent 100%
-          );
-        background-size:
-          auto,
-          28px 28px;
-      }
-      .code-editor-highlight,
-      .code-editor-input {
-        margin: 0;
-        width: 100%;
-        min-height: min(62vh, 650px);
-        max-height: min(62vh, 650px);
-        padding: 20px 22px;
-        font:
-          13px/1.55 "Courier New",
-          monospace;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-        tab-size: 2;
-        overflow: auto;
-        overflow-x: hidden;
-      }
-      .code-editor-highlight {
-        color: #cbd5e1;
-        pointer-events: none;
-        background: linear-gradient(
-          180deg,
-          rgba(15, 23, 42, 0.16) 0%,
-          rgba(2, 6, 23, 0.08) 100%
-        );
-      }
-      .code-editor-input {
-        position: absolute;
-        inset: 0;
-        resize: none;
-        border: 0;
-        background: transparent;
-        color: transparent;
-        caret-color: #f8fafc;
-        outline: none;
-        overflow: auto;
-        overflow-x: hidden;
-      }
-      .code-token-tag {
-        color: #7dd3fc;
-      }
-      .code-token-attr {
-        color: #f9a8d4;
-      }
-      .code-token-string {
-        color: #86efac;
-      }
-      .code-token-comment {
-        color: #64748b;
-      }
-      .code-token-bracket {
-        color: #f8fafc;
-      }
-      .code-token-doctype {
-        color: #c084fc;
-      }
-      .code-token-selector {
-        color: #fcd34d;
-      }
-      .code-token-property {
-        color: #93c5fd;
-      }
-      .code-token-value {
-        color: #fdba74;
-      }
-      .code-token-keyword {
-        color: #67e8f9;
-      }
-      .builder-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 3200;
-        background: rgba(2, 6, 23, 0.84);
-        backdrop-filter: blur(18px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-      }
-      .builder-modal-card {
-        width: min(100%, 460px);
-        max-height: min(88vh, 760px);
-        overflow-y: auto;
-        border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background:
-          radial-gradient(
-            circle at top right,
-            rgba(34, 211, 238, 0.12),
-            transparent 34%
-          ),
-          rgba(2, 6, 23, 0.96);
-        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.45);
-        -webkit-overflow-scrolling: touch;
-      }
-      .feature-gate-shell {
-        max-width: 42rem;
-        margin: 0 auto;
-        padding: 2.75rem 1rem;
-        animation: fadeIn 0.3s ease;
-      }
-      .feature-gate-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background:
-          radial-gradient(
-            circle at top right,
-            rgba(34, 211, 238, 0.12),
-            transparent 30%
-          ),
-          rgba(15, 23, 42, 0.72);
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.32);
-        backdrop-filter: blur(14px);
-      }
-      .feature-gate-card--premium {
-        background:
-          radial-gradient(
-            circle at top right,
-            rgba(245, 158, 11, 0.14),
-            transparent 32%
-          ),
-          rgba(15, 23, 42, 0.72);
-      }
-      .feature-gate-lockline {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin: 0 auto 1.2rem;
-        color: #fbbf24;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-      }
-      .feature-gate-status {
-        max-width: 28rem;
-        margin: 0 auto 1.5rem;
-        padding: 0.95rem 1rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(250, 204, 21, 0.18);
-        background: rgba(250, 204, 21, 0.08);
-        color: #fde68a;
-        font-size: 0.9rem;
-        line-height: 1.6;
-      }
-      .feature-gate-status--pending {
-        border-color: rgba(34, 197, 94, 0.15);
-        background: rgba(34, 197, 94, 0.08);
-        color: #bbf7d0;
-      }
-      .feature-gate-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1rem;
-        padding: 0.45rem 0.8rem;
-        border-radius: 999px;
-        border: 1px solid rgba(34, 211, 238, 0.18);
-        background: rgba(34, 211, 238, 0.08);
-        color: #67e8f9;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-      }
-      .feature-gate-badge--premium {
-        border-color: rgba(245, 158, 11, 0.2);
-        background: rgba(245, 158, 11, 0.1);
-        color: #fbbf24;
-      }
-      .feature-gate-icon {
-        width: 5rem;
-        height: 5rem;
-        margin: 0 auto 1.25rem;
-        border-radius: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.05);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      }
-      .feature-gate-title {
-        margin-bottom: 0.75rem;
-        color: #fff;
-        font-size: clamp(1.75rem, 4vw, 2.3rem);
-        font-weight: 900;
-        letter-spacing: -0.04em;
-      }
-      .feature-gate-text {
-        max-width: 28rem;
-        margin: 0 auto 1.5rem;
-        color: #94a3b8;
-        font-size: 0.97rem;
-        line-height: 1.7;
-      }
-      .feature-gate-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        min-height: 3.35rem;
-        padding: 0.9rem 1.25rem;
-        border-radius: 1.1rem;
-        background: #0891b2;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 900;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        box-shadow: 0 18px 40px rgba(8, 145, 178, 0.22);
-        transition:
-          transform 0.2s ease,
-          background 0.2s ease;
-      }
-      .feature-gate-button:hover {
-        background: #06b6d4;
-        transform: translateY(-1px);
-      }
-      .feature-gate-button--premium {
-        background: #f59e0b;
-        color: #111827;
-        box-shadow: 0 18px 40px rgba(245, 158, 11, 0.22);
-      }
-      .feature-gate-button--premium:hover {
-        background: #fbbf24;
-      }
-      .studio-launch-overlay {
-        position: absolute;
-        inset: 0;
-        z-index: 200;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        background:
-          linear-gradient(
-            180deg,
-            rgba(241, 245, 249, 0.18) 0%,
-            rgba(15, 23, 42, 0.28) 100%
-          ),
-          radial-gradient(
-            circle at top,
-            rgba(34, 211, 238, 0.12),
-            transparent 42%
-          );
-        backdrop-filter: blur(10px);
-      }
-      #design-modal {
-        background: transparent;
-        backdrop-filter: none;
-        align-items: flex-start;
-        justify-content: flex-end;
-        padding: 88px 16px 16px;
-        z-index: 3200 !important;
-      }
-      #design-modal .builder-modal-card {
-        width: min(100%, 420px);
-        box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
-      }
-      #builder-tour-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 999999 !important;
-        pointer-events: none;
-      }
-      #builder-snackbar {
-        z-index: 2000000 !important;
-        pointer-events: none;
-      }
-      #smart-inspector {
-        position: fixed; /* Changed from absolute/relative to fixed */
-        inset: 0;
-        z-index: 9999; /* Stay above everything */
-        display: flex;
-        align-items: center; /* Center vertically */
-        justify-content: center; /* Center horizontally */
-        background: rgba(2, 6, 23, 0.7);
-        backdrop-filter: blur(8px);
-      }
-      #smart-inspector.hidden {
-        display: none !important;
-      }
-      #smart-inspector > div {
-        width: min(100%, 392px);
-        max-height: min(82vh, 620px);
-      }
-      .feedback-stars {
-        display: flex;
-        gap: 10px;
-      }
-      .feedback-star {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-        color: #64748b;
-        transition: all 0.2s ease;
-      }
-      .feedback-star.active,
-      .feedback-star:hover {
-        color: #facc15;
-        border-color: rgba(250, 204, 21, 0.26);
-        background: rgba(250, 204, 21, 0.12);
-      }
-      @media (max-width: 900px) {
-        #smart-inspector {
-          align-items: flex-start;
-          padding: 1rem 0.85rem 0.85rem;
-        }
-        #smart-inspector > div {
-          width: min(100%, 400px);
-          max-height: calc(100vh - 1.4rem);
-        }
-      }
-      @media (max-width: 640px) {
-        .word-processor-shell {
-          width: 100%;
-          height: 100%;
-        }
-        .word-processor-workspace {
-          border-radius: 0;
-        }
-        .word-processor-toolbar-shell {
-          padding: 7px 8px;
-        }
-        .word-processor-tabs {
-          flex: 1;
-          min-width: 0;
-          padding-bottom: 0;
-        }
-        .word-processor-tab {
-          min-height: 30px;
-          padding: 0 10px;
-          font-size: 9px;
-          letter-spacing: 0.12em;
-        }
-        .word-processor-toolbar-top {
-          gap: 6px;
-        }
-        .word-processor-title-input {
-          width: 110px;
-          min-width: 110px;
-          padding: 8px 10px;
-          font-size: 12px;
-        }
-        .word-toolbar-group {
-          padding: 6px;
-          border-radius: 16px;
-        }
-        .word-toolbar-btn,
-        .word-toolbar-select {
-          min-height: 36px;
-          border-radius: 10px;
-          padding: 0 10px;
-          font-size: 11px;
-        }
-        .word-processor-body {
-          padding: 6px;
-        }
-        .word-processor-canvas {
-          border-radius: 16px;
-          padding: 6px;
-        }
-        .word-processor-ruler {
-          display: none;
-          margin-bottom: 12px;
-          padding: 0 8px;
-          gap: 4px;
-        }
-        .word-processor-page {
-          width: 100%;
-          min-height: 720px;
-          border-radius: 18px;
-        }
-        #text-input {
-          min-height: 680px;
-          padding: 22px 16px 64px;
-          font-size: 15px;
-        }
-        #text-input h1 {
-          font-size: 2rem;
-        }
-        #text-input h2 {
-          font-size: 1.6rem;
-        }
-        #text-input h3 {
-          font-size: 1.25rem;
-        }
-        #word-processor-ribbon-groups {
-          margin-top: 6px;
-        }
-        .code-editor {
-        }
-        .builder-tabbar {
-          width: 100%;
-          padding-bottom: 2px;
-        }
-        .builder-popover {
-          width: calc(100vw - 14px);
-          left: -3px;
-          border-radius: 18px;
-          padding: 10px;
-          max-height: min(62vh, 520px);
-          overflow-y: auto;
-        }
-        .builder-popover-grid {
-          grid-template-columns: 1fr;
-        }
-        .studio-menu-panel {
-          width: calc(100vw - 16px);
-          left: -4px;
-          border-radius: 18px;
-          padding: 10px;
-          max-height: min(72vh, 560px);
-          overflow-y: auto;
-        }
-        .code-editor-shell {
-          border-radius: 20px;
-          min-height: min(68vh, 620px);
-        }
-        .code-file-tabs {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-        .code-file-meta {
-          font-size: 9px;
-        }
-        .code-editor-stage {
-          grid-template-columns: 42px minmax(0, 1fr);
-          min-height: min(58vh, 560px);
-          max-height: min(58vh, 560px);
-        }
-        .code-line-gutter {
-          padding: 16px 8px 16px 0;
-          font-size: 11px;
-        }
-        .code-editor-highlight,
-        .code-editor-input {
-          min-height: min(58vh, 560px);
-          max-height: min(58vh, 560px);
-        }
-        .code-editor-highlight,
-        .code-editor-input {
-          padding: 16px 16px 16px 14px;
-          font-size: 12px;
-        }
-        .builder-modal-card {
-          max-height: calc(100vh - 20px);
-          border-radius: 22px;
-        }
-        .feature-gate-shell {
-          padding: 1.15rem 0.5rem 1.5rem;
-        }
-        .feature-gate-card {
-          border-radius: 1.5rem;
-          padding: 1.25rem 1rem;
-          box-shadow: 0 20px 50px rgba(2, 6, 23, 0.24);
-        }
-        .feature-gate-badge {
-          margin-bottom: 0.85rem;
-          padding: 0.4rem 0.72rem;
-          font-size: 9px;
-          letter-spacing: 0.16em;
-        }
-        .feature-gate-icon {
-          width: 4rem;
-          height: 4rem;
-          margin-bottom: 1rem;
-          border-radius: 1.15rem;
-        }
-        .feature-gate-title {
-          font-size: 1.55rem;
-          margin-bottom: 0.55rem;
-        }
-        .feature-gate-text {
-          font-size: 0.9rem;
-          line-height: 1.6;
-          margin-bottom: 1.15rem;
-        }
-        .feature-gate-button {
-          width: 100%;
-          padding: 0.9rem 1rem;
-          min-height: 3rem;
-          border-radius: 1rem;
-          letter-spacing: 0.14em;
-        }
-        .studio-launch-overlay {
-          align-items: flex-start;
-          padding: 0.9rem 0.55rem;
-        }
-        #design-modal {
-          align-items: flex-start;
-          justify-content: center;
-          padding: 86px 10px 10px;
-        }
-        #design-modal .builder-modal-card {
-          width: 100%;
-          max-width: calc(100vw - 20px);
-        }
-        #smart-inspector {
-          align-items: flex-start;
-          justify-content: center;
-          padding: max(env(safe-area-inset-top), 0.35rem) 0.65rem 0.75rem;
-          background: rgba(2, 6, 23, 0.45);
-          backdrop-filter: blur(8px);
-        }
-        #smart-inspector > div {
-          width: min(100%, 380px);
-          max-width: calc(100vw - 1.3rem);
-          border-radius: 1.6rem;
-          max-height: calc(
-            100vh - max(env(safe-area-inset-top), 0.45rem) - 0.55rem
-          );
-        }
-      }
-      body.builder-mode {
-        overflow: hidden;
-      }
-      body.builder-mode #studio-container {
-        position: fixed;
-        inset: 0;
-        z-index: 2500;
-        height: 100vh;
-        width: 100vw;
-      }
-      body.builder-mode #word-processor-container {
-        position: fixed;
-        inset: 0;
-        z-index: 2500;
-        width: 100vw;
-        height: 100vh;
-      }
-      body.builder-mode #word-processor-workspace {
-        display: flex !important;
-      }
-      body.builder-mode #word-processor-welcome {
-        display: none !important;
-      }
-      body.builder-mode #studio-workspace {
-        display: flex !important;
-      }
-      body.builder-mode #editor-welcome {
-        display: none !important;
-      }
-      body.builder-mode nav,
-      body.builder-mode #landing,
-      body.builder-mode footer,
-      body.builder-mode #login-modal,
-      body.builder-mode #loading,
-      body.builder-mode #pwa-install-banner,
-      body.builder-mode #studio > .lg\:hidden {
-        visibility: hidden;
-      }
-      @media (max-width: 640px) {
-        body.builder-mode #studio-container {
-          inset: 0;
-        }
-      }
-      .builder-tour-highlight {
-        position: fixed;
-        z-index: 1000002;
-        border-radius: 1.35rem;
-        border: 1px solid rgba(34, 211, 238, 0.85);
-        box-shadow:
-          0 0 0 9999px rgba(2, 6, 23, 0.58),
-          0 0 0 6px rgba(34, 211, 238, 0.14),
-          0 18px 50px rgba(8, 145, 178, 0.28);
-        animation: builderTourPulse 1.7s ease-in-out infinite;
-        transition:
-          top 0.22s ease,
-          left 0.22s ease,
-          width 0.22s ease,
-          height 0.22s ease;
-      }
-      .builder-tour-pointer {
-        position: fixed;
-        z-index: 1000003;
-        width: 3.2rem;
-        height: 3.2rem;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: radial-gradient(
-          circle at 30% 30%,
-          rgba(255, 255, 255, 0.96),
-          rgba(226, 232, 240, 0.88) 55%,
-          rgba(148, 163, 184, 0.65) 100%
-        );
-        border: 1px solid rgba(255, 255, 255, 0.78);
-        box-shadow:
-          0 18px 44px rgba(8, 145, 178, 0.35),
-          0 0 0 8px rgba(34, 211, 238, 0.12);
-        color: #0f172a;
-        transform-origin: center;
-        animation: builderTourPointerFloat 1.4s ease-in-out infinite;
-        transition:
-          top 0.22s ease,
-          left 0.22s ease,
-          opacity 0.18s ease;
-      }
-      .builder-tour-pointer i {
-        font-size: 1.2rem;
-        transform: rotate(-18deg);
-      }
-      @keyframes builderTourPulse {
-        0%,
-        100% {
-          box-shadow:
-            0 0 0 9999px rgba(2, 6, 23, 0.58),
-            0 0 0 6px rgba(34, 211, 238, 0.14),
-            0 18px 50px rgba(8, 145, 178, 0.28);
-        }
-        50% {
-          box-shadow:
-            0 0 0 9999px rgba(2, 6, 23, 0.58),
-            0 0 0 10px rgba(34, 211, 238, 0.2),
-            0 24px 80px rgba(34, 211, 238, 0.42);
-        }
-      }
-      @keyframes builderTourPointerFloat {
-        0%,
-        100% {
-          transform: translateY(0) scale(1);
-        }
-        50% {
-          transform: translateY(-4px) scale(1.04);
-        }
-      }
-      .builder-tour-card {
-        position: fixed;
-        z-index: 1000004;
-        left: 50%;
-        bottom: max(1rem, env(safe-area-inset-bottom));
-        transform: translateX(-50%);
-        width: min(92vw, 24rem);
-        padding: 0.95rem 1rem 1rem;
-        border-radius: 1.2rem;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background:
-          radial-gradient(
-            circle at top,
-            rgba(34, 211, 238, 0.12),
-            transparent 52%
-          ),
-          rgba(2, 6, 23, 0.94);
-        box-shadow: 0 20px 70px rgba(2, 6, 23, 0.55);
-        backdrop-filter: blur(22px);
-      }
-      .builder-tour-chip {
-        font-size: 0.55rem;
-        font-weight: 900;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: #67e8f9;
-        margin-bottom: 0.55rem;
-      }
-      .builder-tour-title {
-        font-size: 0.95rem;
-        font-weight: 800;
-        color: #f8fafc;
-        margin: 0 0 0.35rem;
-      }
-      .builder-tour-message {
-        font-size: 0.82rem;
-        line-height: 1.45;
-        color: #cbd5e1;
-        margin: 0;
-      }
-      .builder-tour-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.55rem;
-        margin-top: 0.9rem;
-      }
-      .builder-tour-btn {
-        border: 0;
-        border-radius: 999px;
-        padding: 0.52rem 0.9rem;
-        font-size: 0.68rem;
-        font-weight: 900;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-      .builder-tour-btn--ghost {
-        background: rgba(255, 255, 255, 0.06);
-        color: #cbd5e1;
-      }
-      .builder-tour-btn--primary {
-        background: linear-gradient(135deg, #22d3ee, #0891b2);
-        color: #ecfeff;
-      }
-    </style>
-  </head>
-  <body class="bg-gray-950 text-gray-100 min-h-screen">
-    <!-- NAVBAR -->
-    <nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
-      <div
-        class="w-full px-2 sm:px-3 py-3 sm:py-4 flex items-center justify-between"
-      >
-        <div class="flex items-center gap-x-3">
-          <div class="w-9 h-9 rounded-3xl overflow-hidden">
-            <img
-              src="/favicon.png"
-              alt="logo"
-              class="w-full h-full object-contain"
-            />
-          </div>
-          <span class="text-2xl sm:text-3xl font-semibold tracking-tighter"
-            >MediaLab</span
-          >
-        </div>
-        <div class="flex items-center gap-x-6">
-          <div id="more-features-shell" class="relative">
-            <button
-              id="more-features-toggle"
-              onclick="toggleMore(event)"
-              class="flex items-center gap-x-2 text-gray-400 hover:text-white text-sm sm:text-base"
-            >
-              Monetize your work<i class="fas fa-chevron-down text-xs"></i>
-            </button>
-            <div
-              id="more-dropdown"
-              class="hidden absolute right-0 mt-3 w-80 bg-gray-900 border border-gray-700 rounded-3xl p-5 shadow-2xl text-sm"
-            >
-              <div class="space-y-4">
-                <div>
-                  <p class="text-sm text-gray-400 mt-2">
-                    Open monetization resources in one place.
-                  </p>
-                </div>
-                <a
-                  href="https://www.google.com/adsense/start/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex items-center justify-between gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-4 hover:bg-amber-500/15 transition-all"
-                >
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div
-                      class="w-11 h-11 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shrink-0"
-                    >
-                      <i class="fab fa-google text-amber-300 text-lg"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <div class="text-sm font-bold text-white">
-                        Google AdSense
-                      </div>
-                      <div class="text-xs text-amber-100/80 mt-1">
-                        Open AdSense. Monetize your work.
-                      </div>
-                    </div>
-                  </div>
-                  <i
-                    class="fas fa-arrow-up-right-from-square text-amber-300 text-sm shrink-0"
-                  ></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <button
-            onclick="handleStartFree()"
-            id="start-btn"
-            class="bg-white text-gray-900 px-5 py-2 rounded-3xl font-semibold hover:bg-cyan-400 hover:text-white text-sm sm:text-base"
-          >
-            Sign In
-          </button>
-          <div
-            id="user-section"
-            onclick="toggleProfileMenu()"
-            class="hidden flex flex-col items-center justify-center cursor-pointer group relative"
-          >
-            <div class="relative">
-              <img
-                id="profile-pic"
-                src="https://via.placeholder.com/32"
-                class="w-10 h-10 rounded-full object-cover border-2 border-cyan-500 group-hover:border-white transition-all shadow-lg"
-              />
-              <div
-                class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"
-              ></div>
-            </div>
-            <span
-              id="username"
-              class="text-[10px] font-black uppercase tracking-tighter text-gray-400 group-hover:text-cyan-400 mt-1"
-              >User</span
-            >
-          </div>
-        </div>
-      </div>
-    </nav>
-    <!-- PROFILE DROPDOWN -->
-    <div
-      id="profile-menu"
-      class="hidden fixed top-16 right-2 sm:right-3 bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl w-64 py-2 z-50 dropdown-menu"
-    >
-      <div class="px-6 py-4 border-b border-gray-800">
-        <div class="flex items-center gap-x-3">
-          <img
-            id="dropdown-pic"
-            src="https://via.placeholder.com/48"
-            alt="Profile"
-            class="w-10 h-10 rounded-full object-cover border-2 border-white/10"
-          />
-          <div>
-            <p id="dropdown-name" class="font-semibold">User</p>
-            <p id="dropdown-email" class="text-xs text-gray-400">
-              user@example.com
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="py-2">
-        <a
-          onclick="handlePremiumPlanAction()"
-          class="flex items-center gap-x-4 px-6 py-3 hover:bg-gray-800 cursor-pointer"
-        >
-          <i id="premium-plan-icon" class="fas fa-crown text-cyan-300"></i
-          ><span id="premium-plan-label">Upgrade Plan</span>
-        </a>
-        <a
-          onclick="switchAccount()"
-          class="flex items-center gap-x-4 px-6 py-3 hover:bg-gray-800 cursor-pointer"
-        >
-          <i class="fas fa-exchange-alt"></i><span>Switch Account</span>
-        </a>
-        <a
-          onclick="logout()"
-          class="flex items-center gap-x-4 px-6 py-3 hover:bg-gray-800 text-red-400 cursor-pointer"
-        >
-          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-        </a>
-      </div>
-    </div>
-    <!-- LANDING PAGE -->
-    <div id="landing" class="min-h-screen">
-      <div class="max-w-7xl mx-auto px-6 pt-20 pb-16 text-center">
-        <h1
-          class="text-4xl sm:text-5xl font-semibold tracking-tighter mb-4 text-center flex items-center justify-center gap-4"
-        >
-          <span class="relative flex h-4 w-4">
-            <span
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-            ></span>
-            <span
-              class="relative inline-flex rounded-full h-4 w-4 bg-green-500 shadow-[0_0_15px_#22c55e]"
-            ></span>
-          </span>
-          <span class="drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] text-white">
-            Workflow AI
-          </span>
-        </h1>
-        <p class="text-lg sm:text-xl text-gray-400 max-w-lg mx-auto">
-          Convert • Clone • Speak • Edit • Develop.
-        </p>
-        <button
-          onclick="handleStartFree()"
-          class="mt-10 bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-3xl text-lg font-semibold inline-flex items-center gap-x-3"
-        >
-          Start for free <i class="fas fa-arrow-right"></i>
-        </button>
-      </div>
-      <div
-        class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6"
-        id="tool-grid"
-      ></div>
-    </div>
-    <!-- STUDIO PAGE -->
-    <div
-      id="studio"
-      class="hidden h-screen bg-gray-950 flex flex-col overflow-hidden"
-    >
-      <div class="studio-tool-ribbon lg:hidden px-4 py-3 shrink-0">
-        <div class="studio-tool-ribbon-track no-scrollbar">
-          <div
-            data-tool-switch="web-builder"
-            onclick="switchTool('web-builder')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2.5 rounded-3xl cursor-pointer"
-          >
-            <i class="fas fa-drafting-compass text-cyan-400"></i>
-            <span class="font-medium text-sm text-gray-200">Web Builder</span>
-            <span
-              class="text-[7px] font-black bg-cyan-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 uppercase"
-              >New</span
-            >
-          </div>
-          <div
-            data-tool-switch="image-pdf"
-            onclick="switchTool('image-pdf')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-          >
-            <i class="fas fa-image text-cyan-400"></i>
-            <span class="font-medium text-sm text-gray-200">Image → PDF</span>
-          </div>
-          <div
-            data-tool-switch="text-doc"
-            onclick="switchTool('text-doc')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-          >
-            <i class="fas fa-file-alt text-cyan-400"></i>
-            <span class="font-medium text-sm text-gray-200">Text → Word</span>
-          </div>
-          <div
-            data-tool-switch="video-audio"
-            onclick="switchTool('video-audio')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-          >
-            <i class="fas fa-video text-cyan-400"></i>
-            <span class="font-medium text-sm text-gray-200">Video → Audio</span>
-          </div>
-          <div
-            data-tool-switch="text-to-speech"
-            onclick="switchTool('text-to-speech')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-          >
-            <i class="fas fa-volume-up text-amber-500 text-sm"></i>
-            <span class="font-medium text-sm text-gray-200">Text → Speech</span>
-            <span
-              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-              >Pro</span
-            >
-          </div>
-          <div
-            data-tool-switch="voice-clone"
-            onclick="switchTool('voice-clone')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-          >
-            <i class="fas fa-microphone-alt text-amber-500 text-sm"></i>
-            <span class="font-medium text-sm text-gray-200">Voice Clone</span>
-            <span
-              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-              >Pro</span
-            >
-          </div>
-          <div
-            data-tool-switch="image-edit"
-            onclick="switchTool('image-edit')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-          >
-            <i class="fas fa-magic text-amber-500 text-sm"></i>
-            <span class="font-medium text-sm text-gray-200">AI Editor</span>
-            <span
-              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-              >Pro</span
-            >
-          </div>
-          <div
-            data-tool-switch="history"
-            onclick="switchTool('history')"
-            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-          >
-            <i class="fas fa-history text-gray-400"></i>
-            <span class="font-medium text-sm text-gray-200">History</span>
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-1 overflow-hidden">
-        <div
-          class="hidden lg:flex w-72 bg-gray-900 border-r border-gray-800 flex-col shrink-0"
-        >
-          <div class="p-8 shrink-0">
-            <div class="flex items-center gap-x-3 mb-6">
-              <div
-                class="w-8 h-8 bg-cyan-500 rounded-xl flex items-center justify-center font-bold text-gray-950 shadow-[0_0_15px_rgba(6,182,212,0.4)]"
-              >
-                M
-              </div>
-              <span class="text-2xl font-semibold tracking-tighter text-white"
-                >Studio</span
-              >
-            </div>
-            <div
-              class="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent w-full"
-            ></div>
-          </div>
-          <div
-            class="flex-1 overflow-y-auto sidebar-scroll px-4 pb-12 space-y-1"
-          >
-            <p
-              class="text-[10px] font-black text-gray-500 px-5 mb-4 uppercase tracking-[0.2em]"
-            >
-              Creation Suite
-            </p>
-            <div
-              onclick="switchTool('web-builder')"
-              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-cyan-500/30"
-            >
-              <i
-                class="fas fa-drafting-compass text-lg text-gray-500 group-hover:text-cyan-400"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Web Builder</span
-              >
-              <span
-                class="ml-auto bg-cyan-500/10 text-cyan-400 text-[8px] font-black px-1.5 py-0.5 rounded border border-cyan-500/20"
-                >NEW</span
-              >
-            </div>
-            <p
-              class="text-[10px] font-black text-gray-500 px-5 mt-8 mb-4 uppercase tracking-[0.2em]"
-            >
-              Standard Tools
-            </p>
-            <div
-              onclick="switchTool('image-pdf')"
-              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-image text-lg text-gray-500 group-hover:text-cyan-400"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Image → PDF</span
-              >
-            </div>
-            <div
-              onclick="switchTool('text-doc')"
-              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-file-word text-lg text-gray-500 group-hover:text-cyan-400"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Text → Word</span
-              >
-            </div>
-            <div
-              onclick="switchTool('video-audio')"
-              class="flex items-center gap-x-4 px-5 py-3.5 hover:bg-gray-800 rounded-2xl cursor-pointer group transition-all"
-            >
-              <i
-                class="fas fa-video text-lg text-gray-500 group-hover:text-cyan-400"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Video → Audio</span
-              >
-            </div>
-            <p
-              class="text-[10px] font-black text-amber-500/60 px-5 mt-8 mb-4 uppercase tracking-[0.2em]"
-            >
-              Premium Tools
-            </p>
-            <div
-              onclick="switchTool('text-to-speech')"
-              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
-            >
-              <i
-                class="fas fa-volume-up text-lg text-gray-500 group-hover:text-amber-500"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Text to Speech</span
-              >
-              <span
-                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
-                >PRO</span
-              >
-            </div>
-            <div
-              onclick="switchTool('voice-clone')"
-              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
-            >
-              <i
-                class="fas fa-microphone-alt text-lg text-gray-500 group-hover:text-amber-500"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >Voice Cloning</span
-              >
-              <span
-                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
-                >PRO</span
-              >
-            </div>
-            <div
-              onclick="switchTool('image-edit')"
-              class="relative flex items-center gap-x-4 px-5 py-3.5 hover:bg-amber-500/5 rounded-2xl cursor-pointer group transition-all border border-transparent hover:border-amber-500/20"
-            >
-              <i
-                class="fas fa-magic text-lg text-gray-500 group-hover:text-amber-500"
-              ></i>
-              <span
-                class="font-bold text-sm text-gray-400 group-hover:text-white"
-                >AI Image Editor</span
-              >
-              <span
-                class="ml-auto bg-amber-500/10 text-amber-500 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20"
-                >PRO</span
-              >
-            </div>
-            <div class="mt-8 pt-8 border-t border-gray-800">
-              <button
-                onclick="switchTool('history')"
-                class="w-full flex items-center justify-between bg-gray-800/40 hover:bg-cyan-500 hover:text-gray-950 p-4 rounded-2xl transition-all group shadow-lg border border-white/5"
-              >
-                <div class="flex items-center gap-3">
-                  <i
-                    class="fas fa-history text-cyan-400 group-hover:text-gray-950"
-                  ></i>
-                  <span class="font-black text-xs uppercase tracking-widest"
-                    >Full History</span
-                  >
-                </div>
-                <i class="fas fa-chevron-right text-[10px] opacity-30"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="flex-1 flex flex-col bg-gray-950 relative overflow-hidden">
-          <div class="studio-tool-ribbon hidden lg:block px-4 sm:px-8 py-3">
-            <div class="studio-tool-ribbon-track no-scrollbar">
-              <button
-                data-tool-switch="web-builder"
-                onclick="switchTool('web-builder')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-drafting-compass text-cyan-400"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Web Builder</span
-                >
-              </button>
-              <button
-                data-tool-switch="image-pdf"
-                onclick="switchTool('image-pdf')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-image text-cyan-400"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Image to PDF</span
-                >
-              </button>
-              <button
-                data-tool-switch="text-doc"
-                onclick="switchTool('text-doc')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-file-word text-cyan-400"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Word Processor</span
-                >
-              </button>
-              <button
-                data-tool-switch="video-audio"
-                onclick="switchTool('video-audio')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-video text-cyan-400"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Video to Audio</span
-                >
-              </button>
-              <button
-                data-tool-switch="text-to-speech"
-                onclick="switchTool('text-to-speech')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-volume-up text-amber-500 text-sm"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Text to Speech</span
-                >
-              </button>
-              <button
-                data-tool-switch="voice-clone"
-                onclick="switchTool('voice-clone')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-microphone-alt text-amber-500 text-sm"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >Voice Clone</span
-                >
-              </button>
-              <button
-                data-tool-switch="image-edit"
-                onclick="switchTool('image-edit')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-magic text-amber-500 text-sm"></i
-                ><span class="font-medium text-sm text-gray-200"
-                  >AI Editor</span
-                >
-              </button>
-              <button
-                data-tool-switch="history"
-                onclick="switchTool('history')"
-                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
-              >
-                <i class="fas fa-history text-gray-400"></i
-                ><span class="font-medium text-sm text-gray-200">History</span>
-              </button>
-            </div>
-          </div>
-          <div
-            class="flex-1 p-4 sm:p-8 overflow-y-auto sidebar-scroll relative"
-            id="content-area"
-          >
-            <div
-              id="universal-progress"
-              class="hidden max-w-4xl mx-auto mb-6 animate-fadeIn sticky top-0 z-30"
-            >
-              <div class="relative pt-4">
-                <div
-                  class="h-[2px] w-full bg-gray-800 rounded-full overflow-hidden"
-                >
-                  <div
-                    id="universal-bar"
-                    class="h-full bg-cyan-400 w-0 transition-all duration-500 ease-out shadow-[0_0_12px_rgba(34,211,238,0.8)]"
-                  ></div>
-                </div>
-                <div class="flex items-center justify-between mt-3 px-1">
-                  <div class="flex items-center gap-2">
-                    <span class="relative flex h-2 w-2">
-                      <span
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"
-                      ></span>
-                      <span
-                        class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"
-                      ></span>
-                    </span>
-                    <span
-                      id="universal-status-text"
-                      class="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"
-                      >Engine Active...</span
-                    >
-                  </div>
-                  <span
-                    id="universal-percent"
-                    class="text-[10px] font-black text-cyan-400 tabular-nums"
-                    >0%</span
-                  >
-                </div>
-              </div>
-            </div>
-            <div
-              id="tool-display"
-              class="max-w-5xl mx-auto h-full min-h-[500px]"
-            ></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- LOGIN MODAL -->
-    <div
-      id="login-modal"
-      onclick="if (event.target === this) hideLogin();"
-      class="hidden fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4"
-    >
-      <div
-        onclick="event.stopImmediatePropagation()"
-        class="w-full max-w-md rounded-[1.75rem] sm:rounded-[2.5rem] p-5 sm:p-10 border border-white/10 shadow-2xl bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_34%),rgba(15,23,42,0.96)]"
-      >
-        <h2
-          class="text-2xl sm:text-3xl font-semibold text-center mb-2 text-white"
-        >
-          Welcome back
-        </h2>
-        <p class="text-gray-400 text-center mb-6 sm:mb-8 text-sm">
-          Log in to your MediaLab account
-        </p>
-        <input
-          id="email"
-          type="email"
-          placeholder="Email address"
-          class="w-full bg-gray-800/90 border border-gray-700 rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 mb-3 sm:mb-4 focus:border-cyan-500 outline-none transition-all"
-        />
-        <input
-          id="password"
-          type="password"
-          placeholder="Password"
-          class="w-full bg-gray-800/90 border border-gray-700 rounded-xl sm:rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 mb-4 sm:mb-6 focus:border-cyan-500 outline-none transition-all"
-        />
-        <button
-          onclick="emailLogin()"
-          class="w-full bg-cyan-600 text-white py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold mb-5 sm:mb-6 hover:bg-cyan-500 transition-all shadow-lg shadow-cyan-900/20"
-        >
-          Sign in with Email
-        </button>
-        <div class="relative flex items-center mb-5 sm:mb-6">
-          <div class="flex-grow border-t border-gray-800"></div>
-          <span
-            class="flex-shrink mx-4 text-gray-500 text-xs uppercase tracking-widest font-bold"
-            >or</span
-          >
-          <div class="flex-grow border-t border-gray-800"></div>
-        </div>
-        <button
-          onclick="googleLogin()"
-          class="w-full flex items-center justify-center gap-x-3 bg-white hover:bg-gray-50 text-gray-700 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl mb-3 transition-all border border-gray-200 shadow-sm"
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            class="w-5 h-5"
-            alt="Google"
-          />
-          <span class="font-bold text-sm">Continue with Google</span>
-        </button>
-        <button
-          onclick="fakeOAuth('Apple')"
-          class="w-full flex items-center justify-center gap-x-3 bg-black hover:bg-zinc-900 text-white py-3.5 sm:py-4 rounded-xl sm:rounded-2xl transition-all border border-zinc-800"
-        >
-          <i class="fab fa-apple text-xl mb-1"></i>
-          <span class="font-bold text-sm">Continue with Apple</span>
-        </button>
-        <p
-          class="text-center text-gray-500 text-xs mt-6 sm:mt-8 leading-relaxed"
-        >
-          By continuing, you agree to MediaLab's
-          <a
-            href="/terms-and-services.html"
-            class="text-gray-400 underline cursor-pointer"
-            >Terms</a
-          >
-          and
-          <a
-            href="/privacy-policy.html"
-            class="text-gray-400 underline cursor-pointer"
-            >Privacy Policy</a
-          >.
-        </p>
-      </div>
-    </div>
-    <!-- LOADING -->
-    <div
-      id="loading"
-      class="hidden fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center"
-    >
-      <div class="text-center">
-        <div
-          class="animate-spin w-14 h-14 border-4 border-cyan-400 border-t-transparent rounded-full mx-auto mb-6"
-        ></div>
-        <p id="loading-msg" class="text-white text-lg mb-8">Processing…</p>
-        <div class="w-96 bg-gray-800 rounded-3xl h-3 overflow-hidden">
-          <div
-            id="progress"
-            class="h-full bg-cyan-400 w-1/3 rounded-3xl animate-[progress_1.5s_linear_infinite]"
-          ></div>
-        </div>
-      </div>
-    </div>
-    <div
-      id="builder-confirm-modal"
-      class="hidden builder-modal-backdrop"
-      onclick="if (event.target === this) closeBuilderConfirmModal();"
-    >
-      <div
-        class="builder-modal-card p-6 sm:p-8"
-        onclick="event.stopPropagation()"
-      >
-        <div class="flex items-start justify-between gap-4 mb-5">
-          <div>
-            <p
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400"
-            >
-              Studio Confirmation
-            </p>
-            <h3
-              id="builder-confirm-title"
-              class="text-2xl font-black text-white mt-2"
-            >
-              Clear canvas?
-            </h3>
-          </div>
-          <button
-            onclick="closeBuilderConfirmModal()"
-            class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <p
-          id="builder-confirm-message"
-          class="text-sm text-slate-400 leading-relaxed mb-6"
-        >
-          This will remove all current objects from the current builder canvas.
-        </p>
-        <div class="flex flex-wrap justify-end gap-3">
-          <button
-            onclick="closeBuilderConfirmModal()"
-            class="px-4 py-3 rounded-2xl bg-white/5 text-sm font-bold text-slate-300 hover:bg-white/10 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            id="builder-confirm-secondary"
-            onclick="runBuilderConfirmSecondaryAction()"
-            class="hidden px-5 py-3 rounded-2xl bg-white/5 text-sm font-black text-slate-200 hover:bg-white/10 transition-all"
-          >
-            Save Draft
-          </button>
-          <button
-            id="builder-confirm-action"
-            onclick="runBuilderConfirmAction()"
-            class="px-5 py-3 rounded-2xl bg-red-500 text-sm font-black text-white hover:bg-red-400 transition-all"
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-    <div
-      id="feedback-modal"
-      class="hidden builder-modal-backdrop"
-      onclick="if (event.target === this) closeFeedbackModal();"
-    >
-      <div
-        class="builder-modal-card p-6 sm:p-8"
-        onclick="event.stopPropagation()"
-      >
-        <div class="flex items-start justify-between gap-4 mb-5">
-          <div>
-            <p
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400"
-            >
-              Community
-            </p>
-            <h3 class="text-2xl font-black text-white mt-2">
-              Rate the builder
-            </h3>
-            <p id="feedback-identity" class="text-sm text-slate-400 mt-2">
-              Signed in feedback will include your account details.
-            </p>
-            <p
-              id="feedback-exit-note"
-              class="hidden text-xs text-amber-300 mt-3 font-bold uppercase tracking-[0.18em]"
-            >
-              Share quick feedback before exit, or skip and leave.
-            </p>
-          </div>
-          <button
-            onclick="closeFeedbackModal()"
-            class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="space-y-5">
-          <div>
-            <p
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 mb-3"
-            >
-              Your Rating
-            </p>
-            <div class="feedback-stars">
-              <button
-                type="button"
-                class="feedback-star"
-                onclick="setFeedbackRating(1)"
-              >
-                <i class="fas fa-star"></i>
-              </button>
-              <button
-                type="button"
-                class="feedback-star"
-                onclick="setFeedbackRating(2)"
-              >
-                <i class="fas fa-star"></i>
-              </button>
-              <button
-                type="button"
-                class="feedback-star"
-                onclick="setFeedbackRating(3)"
-              >
-                <i class="fas fa-star"></i>
-              </button>
-              <button
-                type="button"
-                class="feedback-star"
-                onclick="setFeedbackRating(4)"
-              >
-                <i class="fas fa-star"></i>
-              </button>
-              <button
-                type="button"
-                class="feedback-star"
-                onclick="setFeedbackRating(5)"
-              >
-                <i class="fas fa-star"></i>
-              </button>
-            </div>
-          </div>
-          <label class="block">
-            <span
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500"
-              >Suggestion</span
-            >
-            <textarea
-              id="feedback-text"
-              placeholder="Tell us what should improve next..."
-              class="w-full mt-3 min-h-[150px] rounded-[1.4rem] bg-white/5 border border-white/10 text-white text-sm leading-relaxed p-4 outline-none focus:border-cyan-500 resize-none"
-            ></textarea>
-          </label>
-          <div class="flex flex-wrap justify-end gap-3">
-            <button
-              id="feedback-cancel-btn"
-              onclick="closeFeedbackModal()"
-              class="px-4 py-3 rounded-2xl bg-white/5 text-sm font-bold text-slate-300 hover:bg-white/10 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              id="feedback-skip-exit-btn"
-              onclick="skipFeedbackAndExit()"
-              class="hidden px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-sm font-bold text-amber-200 hover:bg-amber-500/15 transition-all"
-            >
-              Skip & Exit
-            </button>
-            <button
-              id="feedback-submit-btn"
-              onclick="submitCommunityFeedback()"
-              class="px-5 py-3 rounded-2xl bg-cyan-600 text-sm font-black text-white hover:bg-cyan-500 transition-all"
-            >
-              Send Feedback
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      id="upgrade-modal"
-      class="hidden builder-modal-backdrop"
-      onclick="if (event.target === this) closeUpgradeModal();"
-    >
-      <div
-        class="builder-modal-card p-6 sm:p-8"
-        onclick="event.stopPropagation()"
-      >
-        <div class="flex items-start justify-between gap-4 mb-5">
-          <div>
-            <p
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400"
-            >
-              Upgrade Request
-            </p>
-            <h3 class="text-2xl font-black text-white mt-2">
-              Request MediaLab Pro
-            </h3>
-            <p id="upgrade-modal-subtitle" class="text-sm text-slate-400 mt-2">
-              Send your upgrade request and our team will follow up soon.
-            </p>
-          </div>
-          <button
-            onclick="closeUpgradeModal()"
-            class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="space-y-5">
-          <div
-            class="rounded-[1.5rem] border border-cyan-500/20 bg-cyan-500/10 px-4 py-4"
-          >
-            <p
-              id="upgrade-request-feature"
-              class="text-sm font-bold text-white"
-            >
-              Requesting access to MediaLab Pro
-            </p>
-            <p class="text-xs text-slate-300 mt-1">
-              Your request has been reves, uyoull get a feedback soon.
-            </p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <label class="block">
-              <span
-                class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500"
-                >Name</span
-              >
-              <input
-                id="upgrade-name"
-                class="w-full mt-3 rounded-[1.2rem] bg-white/5 border border-white/10 text-white text-sm p-4 outline-none focus:border-cyan-500"
-                placeholder="Your full name"
-              />
-            </label>
-            <label class="block">
-              <span
-                class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500"
-                >Email</span
-              >
-              <input
-                id="upgrade-email"
-                type="email"
-                class="w-full mt-3 rounded-[1.2rem] bg-white/5 border border-white/10 text-white text-sm p-4 outline-none focus:border-cyan-500"
-                placeholder="you@example.com"
-              />
-            </label>
-          </div>
-          <label class="block">
-            <span
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500"
-              >Message</span
-            >
-            <textarea
-              id="upgrade-message"
-              placeholder="Tell us which premium features you want most..."
-              class="w-full mt-3 min-h-[120px] rounded-[1.4rem] bg-white/5 border border-white/10 text-white text-sm leading-relaxed p-4 outline-none focus:border-cyan-500 resize-none"
-            ></textarea>
-          </label>
-          <div class="flex flex-wrap justify-end gap-3">
-            <button
-              onclick="closeUpgradeModal()"
-              class="px-4 py-3 rounded-2xl bg-white/5 text-sm font-bold text-slate-300 hover:bg-white/10 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              id="upgrade-submit-btn"
-              onclick="submitUpgradeRequest()"
-              class="px-5 py-3 rounded-2xl bg-cyan-600 text-sm font-black text-white hover:bg-cyan-500 transition-all"
-            >
-              Send Request
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      id="design-modal"
-      class="hidden builder-modal-backdrop"
-      onclick="if (event.target === this) closeDesignModal();"
-    >
-      <div
-        class="builder-modal-card p-6 sm:p-8"
-        onclick="event.stopPropagation()"
-      >
-        <div class="flex items-start justify-between gap-4 mb-5">
-          <div>
-            <p
-              class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-400"
-            >
-              Page Design
-            </p>
-            <h3
-              id="design-modal-title"
-              class="text-2xl font-black text-white mt-2"
-            >
-              Background Templates
-            </h3>
-            <p id="design-modal-subtitle" class="text-sm text-slate-400 mt-2">
-              Apply professional page backgrounds without losing grid
-              visibility.
-            </p>
-          </div>
-          <button
-            id="design-modal-close"
-            onclick="closeDesignModal()"
-            class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div
-          id="design-modal-body"
-          class="space-y-4 max-h-[60vh] overflow-y-auto pr-1"
-        ></div>
-        <input
-          type="file"
-          id="canvas-bg-file-input"
-          accept="image/*"
-          class="hidden"
-          onchange="handleCanvasBackgroundImageFile(this.files[0])"
-        />
-      </div>
-    </div>
-    <footer class="bg-gray-950 border-t border-gray-900 py-4">
-      <div
-        class="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-[10px] sm:text-xs"
-      >
-        <div class="flex items-center gap-x-2 opacity-40">
-          <div
-            class="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center text-[8px] font-bold text-black"
-          >
-            M
-          </div>
-          <span class="font-medium tracking-tighter">MediaLab © 2026</span>
-        </div>
-        <div class="flex gap-x-4 text-gray-600">
-          <a
-            href="/privatePolicies.html"
-            class="hover:text-cyan-400 transition-colors"
-            >Privacy</a
-          >
-          <a
-            href="/terms-and-services.html"
-            class="hover:text-cyan-400 transition-colors"
-            >Terms</a
-          >
-          <a
-            href="/contact-support.html"
-            class="hover:text-cyan-400 transition-colors"
-            >Support</a
-          >
-        </div>
-      </div>
-
-      <div
-        id="pwa-install-banner"
-        class="hidden fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:w-96 z-[9999] animate-fadeIn"
-      >
-        <div
-          class="bg-gray-900 border border-cyan-500/30 rounded-[2.5rem] p-6 shadow-2xl backdrop-blur-xl"
-        >
-          <div class="flex items-center gap-4 mb-4">
-            <div
-              class="w-12 h-12 bg-cyan-500 rounded-2xl flex items-center justify-center font-bold text-gray-950 text-xl shadow-lg"
-            >
-              M
-            </div>
-            <div>
-              <h4 class="text-white font-bold tracking-tight">
-                Install MediaLab
-              </h4>
-              <p class="text-gray-400 text-xs">
-                Add to home screen for a better experience.
-              </p>
-            </div>
-            <button
-              onclick="hideInstallBanner()"
-              class="ml-auto text-gray-500 hover:text-white transition-colors"
-            >
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="flex gap-3">
-            <button
-              id="btn-pwa-install"
-              class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-cyan-900/20"
-            >
-              Install App
-            </button>
-            <button
-              onclick="hideInstallBanner()"
-              class="px-6 py-3 bg-gray-800 text-gray-400 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-gray-700 transition-all"
-            >
-              Later
-            </button>
-          </div>
-        </div>
-      </div>
-    </footer>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <div id="builder-snackbar" class="hidden fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[1000010] px-4 py-3 rounded-2xl bg-slate-950/92 border border-cyan-400/20 text-sm font-bold text-cyan-100 shadow-[0_20px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl">
-      Code copied to clipboard
-    </div>
-    <div id="builder-tour-overlay" class="hidden fixed inset-0 z-[1000000] pointer-events-none">
-      <div id="builder-tour-highlight" class="builder-tour-highlight hidden"></div>
-      <div id="builder-tour-pointer" class="builder-tour-pointer hidden">
-        <i class="fas fa-hand-pointer"></i>
-      </div>
-      <div id="builder-tour-card" class="builder-tour-card hidden pointer-events-auto">
-        <div class="builder-tour-chip">Workflow AI Guide</div>
-        <h4 id="builder-tour-title" class="builder-tour-title">Builder guide</h4>
-        <p id="builder-tour-message" class="builder-tour-message">A quick tour helps you move faster.</p>
-        <div class="builder-tour-actions">
-          <button id="builder-tour-dismiss" type="button" class="builder-tour-btn builder-tour-btn--ghost">Dismiss</button>
-          <button id="builder-tour-next" type="button" class="builder-tour-btn builder-tour-btn--primary">Next</button>
-        </div>
-      </div>
-    </div>
-    <script>
       // ====================== STATE ======================
       let loggedIn = false;
       let currentUser = null;
@@ -2651,6 +16,15 @@
         timer: null,
         context: {},
       };
+      let builderTourStripTimer = null;
+      let wordTourState = {
+        active: false,
+        stepIndex: -1,
+        steps: [],
+        dismissedThisSession: false,
+        timer: null,
+      };
+      let wordTourStripTimer = null;
       const toolsData = [
         {
           id: "web-builder",
@@ -2719,17 +93,17 @@
       function hasPremiumAccess() {
         return Boolean(
           loggedIn &&
-          (currentUser?.isPro ||
-            String(currentPremiumRequest?.status || "").toLowerCase() ===
-              "granted"),
+            (currentUser?.isPro ||
+              String(currentPremiumRequest?.status || "").toLowerCase() ===
+                "granted"),
         );
       }
       function hasPendingPremiumRequest() {
         return Boolean(
           currentPremiumRequest &&
-          ["pending", "reviewing", "received"].includes(
-            String(currentPremiumRequest.status || "").toLowerCase(),
-          ),
+            ["pending", "reviewing", "received"].includes(
+              String(currentPremiumRequest.status || "").toLowerCase(),
+            ),
         );
       }
       function hasDeniedPremiumRequest() {
@@ -2786,7 +160,7 @@
                 <span>Request Review</span>
                 <i class="fas fa-arrow-right"></i>
               </button>`
-            : `<button onclick="${loggedIn ? "upgradePlan()" : "showLogin()"}" class="feature-gate-button feature-gate-button--premium relative hover:scale-[1.03] transition-all">
+          : `<button onclick="${loggedIn ? "upgradePlan()" : "showLogin()"}" class="feature-gate-button feature-gate-button--premium relative hover:scale-[1.03] transition-all">
                 <span>${loggedIn ? "Request Premium" : "Sign in to Unlock"}</span>
                 <i class="fas fa-arrow-right"></i>
               </button>`;
@@ -3115,17 +489,11 @@
           "https://via.placeholder.com/32/22d3ee/ffffff?text=U";
         if (profilePic) {
           profilePic.src = picSrc;
-          profilePic.classList.toggle(
-            "pro-avatar-ring",
-            Boolean(currentUser.isPro),
-          );
+          profilePic.classList.toggle("pro-avatar-ring", Boolean(currentUser.isPro));
         }
         if (dropdownPic) {
           dropdownPic.src = picSrc;
-          dropdownPic.classList.toggle(
-            "pro-avatar-ring",
-            Boolean(currentUser.isPro),
-          );
+          dropdownPic.classList.toggle("pro-avatar-ring", Boolean(currentUser.isPro));
         }
         if (username) username.textContent = currentUser.name || "User";
         if (dropdownName) dropdownName.textContent = currentUser.name || "User";
@@ -3160,9 +528,7 @@
           });
           const data = await res.json();
           if (!res.ok || !data.success) {
-            throw new Error(
-              data.message || "Could not cancel premium right now.",
-            );
+            throw new Error(data.message || "Could not cancel premium right now.");
           }
           currentUser.isPro = false;
           currentPremiumRequest = {
@@ -3170,10 +536,7 @@
             status: "closed",
           };
           updateUserProfileUi();
-          if (
-            currentStudioToolId &&
-            PREMIUM_TOOL_IDS.includes(currentStudioToolId)
-          ) {
+          if (currentStudioToolId && PREMIUM_TOOL_IDS.includes(currentStudioToolId)) {
             switchTool(currentStudioToolId);
           }
         } catch (error) {
@@ -3255,9 +618,7 @@
           prefill?.name ?? document.getElementById("upgrade-name")?.value ?? "",
         ).trim();
         const email = String(
-          prefill?.email ??
-            document.getElementById("upgrade-email")?.value ??
-            "",
+          prefill?.email ?? document.getElementById("upgrade-email")?.value ?? "",
         ).trim();
         const message = String(
           prefill?.message ??
@@ -3648,6 +1009,7 @@
           );
         updateToolbarState();
         saveHistory();
+        handleWordTutorialEvent("word-smart-cleaned");
       }
       function setTextColor(color) {
         const editor = document.getElementById("text-input");
@@ -3794,6 +1156,7 @@
         editor.innerHTML = templates[type] || "<p>Start writing...</p>";
         updateToolbarState();
         saveHistory();
+        handleWordTutorialEvent("word-template-inserted", { type });
       }
       function buildOutlineHeadingId(text, index) {
         return `doc-heading-${index}-${text
@@ -3871,6 +1234,7 @@
           .trim()
           .slice(0, 60);
         setTimeout(() => input.focus(), 50);
+        handleWordTutorialEvent("word-export-started");
       }
       function closeDocumentFilenameModal() {
         document
@@ -3894,6 +1258,7 @@
           group.classList.toggle("hidden", group.dataset.wordTab !== tab);
         });
         showWordRibbon();
+        handleWordTutorialEvent("word-tab-opened", { tab });
       }
       function showWordRibbon() {
         const workspace = document.getElementById("word-processor-workspace");
@@ -3952,14 +1317,17 @@
         workspace.classList.remove("hidden");
         setTimeout(() => {
           bindWordProcessorChrome();
+          bindWordTutorialControls();
           setWordRibbonTab(activeWordRibbonTab);
           showWordRibbon();
           document.getElementById("text-input")?.focus();
           updateToolbarState();
           updateWordProcessorStats();
+          scheduleWordTutorial();
         }, 120);
       }
       function exitWordProcessorMode() {
+        handleWordTutorialEvent("word-exit-clicked");
         if (document.fullscreenElement) {
           Promise.resolve(document.exitFullscreen()).catch(() => {});
         }
@@ -3971,6 +1339,369 @@
           .getElementById("word-processor-welcome")
           ?.classList.remove("hidden");
         clearTimeout(wordRibbonAutoHideTimer);
+        closeWordTutorial();
+      }
+      function bindWordTutorialControls() {
+        const exitBtn = document.getElementById("word-tour-exit");
+        const dismissBtn = document.getElementById("word-tour-dismiss");
+        const nextBtn = document.getElementById("word-tour-next");
+        if (exitBtn && !exitBtn.dataset.bound) {
+          exitBtn.dataset.bound = "true";
+          exitBtn.addEventListener("click", () => dismissWordTutorial(true));
+        }
+        if (dismissBtn && !dismissBtn.dataset.bound) {
+          dismissBtn.dataset.bound = "true";
+          dismissBtn.addEventListener("click", () => {
+            const step = wordTourState.steps[wordTourState.stepIndex];
+            if (step?.secondaryAction) step.secondaryAction();
+          });
+        }
+        if (nextBtn && !nextBtn.dataset.bound) {
+          nextBtn.dataset.bound = "true";
+          nextBtn.addEventListener("click", () => {
+            const step = wordTourState.steps[wordTourState.stepIndex];
+            if (step?.primaryAction) step.primaryAction();
+          });
+        }
+        if (!document.body.dataset.wordTourBound) {
+          document.body.dataset.wordTourBound = "true";
+          document.addEventListener(
+            "mousedown",
+            (event) => {
+              if (!wordTourState.active) return;
+              const step = wordTourState.steps[wordTourState.stepIndex];
+              if (!step?.waitFor) return;
+              const card = document.getElementById("word-tour-card");
+              if (card?.contains(event.target)) return;
+              const target = getWordTutorialTarget(step);
+              if (!target) return;
+              if (target.contains(event.target) || target === event.target) {
+                showWordTutorialStrip(
+                  "success",
+                  step.hintMessage || "Great, that's the right place.",
+                );
+                return;
+              }
+              showWordTutorialStrip(
+                "error",
+                "Wrong place clicked. You may exit tutorial mode if you'd like.",
+              );
+            },
+            true,
+          );
+        }
+      }
+      function showWordTutorialStrip(kind, message) {
+        const strip = document.getElementById("word-tour-strip");
+        if (!strip) return;
+        strip.textContent = message;
+        strip.className = `builder-tour-strip builder-tour-strip--${kind}`;
+        strip.classList.remove("hidden");
+        clearTimeout(wordTourStripTimer);
+        wordTourStripTimer = setTimeout(() => {
+          strip.classList.add("hidden");
+        }, kind === "error" ? 2200 : 1600);
+      }
+      function shouldOfferWordTutorial() {
+        if (currentStudioToolId !== "text-doc") return false;
+        if (wordTourState.active || wordTourState.dismissedThisSession) return false;
+        return sessionStorage.getItem("medialab_word_tutorial_done") !== "1";
+      }
+      function scheduleWordTutorial() {
+        clearTimeout(wordTourState.timer);
+        if (!shouldOfferWordTutorial()) return;
+        wordTourState.timer = setTimeout(() => {
+          if (shouldOfferWordTutorial()) openWordTutorialPrompt();
+        }, 650);
+      }
+      function getWordTutorialTarget(step) {
+        if (!step) return null;
+        if (typeof step.getTarget === "function") return step.getTarget();
+        return step.targetSelector
+          ? document.querySelector(step.targetSelector)
+          : null;
+      }
+      function handleWordTutorialEvent(eventName, payload = {}) {
+        if (!wordTourState.active) return;
+        const step = wordTourState.steps[wordTourState.stepIndex];
+        if (!step || step.waitFor !== eventName) return;
+        showWordTutorialStrip(
+          "success",
+          step.successMessage || "Great, you did it.",
+        );
+        if (typeof step.onEvent === "function") {
+          step.onEvent(payload);
+          return;
+        }
+        advanceWordTutorial();
+      }
+      function getWordTutorialSteps() {
+        return [
+          {
+            title: "Word Processor Summary",
+            message:
+              "This studio helps you write, format, insert templates, clean content, and export polished documents fast.",
+            targetSelector: ".word-processor-toolbar-shell",
+            primaryLabel: "Next",
+            primaryAction: advanceWordTutorial,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+          },
+          {
+            title: "Ribbon Tabs",
+            message:
+              "These tabs control your workflow. On phones, swipe sideways across this row to reach every tab.",
+            targetSelector: ".word-processor-tabs",
+            pointerMode: "swipe",
+            primaryLabel: "Next",
+            primaryAction: advanceWordTutorial,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+          },
+          {
+            title: "Start Writing",
+            message:
+              "Click into the page and type a little text. Workflow AI will wait until you start writing.",
+            targetSelector: "#text-input",
+            hintMessage: "Yes, click into the page and start typing.",
+            successMessage: "Great, you started your document.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-typed",
+          },
+          {
+            title: "Open Insert",
+            message:
+              "Click Insert to add lists, links, images, tables, dividers, and other rich content.",
+            targetSelector: "#word-tab-insert",
+            hintMessage: "Great, open Insert next.",
+            successMessage: "Great, Insert is open.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab === "insert") advanceWordTutorial();
+            },
+          },
+          {
+            title: "Open Review",
+            message:
+              "Now click Review to access templates and smart cleanup tools.",
+            targetSelector: "#word-tab-review",
+            hintMessage: "Perfect. Review is the next step.",
+            successMessage: "Great, Review is open.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab === "review") advanceWordTutorial();
+            },
+          },
+          {
+            title: "Use A Template",
+            message:
+              "Pick a template like Letter, CV, or Proposal. Workflow AI will continue after you insert one.",
+            targetSelector: "[data-word-tab='review']",
+            hintMessage: "Great, choose one of these templates.",
+            successMessage: "Great, a template was inserted.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-template-inserted",
+          },
+          {
+            title: "Smart Clean",
+            message:
+              "Use Smart Clean to tidy unusual spacing and line breaks automatically.",
+            getTarget: () =>
+              document.querySelector(
+                "[data-word-tab='review'] button[onclick*='smartCleanDocument']",
+              ),
+            hintMessage: "Great, click Smart Clean.",
+            successMessage: "Great, the document was cleaned.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-smart-cleaned",
+          },
+          {
+            title: "Open Export",
+            message:
+              "Click Export when your document is ready to download.",
+            targetSelector: "#word-tab-export",
+            hintMessage: "Yes, Export is the next tab.",
+            successMessage: "Great, Export is open.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab === "export") advanceWordTutorial();
+            },
+          },
+          {
+            title: "Export Document",
+            message:
+              "Click Export to generate your document file. The guide will finish after that starts.",
+            getTarget: () => document.getElementById("convert-btn"),
+            hintMessage: "Great, click Export to generate the file.",
+            successMessage: "Great, your export started.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+            waitFor: "word-export-started",
+          },
+          {
+            title: "You're Ready",
+            message:
+              "You’ve seen the core writing workflow. Use Exit any time to leave fullscreen mode.",
+            getTarget: () =>
+              document.querySelector(".word-toolbar-btn--exit"),
+            primaryLabel: "Finish",
+            primaryAction: completeWordTutorial,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissWordTutorial(true),
+          },
+        ];
+      }
+      function openWordTutorialPrompt() {
+        wordTourState.steps = [
+          {
+            title: "Workflow AI Guide",
+            message:
+              "Would you like Workflow AI to guide you through the word processor with short friendly steps?",
+            targetSelector: document
+              .getElementById("word-processor-welcome")
+              ?.classList.contains("hidden")
+              ? "#word-processor-workspace"
+              : "#word-processor-welcome .feature-gate-card",
+            primaryLabel: "Yes",
+            primaryAction: startWordTutorial,
+            secondaryLabel: "No",
+            secondaryAction: () => dismissWordTutorial(false),
+          },
+        ];
+        wordTourState.stepIndex = 0;
+        wordTourState.active = true;
+        renderWordTutorialStep();
+      }
+      function startWordTutorial() {
+        if (!document.getElementById("word-processor-workspace") || document.getElementById("word-processor-workspace")?.classList.contains("hidden")) {
+          launchWordProcessorMode();
+          setTimeout(() => startWordTutorial(), 260);
+          return;
+        }
+        wordTourState.steps = getWordTutorialSteps();
+        wordTourState.stepIndex = 0;
+        wordTourState.active = true;
+        renderWordTutorialStep();
+      }
+      function advanceWordTutorial() {
+        if (!wordTourState.active) return;
+        const nextIndex = wordTourState.stepIndex + 1;
+        if (nextIndex >= wordTourState.steps.length) {
+          completeWordTutorial();
+          return;
+        }
+        wordTourState.stepIndex = nextIndex;
+        renderWordTutorialStep();
+      }
+      function positionWordTutorialHighlight(target) {
+        const overlay = document.getElementById("word-tour-overlay");
+        const highlight = document.getElementById("word-tour-highlight");
+        const pointer = document.getElementById("word-tour-pointer");
+        if (!overlay || !highlight || !pointer) return;
+        if (!target) {
+          highlight.classList.add("hidden");
+          pointer.classList.add("hidden");
+          return;
+        }
+        target.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+        const step = wordTourState.steps[wordTourState.stepIndex] || {};
+        pointer.classList.toggle("builder-tour-pointer--swipe", step.pointerMode === "swipe");
+        pointer.innerHTML =
+          step.pointerMode === "swipe"
+            ? '<i class="fas fa-arrow-right-long"></i>'
+            : '<i class="fas fa-hand-pointer"></i>';
+        const rect = target.getBoundingClientRect();
+        const pad = 8;
+        highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
+        highlight.style.left = `${Math.max(8, rect.left - pad)}px`;
+        highlight.style.width = `${Math.max(40, rect.width + pad * 2)}px`;
+        highlight.style.height = `${Math.max(36, rect.height + pad * 2)}px`;
+        highlight.classList.remove("hidden");
+        const pointerLeft =
+          step.pointerMode === "swipe"
+            ? Math.min(window.innerWidth - 110, Math.max(8, rect.left + 10))
+            : Math.min(window.innerWidth - 62, Math.max(8, rect.right - 18));
+        const pointerTop =
+          step.pointerMode === "swipe"
+            ? Math.max(8, rect.top + Math.min(rect.height + 8, 34))
+            : Math.max(8, rect.top - 26);
+        pointer.style.left = `${pointerLeft}px`;
+        pointer.style.top = `${pointerTop}px`;
+        pointer.classList.remove("hidden");
+      }
+      function renderWordTutorialStep() {
+        const overlay = document.getElementById("word-tour-overlay");
+        const card = document.getElementById("word-tour-card");
+        const title = document.getElementById("word-tour-title");
+        const message = document.getElementById("word-tour-message");
+        const dismissBtn = document.getElementById("word-tour-dismiss");
+        const nextBtn = document.getElementById("word-tour-next");
+        const step = wordTourState.steps[wordTourState.stepIndex];
+        if (!overlay || !card || !title || !message || !dismissBtn || !nextBtn || !step) {
+          closeWordTutorial();
+          return;
+        }
+        overlay.classList.remove("hidden");
+        card.classList.remove("hidden");
+        title.textContent = step.title;
+        message.textContent = step.message;
+        dismissBtn.textContent = step.secondaryLabel || "Dismiss";
+        nextBtn.textContent = step.primaryLabel || "Next";
+        nextBtn.disabled = typeof step.primaryAction !== "function";
+        nextBtn.classList.toggle("opacity-50", nextBtn.disabled);
+        nextBtn.classList.toggle("cursor-not-allowed", nextBtn.disabled);
+        positionWordTutorialHighlight(getWordTutorialTarget(step));
+      }
+      function completeWordTutorial() {
+        wordTourState.dismissedThisSession = true;
+        sessionStorage.setItem("medialab_word_tutorial_done", "1");
+        closeWordTutorial();
+      }
+      function dismissWordTutorial(markDone = false) {
+        wordTourState.dismissedThisSession = true;
+        if (markDone) {
+          sessionStorage.setItem("medialab_word_tutorial_done", "1");
+        }
+        closeWordTutorial();
+      }
+      function closeWordTutorial() {
+        clearTimeout(wordTourState.timer);
+        clearTimeout(wordTourStripTimer);
+        wordTourState.active = false;
+        wordTourState.stepIndex = -1;
+        const overlay = document.getElementById("word-tour-overlay");
+        const highlight = document.getElementById("word-tour-highlight");
+        const pointer = document.getElementById("word-tour-pointer");
+        const card = document.getElementById("word-tour-card");
+        const strip = document.getElementById("word-tour-strip");
+        overlay?.classList.add("hidden");
+        highlight?.classList.add("hidden");
+        pointer?.classList.add("hidden");
+        card?.classList.add("hidden");
+        strip?.classList.add("hidden");
       }
       // Keyboard Shortcuts
       function setupKeyboardShortcuts() {
@@ -4071,6 +1802,9 @@
           updateWordCount();
           updateToolbarState();
           saveHistory();
+          if ((editor.innerText || "").trim().length > 20) {
+            handleWordTutorialEvent("word-typed");
+          }
         });
         editor.addEventListener("mouseup", updateToolbarState);
         editor.addEventListener("keyup", updateToolbarState);
@@ -4561,14 +2295,15 @@
                 <div id="builder-toolbar-shell" class="bg-gray-950/85 backdrop-blur-3xl border border-white/10 rounded-[1.2rem] sm:rounded-[1.6rem] px-2 py-2 sm:px-3 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-[0_25px_80px_rgba(0,0,0,0.6)] ring-1 ring-white/5 relative">
                     <div class="flex items-center gap-2 min-w-0 flex-1">
                         <div class="relative">
-                            <button id="studio-menu-toggle" onclick="toggleStudioMenu(event)" class="w-9 h-9 flex items-center justify-center text-gray-300 hover:text-white border border-white/5 rounded-xl bg-white/5 transition-colors">
+                            <button id="studio-menu-toggle" onclick="toggleStudioMenu(event)" title="Tutorial menu" aria-label="Open web builder tutorial menu" class="h-9 px-3 flex items-center justify-center gap-2 text-gray-300 hover:text-white border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-colors whitespace-nowrap">
                                 <i class="fas fa-bars text-sm"></i>
+                                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em]">Tutorial</span>
                             </button>
                             <div id="studio-menu-panel" class="studio-menu-panel hidden">
                                 <div class="space-y-3">
                                     <div class="px-1">
                                         <p class="text-[9px] font-black uppercase tracking-[0.22em] text-cyan-400">Workflow AI Guide</p>
-                                        <p class="text-[11px] text-slate-400">Replay the builder tutorial whenever you want.</p>
+                                        <p class="text-[11px] text-slate-400">Open the guided builder tutorial any time.</p>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <button onclick="requestNewBuilderProject(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-file-circle-plus text-cyan-400"></i><span>New Project<small>Clear canvas and start fresh</small></span></button>
@@ -4639,16 +2374,16 @@
                     </div>
                     <div id="builder-panel-design" class="builder-popover hidden">
                         <div class="builder-popover-grid">
-                            <button id="builder-design-templates-trigger" onclick="openDesignModal('templates'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-swatchbook text-cyan-400"></i><span>Templates<small>Professional page background presets</small></span></button>
+                            <button onclick="openDesignModal('templates'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-swatchbook text-cyan-400"></i><span>Templates<small>Professional page background presets</small></span></button>
                             <button onclick="openDesignModal('color'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-fill-drip text-cyan-400"></i><span>Color<small>Pick a clean custom page color</small></span></button>
                             <button onclick="openDesignModal('image'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-image text-cyan-400"></i><span>Upload Image<small>Use a real page background image</small></span></button>
                         </div>
                     </div>
                     <div id="builder-panel-templates" class="builder-popover hidden">
                         <div class="builder-popover-grid">
-                            <button id="builder-template-login" onclick="insertStarterBlock('login'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-right-to-bracket text-cyan-400"></i><span>Login Form<small>Auth page starter</small></span></button>
                             <button onclick="insertStarterBlock('hero'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-panorama text-cyan-400"></i><span>Landing Hero<small>Marketing homepage</small></span></button>
                             <button onclick="insertStarterBlock('feature'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-th-large text-cyan-400"></i><span>Features Section<small>Service showcase</small></span></button>
+                            <button onclick="insertStarterBlock('login'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-right-to-bracket text-cyan-400"></i><span>Login Form<small>Auth page starter</small></span></button>
                             <button onclick="insertStarterBlock('contact'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-envelope text-cyan-400"></i><span>Contact Form<small>Lead capture layout</small></span></button>
                             <button onclick="insertStarterBlock('pricing'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-tags text-cyan-400"></i><span>Pricing Cards<small>Product pricing section</small></span></button>
                             <button onclick="insertStarterBlock('dashboard'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard Hero<small>SaaS product starter</small></span></button>
@@ -4740,7 +2475,7 @@
                     ]
                       .map(
                         (item) => `
-                        <button id="element-picker-item-${item.id}" onclick="${item.id === "img" ? "triggerLocalImage()" : `addCanvasElement('${item.id}')`}; toggleElementPicker()"
+                        <button onclick="${item.id === "img" ? "triggerLocalImage()" : `addCanvasElement('${item.id}')`}; toggleElementPicker()"
                                 class="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-[1.5rem] hover:bg-cyan-500/20 transition-all border border-transparent hover:border-cyan-500/30 group">
                             <i class="fas ${item.icon} text-gray-500 group-hover:text-cyan-400 text-xl transition-transform group-hover:scale-110"></i>
                             <span class="text-[7px] font-black text-gray-600 group-hover:text-white uppercase tracking-tighter">${item.label}</span>
@@ -4767,15 +2502,35 @@
                        
                         <div class="mt-5 pt-4 border-t border-white/5 shrink-0">
                             <div class="flex justify-between items-center mb-5 px-1">
-                                <button id="inspector-page-prev" onclick="changeInspectorPage(-1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
+                                <button onclick="changeInspectorPage(-1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
                                 <span id="page-title" class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em] flex-1 text-center">Content</span>
-                                <button id="inspector-page-next" onclick="changeInspectorPage(1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                                <button onclick="changeInspectorPage(1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
                             </div>
                             <div class="flex gap-2">
                                 <button onclick="closeSmartInspector()" class="flex-1 py-3.5 bg-gray-800 text-gray-500 rounded-2xl font-bold text-[9px] uppercase tracking-widest hover:bg-gray-700 transition-all">Cancel</button>
                                 <button id="inspector-confirm-btn" class="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-bold text-[9px] uppercase tracking-widest shadow-lg shadow-cyan-900/40 hover:bg-cyan-500 transition-all">Apply</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div id="builder-snackbar" class="hidden fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[3400] px-4 py-3 rounded-2xl bg-slate-950/92 border border-cyan-400/20 text-sm font-bold text-cyan-100 shadow-[0_20px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl">
+              Code copied to clipboard
+            </div>
+            <div id="builder-tour-strip" class="hidden builder-tour-strip"></div>
+            <div id="builder-tour-overlay" class="hidden fixed inset-0 z-[3410] pointer-events-none">
+                <div id="builder-tour-highlight" class="builder-tour-highlight hidden"></div>
+                <div id="builder-tour-pointer" class="builder-tour-pointer hidden">
+                    <i class="fas fa-hand-pointer"></i>
+                </div>
+                <div id="builder-tour-card" class="builder-tour-card hidden pointer-events-auto">
+                    <div class="builder-tour-chip">Workflow AI Guide</div>
+                    <h4 id="builder-tour-title" class="builder-tour-title">Builder guide</h4>
+                    <p id="builder-tour-message" class="builder-tour-message">A quick tour helps you move faster.</p>
+                    <div class="builder-tour-actions">
+                        <button id="builder-tour-exit" type="button" class="builder-tour-btn builder-tour-btn--ghost">Exit</button>
+                        <button id="builder-tour-dismiss" type="button" class="builder-tour-btn builder-tour-btn--ghost">Dismiss</button>
+                        <button id="builder-tour-next" type="button" class="builder-tour-btn builder-tour-btn--primary">Next</button>
                     </div>
                 </div>
             </div>
@@ -4850,12 +2605,29 @@
                 <div id="word-processor-workspace" class="word-processor-workspace hidden">
                     <div class="word-processor-toolbar-shell">
                         <div class="word-processor-toolbar-top">
-                            <div class="word-processor-tabs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="relative">
+                                    <button id="word-menu-toggle" onclick="toggleWordMenu(event)" title="Tutorial menu" aria-label="Open word processor tutorial menu" class="h-9 px-3 flex items-center justify-center gap-2 text-gray-300 hover:text-white border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-colors whitespace-nowrap">
+                                        <i class="fas fa-bars text-sm"></i>
+                                        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em]">Tutorial</span>
+                                    </button>
+                                    <div id="word-menu-panel" class="studio-menu-panel hidden">
+                                        <div class="space-y-3">
+                                            <div class="px-1">
+                                                <p class="text-[9px] font-black uppercase tracking-[0.22em] text-cyan-400">Workflow AI Guide</p>
+                                                <p class="text-[11px] text-slate-400">Open the guided writing tutorial any time.</p>
+                                            </div>
+                                            <button onclick="restartWordTutorial(); hideWordMenu();" class="builder-cmd"><i class="fas fa-person-chalkboard text-cyan-400"></i><span>Start Tutorial<small>Replay the Workflow AI guide</small></span></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="word-processor-tabs">
                                 <button id="word-tab-home" onclick="setWordRibbonTab('home')" class="word-processor-tab active">Home</button>
                                 <button id="word-tab-insert" onclick="setWordRibbonTab('insert')" class="word-processor-tab">Insert</button>
                                 <button id="word-tab-layout" onclick="setWordRibbonTab('layout')" class="word-processor-tab">Layout</button>
                                 <button id="word-tab-review" onclick="setWordRibbonTab('review')" class="word-processor-tab">Review</button>
                                 <button id="word-tab-export" onclick="setWordRibbonTab('export')" class="word-processor-tab">Export</button>
+                            </div>
                             </div>
                             <div class="word-processor-top-actions">
                                 <button onclick="exitWordProcessorMode()" class="word-toolbar-btn word-toolbar-btn--exit">
@@ -4996,6 +2768,23 @@
                             <div class="mt-5 flex gap-3">
                                 <button onclick="closeDocumentFilenameModal()" class="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-slate-200">Cancel</button>
                                 <button onclick="confirmDocumentExport()" class="flex-1 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-bold text-slate-950">Continue</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="word-tour-strip" class="hidden builder-tour-strip"></div>
+                    <div id="word-tour-overlay" class="hidden fixed inset-0 z-[3810] pointer-events-none">
+                        <div id="word-tour-highlight" class="builder-tour-highlight hidden"></div>
+                        <div id="word-tour-pointer" class="builder-tour-pointer hidden">
+                            <i class="fas fa-hand-pointer"></i>
+                        </div>
+                        <div id="word-tour-card" class="builder-tour-card hidden pointer-events-auto">
+                            <div class="builder-tour-chip">Workflow AI Guide</div>
+                            <h4 id="word-tour-title" class="builder-tour-title">Word guide</h4>
+                            <p id="word-tour-message" class="builder-tour-message">A quick tour helps you write faster.</p>
+                            <div class="builder-tour-actions">
+                                <button id="word-tour-exit" type="button" class="builder-tour-btn builder-tour-btn--ghost">Exit</button>
+                                <button id="word-tour-dismiss" type="button" class="builder-tour-btn builder-tour-btn--ghost">Dismiss</button>
+                                <button id="word-tour-next" type="button" class="builder-tour-btn builder-tour-btn--primary">Next</button>
                             </div>
                         </div>
                     </div>
@@ -6100,8 +3889,7 @@
             profileMenu.classList.add("hidden");
           } else if (
             !profileMenu.classList.contains("hidden") &&
-            (profileMenu.contains(event.target) ||
-              userSection.contains(event.target))
+            (profileMenu.contains(event.target) || userSection.contains(event.target))
           ) {
             queueProfileMenuAutoHide();
           }
@@ -6114,8 +3902,7 @@
           profileMenu &&
           userSection &&
           !profileMenu.classList.contains("hidden") &&
-          (profileMenu.contains(event.target) ||
-            userSection.contains(event.target))
+          (profileMenu.contains(event.target) || userSection.contains(event.target))
         ) {
           queueProfileMenuAutoHide();
         }
@@ -6542,7 +4329,6 @@
             "linear-gradient(145deg, #111827 0%, #0f172a 50%, #020617 100%)",
         };
         applyCanvasPageBackground(presets[kind] || presets.clean, silent);
-        handleBuilderTutorialEvent("design-preset-applied", { kind });
       }
       function applyCanvasDesignColor(color) {
         applyCanvasPageBackground(color || "#ffffff");
@@ -6562,11 +4348,9 @@
         const modal = document.getElementById("design-modal");
         modal?.classList.remove("hidden");
         renderDesignModal();
-        handleBuilderTutorialEvent("design-modal-opened", { mode });
       }
       function closeDesignModal() {
         document.getElementById("design-modal")?.classList.add("hidden");
-        handleBuilderTutorialEvent("design-modal-closed", {});
       }
       function renderDesignModal() {
         const title = document.getElementById("design-modal-title");
@@ -6622,7 +4406,7 @@
             ]
               .map(
                 ([id, label]) =>
-                  `<button id="design-preset-${id}" onclick="applyCanvasDesignPreset('${id}')" class="builder-cmd justify-center text-center"><span>${label}<small>Apply page look</small></span></button>`,
+                  `<button onclick="applyCanvasDesignPreset('${id}')" class="builder-cmd justify-center text-center"><span>${label}<small>Apply page look</small></span></button>`,
               )
               .join("")}
           </div>
@@ -6764,6 +4548,12 @@
           hideStudioMenu();
         }, 15000);
       }
+      function restartBuilderTutorial() {
+        closeBuilderTutorial();
+        builderTourState.dismissedThisSession = false;
+        sessionStorage.removeItem("medialab_builder_tutorial_guest_done");
+        openBuilderTutorialPrompt();
+      }
       function toggleStudioMenu(event) {
         event?.stopPropagation();
         const panel = document.getElementById("studio-menu-panel");
@@ -6778,6 +4568,22 @@
       function hideStudioMenu() {
         clearTimeout(builderPanelIdleTimer);
         document.getElementById("studio-menu-panel")?.classList.add("hidden");
+      }
+      function restartWordTutorial() {
+        closeWordTutorial();
+        wordTourState.dismissedThisSession = false;
+        sessionStorage.removeItem("medialab_word_tutorial_done");
+        openWordTutorialPrompt();
+      }
+      function toggleWordMenu(event) {
+        event?.stopPropagation();
+        const panel = document.getElementById("word-menu-panel");
+        if (!panel) return;
+        const nextHidden = !panel.classList.contains("hidden");
+        panel.classList.toggle("hidden", nextHidden);
+      }
+      function hideWordMenu() {
+        document.getElementById("word-menu-panel")?.classList.add("hidden");
       }
       function openFeedbackModal(options = {}) {
         const identity = document.getElementById("feedback-identity");
@@ -6895,6 +4701,16 @@
         ) {
           hideStudioMenu();
         }
+        const wordMenu = document.getElementById("word-menu-panel");
+        const wordToggle = document.getElementById("word-menu-toggle");
+        if (
+          wordMenu &&
+          !wordMenu.contains(e.target) &&
+          wordToggle &&
+          !wordToggle.contains(e.target)
+        ) {
+          hideWordMenu();
+        }
       });
       // Global UI: Close Picker on outside click
       document.addEventListener("mousedown", (e) => {
@@ -6963,29 +4779,16 @@
       });
       // ====================== 3. COMPONENT INJECTION ======================
       function addCanvasElement(type) {
+        const insertTab = document.getElementById("tab-insert");
+        if (insertTab) toggleBuilderTab("insert", { currentTarget: insertTab });
         openSmartInspector(type);
-      }
-      function removeCanvasElement(el) {
-        if (!el) return;
-        const removedId = el.id || "";
-        el.remove();
-        handleBuilderTutorialEvent("element-removed", { elementId: removedId });
-        saveToHistory();
-      }
-      function handleBuilderDeleteAction(el) {
-        removeCanvasElement(el);
       }
       function triggerLocalImage() {
         openBuilderFilePicker("local-img-input");
       }
       function requestBuilderFullscreen() {
         const doc = document.documentElement;
-        if (
-          !isBuilderActive() ||
-          document.fullscreenElement ||
-          !doc?.requestFullscreen
-        )
-          return;
+        if (!isBuilderActive() || document.fullscreenElement || !doc?.requestFullscreen) return;
         Promise.resolve(doc.requestFullscreen()).catch(() => {});
       }
       function openBuilderFilePicker(inputId) {
@@ -7130,12 +4933,12 @@
         applyCustomCssRulesToElement(wrap, mergedAttrs.customCssRules);
         hydrateCanvasElement(wrap);
         canvas.appendChild(wrap);
-        handleBuilderTutorialEvent("element-created", {
-          type,
-          elementId: wrap.id || mergedAttrs.id || "",
-        });
         saveToHistory();
         selectElement(wrap);
+        handleBuilderTutorialEvent("element-created", {
+          elementId: wrap.id,
+          type,
+        });
       }
       function getBuilderDrafts() {
         return loggedIn ? currentUser?.builderDrafts || [] : [];
@@ -7327,10 +5130,6 @@
         const startCount = canvas.querySelectorAll(
           ":scope > .canvas-element",
         ).length;
-        const finishStarterInsert = () => {
-          autoGroupStarterElements(startCount);
-          handleBuilderTutorialEvent("starter-inserted", { kind });
-        };
         if (kind === "hero") {
           addObject(
             "div",
@@ -7388,7 +5187,7 @@
             },
             { text: "Start Building" },
           );
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
         if (kind === "feature") {
@@ -7449,7 +5248,7 @@
               },
             );
           });
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
         if (kind === "login") {
@@ -7529,7 +5328,7 @@
             },
             { text: "Sign In" },
           );
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
         if (kind === "contact") {
@@ -7622,7 +5421,7 @@
             },
             { text: "Send Inquiry" },
           );
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
         if (kind === "pricing") {
@@ -7707,7 +5506,7 @@
               { text: "Choose Plan" },
             );
           });
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
         if (kind === "dashboard") {
@@ -7772,7 +5571,7 @@
               { id: `dashboard_card_${i}_${Date.now()}` },
             );
           });
-          finishStarterInsert();
+          autoGroupStarterElements(startCount);
           return;
         }
       }
@@ -7844,10 +5643,6 @@
         };
         syncInspectorUI();
         document.getElementById("inspector-confirm-btn").onclick = () => {
-          handleBuilderTutorialEvent("inspector-applied", {
-            type: currentInspectorState.type,
-            elementId: existingEl?.id || currentInspectorState.attributes?.id || "",
-          });
           if (existingEl) applyStylesToExisting();
           else
             addObject(
@@ -8409,9 +6204,9 @@
         };
         const typeDefaults = defaults[type] || defaults.div;
         return {
-          top: styles.top || "54px",
-          left: styles.left || "28px",
-          zIndex: styles.zIndex || "10",
+          top: styles.top,
+          left: styles.left,
+          zIndex: styles.zIndex,
           width: styles.width || typeDefaults.width || "260px",
           height: styles.height || typeDefaults.height || "100px",
           padding: styles.padding || typeDefaults.padding || "16px",
@@ -8773,14 +6568,11 @@
           const nextLayer = siblingLayers.find((value) => value > maxLayer);
           delta = nextLayer ? nextLayer - maxLayer : 1;
         } else {
-          const previousLayers = siblingLayers.filter(
-            (value) => value < minLayer,
-          );
+          const previousLayers = siblingLayers.filter((value) => value < minLayer);
           const previousLayer = previousLayers.length
             ? previousLayers[previousLayers.length - 1]
             : null;
-          delta =
-            previousLayer !== null ? previousLayer - minLayer : 1 - minLayer;
+          delta = previousLayer !== null ? previousLayer - minLayer : 1 - minLayer;
         }
         if (delta === 0) return;
         targets.forEach((el) => {
@@ -8981,8 +6773,13 @@
         requestBuilderFullscreen();
       }
       function bindBuilderTutorialControls() {
+        const exitBtn = document.getElementById("builder-tour-exit");
         const dismissBtn = document.getElementById("builder-tour-dismiss");
         const nextBtn = document.getElementById("builder-tour-next");
+        if (exitBtn && !exitBtn.dataset.bound) {
+          exitBtn.dataset.bound = "true";
+          exitBtn.addEventListener("click", () => dismissBuilderTutorial(true));
+        }
         if (dismissBtn && !dismissBtn.dataset.bound) {
           dismissBtn.dataset.bound = "true";
           dismissBtn.addEventListener("click", () => {
@@ -8997,8 +6794,8 @@
             if (step?.primaryAction) step.primaryAction();
           });
         }
-        if (!document.body.dataset.builderTutorialClickBound) {
-          document.body.dataset.builderTutorialClickBound = "true";
+        if (!document.body.dataset.builderTourBound) {
+          document.body.dataset.builderTourBound = "true";
           document.addEventListener(
             "mousedown",
             (event) => {
@@ -9009,61 +6806,38 @@
               if (card?.contains(event.target)) return;
               const target = getBuilderTutorialTarget(step);
               if (!target) return;
-              if (target === event.target || target.contains(event.target)) {
-                showBuilderSnackbar(
-                  step.successHint || "Great, that is the right action.",
+              if (target.contains(event.target) || target === event.target) {
+                showBuilderTutorialStrip(
                   "success",
+                  step.hintMessage || "Great, that's the right place.",
                 );
                 return;
               }
-              event.preventDefault();
-              event.stopPropagation();
-              event.stopImmediatePropagation();
-              showBuilderSnackbar(
-                "Wrong place clicked. Follow the highlighted step or dismiss the tutorial.",
+              showBuilderTutorialStrip(
                 "error",
+                "Wrong place clicked. You may exit tutorial mode if you'd like.",
               );
             },
             true,
           );
         }
-        if (!window.__builderTutorialTrackBound) {
-          window.__builderTutorialTrackBound = true;
-          const refreshTutorialTarget = () => {
-            if (!builderTourState.active) return;
-            const step = builderTourState.steps[builderTourState.stepIndex];
-            const target = getBuilderTutorialTarget(step);
-            positionBuilderTutorialHighlight(target, false);
-          };
-          window.addEventListener("resize", refreshTutorialTarget);
-          window.addEventListener("scroll", refreshTutorialTarget, true);
-        }
       }
-      function getBuilderTutorialTarget(step) {
-        if (!step) return null;
-        if (typeof step.getTarget === "function") {
-          return step.getTarget();
-        }
-        return step.targetSelector ? document.querySelector(step.targetSelector) : null;
-      }
-      function handleBuilderTutorialEvent(eventName, payload = {}) {
-        if (!builderTourState.active) return;
-        const step = builderTourState.steps[builderTourState.stepIndex];
-        if (!step || step.waitFor !== eventName) return;
-        if (typeof step.onEvent === "function") {
-          const handled = step.onEvent(payload);
-          if (handled === false) return;
-        }
-        advanceBuilderTutorial();
+      function showBuilderTutorialStrip(kind, message) {
+        const strip = document.getElementById("builder-tour-strip");
+        if (!strip) return;
+        strip.textContent = message;
+        strip.className = `builder-tour-strip builder-tour-strip--${kind}`;
+        strip.classList.remove("hidden");
+        clearTimeout(builderTourStripTimer);
+        builderTourStripTimer = setTimeout(() => {
+          strip.classList.add("hidden");
+        }, kind === "error" ? 2200 : 1600);
       }
       function shouldOfferBuilderTutorial() {
         if (currentStudioToolId !== "web-builder") return false;
-        if (builderTourState.active || builderTourState.dismissedThisSession)
-          return false;
+        if (builderTourState.active || builderTourState.dismissedThisSession) return false;
         if (loggedIn) return !currentUser?.builderTutorialSeen;
-        return (
-          sessionStorage.getItem("medialab_builder_tutorial_guest_done") !== "1"
-        );
+        return sessionStorage.getItem("medialab_builder_tutorial_guest_done") !== "1";
       }
       function scheduleBuilderTutorial() {
         clearTimeout(builderTourState.timer);
@@ -9072,34 +6846,28 @@
           if (shouldOfferBuilderTutorial()) openBuilderTutorialPrompt();
         }, 700);
       }
-      function showBuilderCelebration(message) {
-        const snackbar = document.getElementById("builder-snackbar");
-        if (!snackbar) return;
-        snackbar.textContent = message;
-        snackbar.style.setProperty("z-index", "2000000", "important");
-        snackbar.classList.remove("hidden");
-        snackbar.classList.remove(
-          "bg-slate-950/92",
-          "bg-emerald-600/95",
-          "bg-rose-600/95",
-          "border-red-500/40",
-          "text-red-100",
-          "border-green-500/40",
-          "text-green-100",
-          "border-cyan-400/20",
-          "text-cyan-100",
+      function getBuilderTutorialTarget(step) {
+        if (!step) return null;
+        if (typeof step.getTarget === "function") {
+          return step.getTarget();
+        }
+        return step.targetSelector
+          ? document.querySelector(step.targetSelector)
+          : null;
+      }
+      function handleBuilderTutorialEvent(eventName, payload = {}) {
+        if (!builderTourState.active) return;
+        const step = builderTourState.steps[builderTourState.stepIndex];
+        if (!step || step.waitFor !== eventName) return;
+        showBuilderTutorialStrip(
+          "success",
+          step.successMessage || "Great, you did it.",
         );
-        snackbar.classList.add(
-          "bg-emerald-600/95",
-          "border-green-400/50",
-          "text-white",
-        );
-        snackbar.classList.add("animate-bounce");
-        clearTimeout(builderTourState.celebrationTimer);
-        builderTourState.celebrationTimer = setTimeout(() => {
-          snackbar.classList.remove("animate-bounce");
-          snackbar.classList.add("hidden");
-        }, 2600);
+        if (typeof step.onEvent === "function") {
+          step.onEvent(payload);
+          return;
+        }
+        advanceBuilderTutorial();
       }
       function getBuilderTutorialSteps() {
         return [
@@ -9118,6 +6886,7 @@
             message:
               "These top tabs are your main workflow. On phones, swipe this row sideways to reach the hidden tabs.",
             targetSelector: ".builder-tabbar",
+            pointerMode: "swipe",
             primaryLabel: "Next",
             primaryAction: advanceBuilderTutorial,
             secondaryLabel: "Dismiss",
@@ -9126,20 +6895,26 @@
           {
             title: "Open Insert",
             message:
-              "Click Insert to open the element tools where your first block begins.",
+              "Start in Insert. Click this tab to open the builder tools.",
             targetSelector: "#tab-insert",
+            hintMessage: "Great, click Insert to open the builder tools.",
+            successMessage: "Great, Insert is open.",
             primaryLabel: "Waiting...",
             primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
             waitFor: "builder-tab-opened",
-            onEvent: (payload) => payload.tab === "insert",
+            onEvent: (payload) => {
+              if (payload.tab === "insert") advanceBuilderTutorial();
+            },
           },
           {
             title: "Open Elements",
             message:
-              "Now click Elements. This opens the component picker for your first container.",
+              "Now click Elements so Workflow AI can help you place your first object on the canvas.",
             targetSelector: "#insert-elements-trigger",
+            hintMessage: "Yes, click Elements next.",
+            successMessage: "Great, the element library is open.",
             primaryLabel: "Waiting...",
             primaryAction: null,
             secondaryLabel: "Dismiss",
@@ -9149,126 +6924,211 @@
           {
             title: "Create Your First Element",
             message:
-              "Click the Container tile. The formatter popup will open so you can design the block before placing it.",
-            targetSelector: "#element-picker-item-div",
+              "Pick one element from this library. A text block or button is a perfect first step.",
+            targetSelector: "#element-picker",
+            hintMessage: "Nice, choose an element from this picker.",
+            successMessage: "Great, you created your first element.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "element-created",
+            onEvent: (payload) => {
+              builderTourState.context.lastCreatedElementId = payload.elementId || "";
+              builderTourState.context.lastCreatedElementType = payload.type || "";
+              advanceBuilderTutorial();
+            },
+          },
+          {
+            title: "Great, First Element Added",
+            message:
+              "Nice. Click your new element once to select it and reveal the smart controls around it.",
+            getTarget: () =>
+              builderTourState.context.lastCreatedElementId
+                ? document.getElementById(builderTourState.context.lastCreatedElementId)
+                : document.querySelector("#web-canvas .canvas-element"),
+            hintMessage: "Great, click your new element to select it.",
+            successMessage: "Great, the element is selected.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "element-selected",
+            onEvent: (payload) => {
+              if (
+                !builderTourState.context.lastCreatedElementId ||
+                payload.elementId === builderTourState.context.lastCreatedElementId
+              ) {
+                advanceBuilderTutorial();
+              }
+            },
+          },
+          {
+            title: "Handles, Move, And Delete",
+            message:
+              "Great. These handles let you drag, resize, style, duplicate, or delete the selected element.",
+            getTarget: () =>
+              builderTourState.context.lastCreatedElementId
+                ? document.getElementById(builderTourState.context.lastCreatedElementId)
+                : selectedEl,
+            primaryLabel: "Next",
+            primaryAction: advanceBuilderTutorial,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+          },
+          {
+            title: "Format With Smart Styler",
+            message:
+              "Now click the sliders handle to style the element. Workflow AI will wait here until the styler opens.",
+            getTarget: () =>
+              document.querySelector(
+                `#${builderTourState.context.lastCreatedElementId} .fa-sliders-h`,
+              ) ||
+              document.querySelector("#web-canvas .canvas-element .fa-sliders-h"),
+            hintMessage: "Perfect. Open the styler from the sliders handle.",
+            successMessage: "Great, the styler is open.",
             primaryLabel: "Waiting...",
             primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
             waitFor: "inspector-opened",
             onEvent: (payload) => {
-              if (payload.type !== "div") return false;
-              builderTourState.context.pendingType = "div";
-              return true;
-            },
-          },
-          {
-            title: "Apply Your First Block",
-            message:
-              "For this first step, just click Apply. You do not need to style anything yet.",
-            targetSelector: "#inspector-confirm-btn",
-            successHint: "Great, click Apply to insert the first block.",
-            primaryLabel: "Waiting...",
-            primaryAction: null,
-            secondaryLabel: "Dismiss",
-            secondaryAction: () => dismissBuilderTutorial(true),
-            waitFor: "inspector-applied",
-            onEvent: (payload) => {
-              if (payload.type !== "div") return false;
-              builderTourState.context.lastCreatedElementId = payload.elementId || "";
-              const insertedEl = payload.elementId
-                ? document.getElementById(payload.elementId)
-                : null;
-              if (insertedEl) {
-                setTimeout(() => {
-                  removeCanvasElement(insertedEl);
-                }, 220);
+              if (
+                !builderTourState.context.lastCreatedElementId ||
+                payload.elementId === builderTourState.context.lastCreatedElementId
+              ) {
+                advanceBuilderTutorial();
               }
-              return true;
             },
           },
           {
-            title: "Open Design",
+            title: "Design Your Element",
             message:
-              "Now move to Design so Workflow AI can show you a quick full-page look.",
-            targetSelector: "#tab-design",
-            primaryLabel: "Waiting...",
-            primaryAction: null,
-            secondaryLabel: "Dismiss",
-            secondaryAction: () => dismissBuilderTutorial(true),
-            waitFor: "builder-tab-opened",
-            onEvent: (payload) => {
-              if (payload.tab !== "design") return false;
-              setTimeout(() => {
-                openDesignModal("templates");
-                renderBuilderTutorialStep();
-              }, 120);
-              return true;
+              "This styler is where you polish typography, background, radius, effects, and custom CSS like a pro.",
+            targetSelector: "#smart-inspector",
+            primaryLabel: "Next",
+            primaryAction: () => {
+              closeSmartInspector();
+              advanceBuilderTutorial();
             },
-          },
-          {
-            title: "Choose Spotlight",
-            message:
-              "Pick Spotlight to give the page a dramatic studio background.",
-            getTarget: () =>
-              document.getElementById("design-preset-spotlight") ||
-              document.querySelector('#design-modal-body button[id="design-preset-spotlight"]'),
-            primaryLabel: "Waiting...",
-            primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
-            waitFor: "design-preset-applied",
-            onEvent: (payload) => payload.kind === "spotlight",
           },
           {
-            title: "Close Design",
+            title: "Templates Speed You Up",
             message:
-              "Great. Now click the X to close the design popup and return to the main builder tabs.",
-            targetSelector: "#design-modal-close",
-            primaryLabel: "Waiting...",
-            primaryAction: null,
-            secondaryLabel: "Dismiss",
-            secondaryAction: () => dismissBuilderTutorial(true),
-            waitFor: "design-modal-closed",
-          },
-          {
-            title: "Open Templates",
-            message:
-              "Now open Templates. Workflow AI will scroll the tabs into view if needed.",
+              "Click Templates next. This is the fastest way to build full sections after your first element.",
             targetSelector: "#tab-templates",
+            hintMessage: "Great, head to Templates next.",
+            successMessage: "Great, Templates is open.",
             primaryLabel: "Waiting...",
             primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
             waitFor: "builder-tab-opened",
-            onEvent: (payload) => payload.tab === "templates",
+            onEvent: (payload) => {
+              if (payload.tab === "templates") advanceBuilderTutorial();
+            },
           },
           {
-            title: "Insert Login Form",
+            title: "Design Tab",
             message:
-              "Choose the Login Form first. It is the fastest way to drop in a real structured section.",
-            targetSelector: "#builder-template-login",
+              "Click Design to control the page background, presets, and overall visual mood.",
+            targetSelector: "#tab-design",
+            hintMessage: "Great, click Design next.",
+            successMessage: "Great, Design is open.",
             primaryLabel: "Waiting...",
             primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
-            waitFor: "starter-inserted",
+            waitFor: "builder-tab-opened",
             onEvent: (payload) => {
-              if (payload.kind !== "login") return false;
-              return true;
+              if (payload.tab === "design") advanceBuilderTutorial();
+            },
+          },
+          {
+            title: "Arrange Layers",
+            message:
+              "Click Arrange to manage layering, grouping, locking, and moving elements backward or forward.",
+            targetSelector: "#tab-arrange",
+            hintMessage: "Great, Arrange is the right next step.",
+            successMessage: "Great, Arrange is open.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab === "arrange") advanceBuilderTutorial();
+            },
+          },
+          {
+            title: "Open File",
+            message:
+              "Click File to open draft, import, and export actions.",
+            targetSelector: "#tab-file",
+            hintMessage: "Yes, click File to continue.",
+            successMessage: "Great, File is open.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab === "file") advanceBuilderTutorial();
+            },
+          },
+          {
+            title: "Export Your Work",
+            message:
+              "Great. Now click Export HTML when you're ready. The guide will continue after a successful export.",
+            getTarget: () =>
+              document.querySelector(
+                "#builder-panel-file button[onclick*='downloadBuilderHtmlFile']",
+              ),
+            hintMessage: "Great, Export HTML is the right action.",
+            successMessage: "Great, you exported your project.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-exported",
+          },
+          {
+            title: "Monetize Later",
+            message:
+              "After exporting your project, click Monetize your work to open AdSense resources and keep moving toward launch.",
+            targetSelector: "#more-features-toggle",
+            primaryLabel: loggedIn ? "Finish" : "Next",
+            primaryAction: loggedIn
+              ? completeBuilderTutorial
+              : advanceBuilderTutorial,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+          },
+          {
+            title: "Continue With Workflow AI",
+            message:
+              "Login to continue with Workflow AI step by step until you publish your first website.",
+            targetSelector: "#user-section",
+            primaryLabel: "Dismiss",
+            primaryAction: () => dismissBuilderTutorial(true),
+            secondaryLabel: "Login",
+            secondaryAction: () => {
+              dismissBuilderTutorial(true);
+              showLogin();
             },
           },
         ];
       }
       function openBuilderTutorialPrompt() {
+        builderTourState.context = {};
         builderTourState.steps = [
           {
             title: "Workflow AI Guide",
             message:
               "Would you like Workflow AI to guide you through the Web Builder with short friendly tips?",
-            targetSelector: document
-              .getElementById("editor-welcome")
-              ?.classList.contains("hidden")
+            targetSelector: document.getElementById("editor-welcome")?.classList.contains("hidden")
               ? "#studio-workspace"
               : "#editor-welcome .feature-gate-card",
             primaryLabel: "Yes",
@@ -9281,20 +7141,13 @@
         builderTourState.active = true;
         renderBuilderTutorialStep();
       }
-      function restartBuilderTutorial() {
-        closeBuilderTutorial();
-        builderTourState.dismissedThisSession = false;
-        if (!loggedIn) {
-          sessionStorage.removeItem("medialab_builder_tutorial_guest_done");
-        }
-        openBuilderTutorialPrompt();
-      }
       function startBuilderTutorial() {
         if (!isBuilderActive()) {
           launchBossMode();
           setTimeout(() => startBuilderTutorial(), 260);
           return;
         }
+        builderTourState.context = {};
         builderTourState.steps = getBuilderTutorialSteps();
         builderTourState.stepIndex = 0;
         builderTourState.active = true;
@@ -9304,37 +7157,34 @@
         if (!builderTourState.active) return;
         const nextIndex = builderTourState.stepIndex + 1;
         if (nextIndex >= builderTourState.steps.length) {
-          showBuilderCelebration(
-            "Congratulation, you built your first website using MediaLab.",
-          );
-          finishBuilderTutorial();
+          completeBuilderTutorial();
           return;
         }
         builderTourState.stepIndex = nextIndex;
         renderBuilderTutorialStep();
       }
-      function positionBuilderTutorialHighlight(target, shouldScroll = true) {
+      function positionBuilderTutorialHighlight(target) {
         const overlay = document.getElementById("builder-tour-overlay");
         const highlight = document.getElementById("builder-tour-highlight");
         const pointer = document.getElementById("builder-tour-pointer");
         const card = document.getElementById("builder-tour-card");
         if (!overlay || !highlight || !pointer || !card) return;
-        overlay.style.setProperty("z-index", "1000000", "important");
-        highlight.style.setProperty("z-index", "1000002", "important");
-        pointer.style.setProperty("z-index", "1000003", "important");
-        card.style.setProperty("z-index", "1000004", "important");
         if (!target) {
           highlight.classList.add("hidden");
           pointer.classList.add("hidden");
           return;
         }
-        if (shouldScroll) {
-          target.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "center",
-          });
-        }
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+        const step = builderTourState.steps[builderTourState.stepIndex] || {};
+        pointer.classList.toggle("builder-tour-pointer--swipe", step.pointerMode === "swipe");
+        pointer.innerHTML =
+          step.pointerMode === "swipe"
+            ? '<i class="fas fa-arrow-right-long"></i>'
+            : '<i class="fas fa-hand-pointer"></i>';
         const rect = target.getBoundingClientRect();
         const pad = 8;
         highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
@@ -9342,28 +7192,17 @@
         highlight.style.width = `${Math.max(40, rect.width + pad * 2)}px`;
         highlight.style.height = `${Math.max(36, rect.height + pad * 2)}px`;
         highlight.classList.remove("hidden");
-        const pointerLeft = Math.min(
-          window.innerWidth - 62,
-          Math.max(8, rect.right - 18),
-        );
-        const pointerTop = Math.max(8, rect.top - 26);
+        const pointerLeft =
+          step.pointerMode === "swipe"
+            ? Math.min(window.innerWidth - 110, Math.max(8, rect.left + 10))
+            : Math.min(window.innerWidth - 62, Math.max(8, rect.right - 18));
+        const pointerTop =
+          step.pointerMode === "swipe"
+            ? Math.max(8, rect.top + Math.min(rect.height + 8, 34))
+            : Math.max(8, rect.top - 26);
         pointer.style.left = `${pointerLeft}px`;
         pointer.style.top = `${pointerTop}px`;
         pointer.classList.remove("hidden");
-        const cardWidth = Math.min(window.innerWidth * 0.92, 384);
-        const gap = 18;
-        const fitsBelow = rect.bottom + gap + 220 < window.innerHeight;
-        const cardTop = fitsBelow
-          ? rect.bottom + gap
-          : Math.max(12, rect.top - 182);
-        const cardLeft = Math.min(
-          window.innerWidth - cardWidth - 12,
-          Math.max(12, rect.left + rect.width / 2 - cardWidth / 2),
-        );
-        card.style.left = `${cardLeft}px`;
-        card.style.top = `${cardTop}px`;
-        card.style.bottom = "auto";
-        card.style.transform = "none";
       }
       function renderBuilderTutorialStep() {
         const overlay = document.getElementById("builder-tour-overlay");
@@ -9373,30 +7212,23 @@
         const dismissBtn = document.getElementById("builder-tour-dismiss");
         const nextBtn = document.getElementById("builder-tour-next");
         const step = builderTourState.steps[builderTourState.stepIndex];
-        if (
-          !overlay ||
-          !card ||
-          !title ||
-          !message ||
-          !dismissBtn ||
-          !nextBtn ||
-          !step
-        ) {
+        if (!overlay || !card || !title || !message || !dismissBtn || !nextBtn || !step) {
           closeBuilderTutorial();
           return;
         }
         overlay.classList.remove("hidden");
         card.classList.remove("hidden");
-        overlay.style.setProperty("z-index", "1000000", "important");
-        card.style.setProperty("z-index", "1000004", "important");
         title.textContent = step.title;
         message.textContent = step.message;
         dismissBtn.textContent = step.secondaryLabel || "Dismiss";
         nextBtn.textContent = step.primaryLabel || "Next";
+        nextBtn.disabled = typeof step.primaryAction !== "function";
+        nextBtn.classList.toggle("opacity-50", nextBtn.disabled);
+        nextBtn.classList.toggle("cursor-not-allowed", nextBtn.disabled);
         const target = getBuilderTutorialTarget(step);
-        positionBuilderTutorialHighlight(target, true);
+        positionBuilderTutorialHighlight(target);
       }
-      async function persistBuilderTutorialCompletion() {
+      async function completeBuilderTutorial() {
         builderTourState.dismissedThisSession = true;
         if (loggedIn && currentUser && !currentUser.builderTutorialSeen) {
           try {
@@ -9414,18 +7246,6 @@
         } else if (!loggedIn) {
           sessionStorage.setItem("medialab_builder_tutorial_guest_done", "1");
         }
-      }
-      function finishBuilderTutorial() {
-        builderTourState.dismissedThisSession = true;
-        closeBuilderTutorial();
-        setTimeout(() => {
-          persistBuilderTutorialCompletion().catch((error) => {
-            console.warn("Builder tutorial completion skipped:", error);
-          });
-        }, 120);
-      }
-      async function completeBuilderTutorial() {
-        await persistBuilderTutorialCompletion();
         closeBuilderTutorial();
       }
       function dismissBuilderTutorial(markGuestDone = false) {
@@ -9439,20 +7259,18 @@
         clearTimeout(builderTourState.timer);
         builderTourState.active = false;
         builderTourState.stepIndex = -1;
+        builderTourState.context = {};
+        clearTimeout(builderTourStripTimer);
         const overlay = document.getElementById("builder-tour-overlay");
         const highlight = document.getElementById("builder-tour-highlight");
         const pointer = document.getElementById("builder-tour-pointer");
         const card = document.getElementById("builder-tour-card");
+        const strip = document.getElementById("builder-tour-strip");
         overlay?.classList.add("hidden");
         highlight?.classList.add("hidden");
         pointer?.classList.add("hidden");
         card?.classList.add("hidden");
-        if (card) {
-          card.style.removeProperty("top");
-          card.style.removeProperty("left");
-          card.style.removeProperty("bottom");
-          card.style.removeProperty("transform");
-        }
+        strip?.classList.add("hidden");
       }
       function normalizeCustomCssRules(rules = []) {
         const safeRules = Array.isArray(rules) ? rules : [];
@@ -9480,9 +7298,7 @@
         body.dataset.baseInlineCss = baseCss;
         body.style.cssText = baseCss;
         rules.forEach((rule) => {
-          const selector = String(rule.selector || "")
-            .trim()
-            .toLowerCase();
+          const selector = String(rule.selector || "").trim().toLowerCase();
           const styleText = String(rule.styles || "").trim();
           if (!styleText) return;
           if (
@@ -9818,7 +7634,7 @@ ${payload.body || "  "}
         <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
             <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
             <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
-            <button onclick="handleBuilderDeleteAction(this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
+            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
         </div>`;
       }
       function dockStarterSelection() {
@@ -9827,13 +7643,12 @@ ${payload.body || "  "}
         if (!canvas || !target) return;
         const compact = canvas.clientWidth < 640;
         const inset = compact ? 12 : 24;
-        const topInset = compact ? 42 : 56;
+        const topInset = compact ? 16 : 24;
         const naturalWidth = target.offsetWidth || 0;
         const maxWidth = Math.max(180, canvas.clientWidth - inset * 2);
-        const scale =
-          compact && naturalWidth > maxWidth
-            ? Math.max(0.68, maxWidth / naturalWidth)
-            : 1;
+        const scale = compact && naturalWidth > maxWidth
+          ? Math.max(0.68, maxWidth / naturalWidth)
+          : 1;
         const rotateMatch = String(target.style.transform || "").match(
           /rotate\([^)]+\)/,
         );
@@ -9960,6 +7775,7 @@ ${payload.body || "  "}
       }
       function downloadBuilderHtmlFile() {
         exportCanvasToHTML();
+        handleBuilderTutorialEvent("builder-exported", { format: "html" });
       }
       function downloadBuilderStylesTxt() {
         const stamp = `medialab-code-${Date.now()}`;
@@ -9973,43 +7789,10 @@ ${payload.body || "  "}
         URL.revokeObjectURL(codeUrl);
       }
       let builderSnackbarTimer = null;
-      function showBuilderSnackbar(message = "Done", tone = "info") {
+      function showBuilderSnackbar(message = "Done") {
         const bar = document.getElementById("builder-snackbar");
         if (!bar) return;
         bar.textContent = message;
-        bar.style.setProperty("z-index", "2000000", "important");
-        bar.classList.remove(
-          "bg-slate-950/92",
-          "bg-emerald-600/95",
-          "bg-rose-600/95",
-          "border-cyan-400/20",
-          "text-cyan-100",
-          "border-green-500/40",
-          "text-green-100",
-          "border-green-400/50",
-          "border-red-500/40",
-          "text-red-100",
-          "text-white",
-        );
-        if (tone === "success") {
-          bar.classList.add(
-            "bg-emerald-600/95",
-            "border-green-400/50",
-            "text-white",
-          );
-        } else if (tone === "error") {
-          bar.classList.add(
-            "bg-rose-600/95",
-            "border-red-400/50",
-            "text-white",
-          );
-        } else {
-          bar.classList.add(
-            "bg-slate-950/92",
-            "border-cyan-400/20",
-            "text-cyan-100",
-          );
-        }
         bar.classList.remove("hidden");
         clearTimeout(builderSnackbarTimer);
         builderSnackbarTimer = setTimeout(() => {
@@ -10088,11 +7871,6 @@ ${payload.body || "  "}
           p === "backgroundImageUrl" ||
           p === "backgroundSize";
         syncInspectorUI(needsControlRefresh);
-        handleBuilderTutorialEvent("inspector-style-updated", {
-          property: p,
-          value: v,
-          page: inspectorPages[inspectorPageIndex] || "",
-        });
       }
       function updateAttr(p, v) {
         currentInspectorState.attributes[p] = v;
@@ -10301,10 +8079,6 @@ ${payload.body || "  "}
           (inspectorPageIndex + dir + inspectorPages.length) %
           inspectorPages.length;
         syncInspectorUI();
-        handleBuilderTutorialEvent("inspector-page-opened", {
-          page: inspectorPages[inspectorPageIndex] || "",
-          index: inspectorPageIndex,
-        });
       }
       function toggleElementPicker(event) {
         const picker = document.getElementById("element-picker");
@@ -10370,6 +8144,10 @@ ${payload.body || "  "}
       function selectElement(el) {
         selectedElements = [el];
         syncSelectedElementState();
+        handleBuilderTutorialEvent("element-selected", {
+          elementId: el?.id || "",
+          type: el?.getAttribute?.("data-type") || "",
+        });
       }
       function handleRightClick(e) {
         const el = e.target.closest(".canvas-element");
@@ -10481,6 +8259,4 @@ ${payload.body || "  "}
           padding: computed?.padding || "16px",
         };
       }
-    </script>
-  </body>
-</html>
+    

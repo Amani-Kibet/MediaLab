@@ -1124,10 +1124,21 @@
         align-items: flex-start;
         justify-content: flex-end;
         padding: 88px 16px 16px;
+        z-index: 3200 !important;
       }
       #design-modal .builder-modal-card {
         width: min(100%, 420px);
         box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
+      }
+      #builder-tour-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 999999 !important;
+        pointer-events: none;
+      }
+      #builder-snackbar {
+        z-index: 2000000 !important;
+        pointer-events: none;
       }
       #smart-inspector {
         position: fixed; /* Changed from absolute/relative to fixed */
@@ -1421,6 +1432,7 @@
       }
       .builder-tour-highlight {
         position: fixed;
+        z-index: 1000002;
         border-radius: 1.35rem;
         border: 1px solid rgba(34, 211, 238, 0.85);
         box-shadow:
@@ -1436,15 +1448,20 @@
       }
       .builder-tour-pointer {
         position: fixed;
+        z-index: 1000003;
         width: 3.2rem;
         height: 3.2rem;
         border-radius: 999px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background:
-          radial-gradient(circle at 30% 30%, rgba(255,255,255,0.96), rgba(226,232,240,0.88) 55%, rgba(148,163,184,0.65) 100%);
-        border: 1px solid rgba(255,255,255,0.78);
+        background: radial-gradient(
+          circle at 30% 30%,
+          rgba(255, 255, 255, 0.96),
+          rgba(226, 232, 240, 0.88) 55%,
+          rgba(148, 163, 184, 0.65) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.78);
         box-shadow:
           0 18px 44px rgba(8, 145, 178, 0.35),
           0 0 0 8px rgba(34, 211, 238, 0.12);
@@ -1486,6 +1503,7 @@
       }
       .builder-tour-card {
         position: fixed;
+        z-index: 1000004;
         left: 50%;
         bottom: max(1rem, env(safe-area-inset-bottom));
         transform: translateX(-50%);
@@ -1494,7 +1512,11 @@
         border-radius: 1.2rem;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background:
-          radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 52%),
+          radial-gradient(
+            circle at top,
+            rgba(34, 211, 238, 0.12),
+            transparent 52%
+          ),
           rgba(2, 6, 23, 0.94);
         box-shadow: 0 20px 70px rgba(2, 6, 23, 0.55);
         backdrop-filter: blur(22px);
@@ -1666,7 +1688,8 @@
           onclick="handlePremiumPlanAction()"
           class="flex items-center gap-x-4 px-6 py-3 hover:bg-gray-800 cursor-pointer"
         >
-          <i id="premium-plan-icon" class="fas fa-crown text-cyan-300"></i><span id="premium-plan-label">Upgrade Plan</span>
+          <i id="premium-plan-icon" class="fas fa-crown text-cyan-300"></i
+          ><span id="premium-plan-label">Upgrade Plan</span>
         </a>
         <a
           onclick="switchAccount()"
@@ -1720,90 +1743,88 @@
       id="studio"
       class="hidden h-screen bg-gray-950 flex flex-col overflow-hidden"
     >
-      <div
-        class="studio-tool-ribbon lg:hidden px-4 py-3 shrink-0"
-      >
+      <div class="studio-tool-ribbon lg:hidden px-4 py-3 shrink-0">
         <div class="studio-tool-ribbon-track no-scrollbar">
-        <div
-          data-tool-switch="web-builder"
-          onclick="switchTool('web-builder')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2.5 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-drafting-compass text-cyan-400"></i>
-          <span class="font-medium text-sm text-gray-200">Web Builder</span>
-          <span
-            class="text-[7px] font-black bg-cyan-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 uppercase"
-            >New</span
+          <div
+            data-tool-switch="web-builder"
+            onclick="switchTool('web-builder')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-cyan-500/10 border border-cyan-500/20 px-5 py-2.5 rounded-3xl cursor-pointer"
           >
-        </div>
-        <div
-          data-tool-switch="image-pdf"
-          onclick="switchTool('image-pdf')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-image text-cyan-400"></i>
-          <span class="font-medium text-sm text-gray-200">Image → PDF</span>
-        </div>
-        <div
-          data-tool-switch="text-doc"
-          onclick="switchTool('text-doc')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-file-alt text-cyan-400"></i>
-          <span class="font-medium text-sm text-gray-200">Text → Word</span>
-        </div>
-        <div
-          data-tool-switch="video-audio"
-          onclick="switchTool('video-audio')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-video text-cyan-400"></i>
-          <span class="font-medium text-sm text-gray-200">Video → Audio</span>
-        </div>
-        <div
-          data-tool-switch="text-to-speech"
-          onclick="switchTool('text-to-speech')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-        >
-          <i class="fas fa-volume-up text-amber-500 text-sm"></i>
-          <span class="font-medium text-sm text-gray-200">Text → Speech</span>
-          <span
-            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-            >Pro</span
+            <i class="fas fa-drafting-compass text-cyan-400"></i>
+            <span class="font-medium text-sm text-gray-200">Web Builder</span>
+            <span
+              class="text-[7px] font-black bg-cyan-500 text-gray-950 px-1.5 py-0.5 rounded ml-1 uppercase"
+              >New</span
+            >
+          </div>
+          <div
+            data-tool-switch="image-pdf"
+            onclick="switchTool('image-pdf')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
           >
-        </div>
-        <div
-          data-tool-switch="voice-clone"
-          onclick="switchTool('voice-clone')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-        >
-          <i class="fas fa-microphone-alt text-amber-500 text-sm"></i>
-          <span class="font-medium text-sm text-gray-200">Voice Clone</span>
-          <span
-            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-            >Pro</span
+            <i class="fas fa-image text-cyan-400"></i>
+            <span class="font-medium text-sm text-gray-200">Image → PDF</span>
+          </div>
+          <div
+            data-tool-switch="text-doc"
+            onclick="switchTool('text-doc')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
           >
-        </div>
-        <div
-          data-tool-switch="image-edit"
-          onclick="switchTool('image-edit')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
-        >
-          <i class="fas fa-magic text-amber-500 text-sm"></i>
-          <span class="font-medium text-sm text-gray-200">AI Editor</span>
-          <span
-            class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
-            >Pro</span
+            <i class="fas fa-file-alt text-cyan-400"></i>
+            <span class="font-medium text-sm text-gray-200">Text → Word</span>
+          </div>
+          <div
+            data-tool-switch="video-audio"
+            onclick="switchTool('video-audio')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
           >
-        </div>
-        <div
-          data-tool-switch="history"
-          onclick="switchTool('history')"
-          class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
-        >
-          <i class="fas fa-history text-gray-400"></i>
-          <span class="font-medium text-sm text-gray-200">History</span>
-        </div>
+            <i class="fas fa-video text-cyan-400"></i>
+            <span class="font-medium text-sm text-gray-200">Video → Audio</span>
+          </div>
+          <div
+            data-tool-switch="text-to-speech"
+            onclick="switchTool('text-to-speech')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
+          >
+            <i class="fas fa-volume-up text-amber-500 text-sm"></i>
+            <span class="font-medium text-sm text-gray-200">Text → Speech</span>
+            <span
+              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
+              >Pro</span
+            >
+          </div>
+          <div
+            data-tool-switch="voice-clone"
+            onclick="switchTool('voice-clone')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
+          >
+            <i class="fas fa-microphone-alt text-amber-500 text-sm"></i>
+            <span class="font-medium text-sm text-gray-200">Voice Clone</span>
+            <span
+              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
+              >Pro</span
+            >
+          </div>
+          <div
+            data-tool-switch="image-edit"
+            onclick="switchTool('image-edit')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800/50 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer hover:border-amber-500/40 transition-all relative"
+          >
+            <i class="fas fa-magic text-amber-500 text-sm"></i>
+            <span class="font-medium text-sm text-gray-200">AI Editor</span>
+            <span
+              class="text-[6px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30 px-1.5 py-0.5 rounded-md uppercase tracking-tighter"
+              >Pro</span
+            >
+          </div>
+          <div
+            data-tool-switch="history"
+            onclick="switchTool('history')"
+            class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 px-5 py-2.5 rounded-3xl cursor-pointer"
+          >
+            <i class="fas fa-history text-gray-400"></i>
+            <span class="font-medium text-sm text-gray-200">History</span>
+          </div>
         </div>
       </div>
       <div class="flex flex-1 overflow-hidden">
@@ -1964,29 +1985,83 @@
         <div class="flex-1 flex flex-col bg-gray-950 relative overflow-hidden">
           <div class="studio-tool-ribbon hidden lg:block px-4 sm:px-8 py-3">
             <div class="studio-tool-ribbon-track no-scrollbar">
-              <button data-tool-switch="web-builder" onclick="switchTool('web-builder')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-drafting-compass text-cyan-400"></i><span class="font-medium text-sm text-gray-200">Web Builder</span>
+              <button
+                data-tool-switch="web-builder"
+                onclick="switchTool('web-builder')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-drafting-compass text-cyan-400"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Web Builder</span
+                >
               </button>
-              <button data-tool-switch="image-pdf" onclick="switchTool('image-pdf')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-image text-cyan-400"></i><span class="font-medium text-sm text-gray-200">Image to PDF</span>
+              <button
+                data-tool-switch="image-pdf"
+                onclick="switchTool('image-pdf')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-image text-cyan-400"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Image to PDF</span
+                >
               </button>
-              <button data-tool-switch="text-doc" onclick="switchTool('text-doc')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-file-word text-cyan-400"></i><span class="font-medium text-sm text-gray-200">Word Processor</span>
+              <button
+                data-tool-switch="text-doc"
+                onclick="switchTool('text-doc')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-file-word text-cyan-400"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Word Processor</span
+                >
               </button>
-              <button data-tool-switch="video-audio" onclick="switchTool('video-audio')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-video text-cyan-400"></i><span class="font-medium text-sm text-gray-200">Video to Audio</span>
+              <button
+                data-tool-switch="video-audio"
+                onclick="switchTool('video-audio')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-video text-cyan-400"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Video to Audio</span
+                >
               </button>
-              <button data-tool-switch="text-to-speech" onclick="switchTool('text-to-speech')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-volume-up text-amber-500 text-sm"></i><span class="font-medium text-sm text-gray-200">Text to Speech</span>
+              <button
+                data-tool-switch="text-to-speech"
+                onclick="switchTool('text-to-speech')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-volume-up text-amber-500 text-sm"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Text to Speech</span
+                >
               </button>
-              <button data-tool-switch="voice-clone" onclick="switchTool('voice-clone')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-microphone-alt text-amber-500 text-sm"></i><span class="font-medium text-sm text-gray-200">Voice Clone</span>
+              <button
+                data-tool-switch="voice-clone"
+                onclick="switchTool('voice-clone')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-microphone-alt text-amber-500 text-sm"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >Voice Clone</span
+                >
               </button>
-              <button data-tool-switch="image-edit" onclick="switchTool('image-edit')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-magic text-amber-500 text-sm"></i><span class="font-medium text-sm text-gray-200">AI Editor</span>
+              <button
+                data-tool-switch="image-edit"
+                onclick="switchTool('image-edit')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-amber-500/10 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-magic text-amber-500 text-sm"></i
+                ><span class="font-medium text-sm text-gray-200"
+                  >AI Editor</span
+                >
               </button>
-              <button data-tool-switch="history" onclick="switchTool('history')" class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer">
-                <i class="fas fa-history text-gray-400"></i><span class="font-medium text-sm text-gray-200">History</span>
+              <button
+                data-tool-switch="history"
+                onclick="switchTool('history')"
+                class="toolbar-item flex-shrink-0 flex items-center gap-x-3 bg-gray-800 border border-white/5 px-5 py-2.5 rounded-3xl cursor-pointer"
+              >
+                <i class="fas fa-history text-gray-400"></i
+                ><span class="font-medium text-sm text-gray-200">History</span>
               </button>
             </div>
           </div>
@@ -2441,6 +2516,7 @@
             </p>
           </div>
           <button
+            id="design-modal-close"
             onclick="closeDesignModal()"
             class="w-10 h-10 rounded-2xl border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-all"
           >
@@ -2539,6 +2615,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <div id="builder-snackbar" class="hidden fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[1000010] px-4 py-3 rounded-2xl bg-slate-950/92 border border-cyan-400/20 text-sm font-bold text-cyan-100 shadow-[0_20px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl">
+      Code copied to clipboard
+    </div>
+    <div id="builder-tour-overlay" class="hidden fixed inset-0 z-[1000000] pointer-events-none">
+      <div id="builder-tour-highlight" class="builder-tour-highlight hidden"></div>
+      <div id="builder-tour-pointer" class="builder-tour-pointer hidden">
+        <i class="fas fa-hand-pointer"></i>
+      </div>
+      <div id="builder-tour-card" class="builder-tour-card hidden pointer-events-auto">
+        <div class="builder-tour-chip">Workflow AI Guide</div>
+        <h4 id="builder-tour-title" class="builder-tour-title">Builder guide</h4>
+        <p id="builder-tour-message" class="builder-tour-message">A quick tour helps you move faster.</p>
+        <div class="builder-tour-actions">
+          <button id="builder-tour-dismiss" type="button" class="builder-tour-btn builder-tour-btn--ghost">Dismiss</button>
+          <button id="builder-tour-next" type="button" class="builder-tour-btn builder-tour-btn--primary">Next</button>
+        </div>
+      </div>
+    </div>
     <script>
       // ====================== STATE ======================
       let loggedIn = false;
@@ -2555,6 +2649,7 @@
         steps: [],
         dismissedThisSession: false,
         timer: null,
+        context: {},
       };
       const toolsData = [
         {
@@ -2624,17 +2719,17 @@
       function hasPremiumAccess() {
         return Boolean(
           loggedIn &&
-            (currentUser?.isPro ||
-              String(currentPremiumRequest?.status || "").toLowerCase() ===
-                "granted"),
+          (currentUser?.isPro ||
+            String(currentPremiumRequest?.status || "").toLowerCase() ===
+              "granted"),
         );
       }
       function hasPendingPremiumRequest() {
         return Boolean(
           currentPremiumRequest &&
-            ["pending", "reviewing", "received"].includes(
-              String(currentPremiumRequest.status || "").toLowerCase(),
-            ),
+          ["pending", "reviewing", "received"].includes(
+            String(currentPremiumRequest.status || "").toLowerCase(),
+          ),
         );
       }
       function hasDeniedPremiumRequest() {
@@ -2691,7 +2786,7 @@
                 <span>Request Review</span>
                 <i class="fas fa-arrow-right"></i>
               </button>`
-          : `<button onclick="${loggedIn ? "upgradePlan()" : "showLogin()"}" class="feature-gate-button feature-gate-button--premium relative hover:scale-[1.03] transition-all">
+            : `<button onclick="${loggedIn ? "upgradePlan()" : "showLogin()"}" class="feature-gate-button feature-gate-button--premium relative hover:scale-[1.03] transition-all">
                 <span>${loggedIn ? "Request Premium" : "Sign in to Unlock"}</span>
                 <i class="fas fa-arrow-right"></i>
               </button>`;
@@ -3020,11 +3115,17 @@
           "https://via.placeholder.com/32/22d3ee/ffffff?text=U";
         if (profilePic) {
           profilePic.src = picSrc;
-          profilePic.classList.toggle("pro-avatar-ring", Boolean(currentUser.isPro));
+          profilePic.classList.toggle(
+            "pro-avatar-ring",
+            Boolean(currentUser.isPro),
+          );
         }
         if (dropdownPic) {
           dropdownPic.src = picSrc;
-          dropdownPic.classList.toggle("pro-avatar-ring", Boolean(currentUser.isPro));
+          dropdownPic.classList.toggle(
+            "pro-avatar-ring",
+            Boolean(currentUser.isPro),
+          );
         }
         if (username) username.textContent = currentUser.name || "User";
         if (dropdownName) dropdownName.textContent = currentUser.name || "User";
@@ -3059,7 +3160,9 @@
           });
           const data = await res.json();
           if (!res.ok || !data.success) {
-            throw new Error(data.message || "Could not cancel premium right now.");
+            throw new Error(
+              data.message || "Could not cancel premium right now.",
+            );
           }
           currentUser.isPro = false;
           currentPremiumRequest = {
@@ -3067,7 +3170,10 @@
             status: "closed",
           };
           updateUserProfileUi();
-          if (currentStudioToolId && PREMIUM_TOOL_IDS.includes(currentStudioToolId)) {
+          if (
+            currentStudioToolId &&
+            PREMIUM_TOOL_IDS.includes(currentStudioToolId)
+          ) {
             switchTool(currentStudioToolId);
           }
         } catch (error) {
@@ -3149,7 +3255,9 @@
           prefill?.name ?? document.getElementById("upgrade-name")?.value ?? "",
         ).trim();
         const email = String(
-          prefill?.email ?? document.getElementById("upgrade-email")?.value ?? "",
+          prefill?.email ??
+            document.getElementById("upgrade-email")?.value ??
+            "",
         ).trim();
         const message = String(
           prefill?.message ??
@@ -4458,10 +4566,15 @@
                             </button>
                             <div id="studio-menu-panel" class="studio-menu-panel hidden">
                                 <div class="space-y-3">
+                                    <div class="px-1">
+                                        <p class="text-[9px] font-black uppercase tracking-[0.22em] text-cyan-400">Workflow AI Guide</p>
+                                        <p class="text-[11px] text-slate-400">Replay the builder tutorial whenever you want.</p>
+                                    </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <button onclick="requestNewBuilderProject(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-file-circle-plus text-cyan-400"></i><span>New Project<small>Clear canvas and start fresh</small></span></button>
                                         <button onclick="saveBuilderDraft(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-floppy-disk text-cyan-400"></i><span>Save Draft<small>Store current project locally</small></span></button>
                                     </div>
+                                    <button onclick="restartBuilderTutorial(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-person-chalkboard text-cyan-400"></i><span>Start Tutorial<small>Replay the Workflow AI guide</small></span></button>
                                     <button onclick="switchTool('history'); exitStudio(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-clock-rotate-left text-cyan-400"></i><span>Project History<small>Open MediaLab history library</small></span></button>
                                     <div>
                                         <p class="text-[9px] font-black uppercase tracking-[0.22em] text-slate-500 px-1 mb-2">Draft Projects</p>
@@ -4526,16 +4639,16 @@
                     </div>
                     <div id="builder-panel-design" class="builder-popover hidden">
                         <div class="builder-popover-grid">
-                            <button onclick="openDesignModal('templates'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-swatchbook text-cyan-400"></i><span>Templates<small>Professional page background presets</small></span></button>
+                            <button id="builder-design-templates-trigger" onclick="openDesignModal('templates'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-swatchbook text-cyan-400"></i><span>Templates<small>Professional page background presets</small></span></button>
                             <button onclick="openDesignModal('color'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-fill-drip text-cyan-400"></i><span>Color<small>Pick a clean custom page color</small></span></button>
                             <button onclick="openDesignModal('image'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-image text-cyan-400"></i><span>Upload Image<small>Use a real page background image</small></span></button>
                         </div>
                     </div>
                     <div id="builder-panel-templates" class="builder-popover hidden">
                         <div class="builder-popover-grid">
+                            <button id="builder-template-login" onclick="insertStarterBlock('login'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-right-to-bracket text-cyan-400"></i><span>Login Form<small>Auth page starter</small></span></button>
                             <button onclick="insertStarterBlock('hero'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-panorama text-cyan-400"></i><span>Landing Hero<small>Marketing homepage</small></span></button>
                             <button onclick="insertStarterBlock('feature'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-th-large text-cyan-400"></i><span>Features Section<small>Service showcase</small></span></button>
-                            <button onclick="insertStarterBlock('login'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-right-to-bracket text-cyan-400"></i><span>Login Form<small>Auth page starter</small></span></button>
                             <button onclick="insertStarterBlock('contact'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-envelope text-cyan-400"></i><span>Contact Form<small>Lead capture layout</small></span></button>
                             <button onclick="insertStarterBlock('pricing'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-tags text-cyan-400"></i><span>Pricing Cards<small>Product pricing section</small></span></button>
                             <button onclick="insertStarterBlock('dashboard'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-chart-line text-cyan-400"></i><span>Dashboard Hero<small>SaaS product starter</small></span></button>
@@ -4627,7 +4740,7 @@
                     ]
                       .map(
                         (item) => `
-                        <button onclick="${item.id === "img" ? "triggerLocalImage()" : `addCanvasElement('${item.id}')`}; toggleElementPicker()"
+                        <button id="element-picker-item-${item.id}" onclick="${item.id === "img" ? "triggerLocalImage()" : `addCanvasElement('${item.id}')`}; toggleElementPicker()"
                                 class="flex flex-col items-center gap-3 p-4 bg-white/5 rounded-[1.5rem] hover:bg-cyan-500/20 transition-all border border-transparent hover:border-cyan-500/30 group">
                             <i class="fas ${item.icon} text-gray-500 group-hover:text-cyan-400 text-xl transition-transform group-hover:scale-110"></i>
                             <span class="text-[7px] font-black text-gray-600 group-hover:text-white uppercase tracking-tighter">${item.label}</span>
@@ -4654,33 +4767,15 @@
                        
                         <div class="mt-5 pt-4 border-t border-white/5 shrink-0">
                             <div class="flex justify-between items-center mb-5 px-1">
-                                <button onclick="changeInspectorPage(-1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
+                                <button id="inspector-page-prev" onclick="changeInspectorPage(-1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-500 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
                                 <span id="page-title" class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em] flex-1 text-center">Content</span>
-                                <button onclick="changeInspectorPage(1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                                <button id="inspector-page-next" onclick="changeInspectorPage(1)" class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
                             </div>
                             <div class="flex gap-2">
                                 <button onclick="closeSmartInspector()" class="flex-1 py-3.5 bg-gray-800 text-gray-500 rounded-2xl font-bold text-[9px] uppercase tracking-widest hover:bg-gray-700 transition-all">Cancel</button>
                                 <button id="inspector-confirm-btn" class="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-bold text-[9px] uppercase tracking-widest shadow-lg shadow-cyan-900/40 hover:bg-cyan-500 transition-all">Apply</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div id="builder-snackbar" class="hidden fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-[3400] px-4 py-3 rounded-2xl bg-slate-950/92 border border-cyan-400/20 text-sm font-bold text-cyan-100 shadow-[0_20px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl">
-              Code copied to clipboard
-            </div>
-            <div id="builder-tour-overlay" class="hidden fixed inset-0 z-[3410] pointer-events-none">
-                <div id="builder-tour-highlight" class="builder-tour-highlight hidden"></div>
-                <div id="builder-tour-pointer" class="builder-tour-pointer hidden">
-                    <i class="fas fa-hand-pointer"></i>
-                </div>
-                <div id="builder-tour-card" class="builder-tour-card hidden pointer-events-auto">
-                    <div class="builder-tour-chip">Workflow AI Guide</div>
-                    <h4 id="builder-tour-title" class="builder-tour-title">Builder guide</h4>
-                    <p id="builder-tour-message" class="builder-tour-message">A quick tour helps you move faster.</p>
-                    <div class="builder-tour-actions">
-                        <button id="builder-tour-dismiss" type="button" class="builder-tour-btn builder-tour-btn--ghost">Dismiss</button>
-                        <button id="builder-tour-next" type="button" class="builder-tour-btn builder-tour-btn--primary">Next</button>
                     </div>
                 </div>
             </div>
@@ -6005,7 +6100,8 @@
             profileMenu.classList.add("hidden");
           } else if (
             !profileMenu.classList.contains("hidden") &&
-            (profileMenu.contains(event.target) || userSection.contains(event.target))
+            (profileMenu.contains(event.target) ||
+              userSection.contains(event.target))
           ) {
             queueProfileMenuAutoHide();
           }
@@ -6018,7 +6114,8 @@
           profileMenu &&
           userSection &&
           !profileMenu.classList.contains("hidden") &&
-          (profileMenu.contains(event.target) || userSection.contains(event.target))
+          (profileMenu.contains(event.target) ||
+            userSection.contains(event.target))
         ) {
           queueProfileMenuAutoHide();
         }
@@ -6445,6 +6542,7 @@
             "linear-gradient(145deg, #111827 0%, #0f172a 50%, #020617 100%)",
         };
         applyCanvasPageBackground(presets[kind] || presets.clean, silent);
+        handleBuilderTutorialEvent("design-preset-applied", { kind });
       }
       function applyCanvasDesignColor(color) {
         applyCanvasPageBackground(color || "#ffffff");
@@ -6464,9 +6562,11 @@
         const modal = document.getElementById("design-modal");
         modal?.classList.remove("hidden");
         renderDesignModal();
+        handleBuilderTutorialEvent("design-modal-opened", { mode });
       }
       function closeDesignModal() {
         document.getElementById("design-modal")?.classList.add("hidden");
+        handleBuilderTutorialEvent("design-modal-closed", {});
       }
       function renderDesignModal() {
         const title = document.getElementById("design-modal-title");
@@ -6522,7 +6622,7 @@
             ]
               .map(
                 ([id, label]) =>
-                  `<button onclick="applyCanvasDesignPreset('${id}')" class="builder-cmd justify-center text-center"><span>${label}<small>Apply page look</small></span></button>`,
+                  `<button id="design-preset-${id}" onclick="applyCanvasDesignPreset('${id}')" class="builder-cmd justify-center text-center"><span>${label}<small>Apply page look</small></span></button>`,
               )
               .join("")}
           </div>
@@ -6775,6 +6875,7 @@
         tab?.classList.add("active");
         activeBuilderPanel = name;
         queueBuilderPanelAutoHide();
+        handleBuilderTutorialEvent("builder-tab-opened", { tab: name });
       }
       document.addEventListener("mousedown", (e) => {
         const toolbarShell = document.getElementById("builder-toolbar-shell");
@@ -6864,12 +6965,27 @@
       function addCanvasElement(type) {
         openSmartInspector(type);
       }
+      function removeCanvasElement(el) {
+        if (!el) return;
+        const removedId = el.id || "";
+        el.remove();
+        handleBuilderTutorialEvent("element-removed", { elementId: removedId });
+        saveToHistory();
+      }
+      function handleBuilderDeleteAction(el) {
+        removeCanvasElement(el);
+      }
       function triggerLocalImage() {
         openBuilderFilePicker("local-img-input");
       }
       function requestBuilderFullscreen() {
         const doc = document.documentElement;
-        if (!isBuilderActive() || document.fullscreenElement || !doc?.requestFullscreen) return;
+        if (
+          !isBuilderActive() ||
+          document.fullscreenElement ||
+          !doc?.requestFullscreen
+        )
+          return;
         Promise.resolve(doc.requestFullscreen()).catch(() => {});
       }
       function openBuilderFilePicker(inputId) {
@@ -7014,6 +7130,10 @@
         applyCustomCssRulesToElement(wrap, mergedAttrs.customCssRules);
         hydrateCanvasElement(wrap);
         canvas.appendChild(wrap);
+        handleBuilderTutorialEvent("element-created", {
+          type,
+          elementId: wrap.id || mergedAttrs.id || "",
+        });
         saveToHistory();
         selectElement(wrap);
       }
@@ -7207,6 +7327,10 @@
         const startCount = canvas.querySelectorAll(
           ":scope > .canvas-element",
         ).length;
+        const finishStarterInsert = () => {
+          autoGroupStarterElements(startCount);
+          handleBuilderTutorialEvent("starter-inserted", { kind });
+        };
         if (kind === "hero") {
           addObject(
             "div",
@@ -7264,7 +7388,7 @@
             },
             { text: "Start Building" },
           );
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
         if (kind === "feature") {
@@ -7325,7 +7449,7 @@
               },
             );
           });
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
         if (kind === "login") {
@@ -7405,7 +7529,7 @@
             },
             { text: "Sign In" },
           );
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
         if (kind === "contact") {
@@ -7498,7 +7622,7 @@
             },
             { text: "Send Inquiry" },
           );
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
         if (kind === "pricing") {
@@ -7583,7 +7707,7 @@
               { text: "Choose Plan" },
             );
           });
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
         if (kind === "dashboard") {
@@ -7648,7 +7772,7 @@
               { id: `dashboard_card_${i}_${Date.now()}` },
             );
           });
-          autoGroupStarterElements(startCount);
+          finishStarterInsert();
           return;
         }
       }
@@ -7657,6 +7781,10 @@
         inspectorPageIndex = 0; // Surgical Reset
         const modal = document.getElementById("smart-inspector");
         modal.classList.remove("hidden");
+        handleBuilderTutorialEvent("inspector-opened", {
+          type,
+          elementId: existingEl?.id || "",
+        });
         const editableDivText =
           type === "div" && !elementHasNestedCanvasChildren(existingEl);
         currentInspectorState = {
@@ -7716,6 +7844,10 @@
         };
         syncInspectorUI();
         document.getElementById("inspector-confirm-btn").onclick = () => {
+          handleBuilderTutorialEvent("inspector-applied", {
+            type: currentInspectorState.type,
+            elementId: existingEl?.id || currentInspectorState.attributes?.id || "",
+          });
           if (existingEl) applyStylesToExisting();
           else
             addObject(
@@ -8277,9 +8409,9 @@
         };
         const typeDefaults = defaults[type] || defaults.div;
         return {
-          top: styles.top,
-          left: styles.left,
-          zIndex: styles.zIndex,
+          top: styles.top || "54px",
+          left: styles.left || "28px",
+          zIndex: styles.zIndex || "10",
           width: styles.width || typeDefaults.width || "260px",
           height: styles.height || typeDefaults.height || "100px",
           padding: styles.padding || typeDefaults.padding || "16px",
@@ -8641,11 +8773,14 @@
           const nextLayer = siblingLayers.find((value) => value > maxLayer);
           delta = nextLayer ? nextLayer - maxLayer : 1;
         } else {
-          const previousLayers = siblingLayers.filter((value) => value < minLayer);
+          const previousLayers = siblingLayers.filter(
+            (value) => value < minLayer,
+          );
           const previousLayer = previousLayers.length
             ? previousLayers[previousLayers.length - 1]
             : null;
-          delta = previousLayer !== null ? previousLayer - minLayer : 1 - minLayer;
+          delta =
+            previousLayer !== null ? previousLayer - minLayer : 1 - minLayer;
         }
         if (delta === 0) return;
         targets.forEach((el) => {
@@ -8862,12 +8997,73 @@
             if (step?.primaryAction) step.primaryAction();
           });
         }
+        if (!document.body.dataset.builderTutorialClickBound) {
+          document.body.dataset.builderTutorialClickBound = "true";
+          document.addEventListener(
+            "mousedown",
+            (event) => {
+              if (!builderTourState.active) return;
+              const step = builderTourState.steps[builderTourState.stepIndex];
+              if (!step?.waitFor) return;
+              const card = document.getElementById("builder-tour-card");
+              if (card?.contains(event.target)) return;
+              const target = getBuilderTutorialTarget(step);
+              if (!target) return;
+              if (target === event.target || target.contains(event.target)) {
+                showBuilderSnackbar(
+                  step.successHint || "Great, that is the right action.",
+                  "success",
+                );
+                return;
+              }
+              event.preventDefault();
+              event.stopPropagation();
+              event.stopImmediatePropagation();
+              showBuilderSnackbar(
+                "Wrong place clicked. Follow the highlighted step or dismiss the tutorial.",
+                "error",
+              );
+            },
+            true,
+          );
+        }
+        if (!window.__builderTutorialTrackBound) {
+          window.__builderTutorialTrackBound = true;
+          const refreshTutorialTarget = () => {
+            if (!builderTourState.active) return;
+            const step = builderTourState.steps[builderTourState.stepIndex];
+            const target = getBuilderTutorialTarget(step);
+            positionBuilderTutorialHighlight(target, false);
+          };
+          window.addEventListener("resize", refreshTutorialTarget);
+          window.addEventListener("scroll", refreshTutorialTarget, true);
+        }
+      }
+      function getBuilderTutorialTarget(step) {
+        if (!step) return null;
+        if (typeof step.getTarget === "function") {
+          return step.getTarget();
+        }
+        return step.targetSelector ? document.querySelector(step.targetSelector) : null;
+      }
+      function handleBuilderTutorialEvent(eventName, payload = {}) {
+        if (!builderTourState.active) return;
+        const step = builderTourState.steps[builderTourState.stepIndex];
+        if (!step || step.waitFor !== eventName) return;
+        if (typeof step.onEvent === "function") {
+          const handled = step.onEvent(payload);
+          if (handled === false) return;
+        }
+        advanceBuilderTutorial();
       }
       function shouldOfferBuilderTutorial() {
         if (currentStudioToolId !== "web-builder") return false;
-        if (builderTourState.active || builderTourState.dismissedThisSession) return false;
+        if (builderTourState.active || builderTourState.dismissedThisSession)
+          return false;
         if (loggedIn) return !currentUser?.builderTutorialSeen;
-        return sessionStorage.getItem("medialab_builder_tutorial_guest_done") !== "1";
+        return (
+          sessionStorage.getItem("medialab_builder_tutorial_guest_done") !== "1"
+        );
       }
       function scheduleBuilderTutorial() {
         clearTimeout(builderTourState.timer);
@@ -8875,6 +9071,35 @@
         builderTourState.timer = setTimeout(() => {
           if (shouldOfferBuilderTutorial()) openBuilderTutorialPrompt();
         }, 700);
+      }
+      function showBuilderCelebration(message) {
+        const snackbar = document.getElementById("builder-snackbar");
+        if (!snackbar) return;
+        snackbar.textContent = message;
+        snackbar.style.setProperty("z-index", "2000000", "important");
+        snackbar.classList.remove("hidden");
+        snackbar.classList.remove(
+          "bg-slate-950/92",
+          "bg-emerald-600/95",
+          "bg-rose-600/95",
+          "border-red-500/40",
+          "text-red-100",
+          "border-green-500/40",
+          "text-green-100",
+          "border-cyan-400/20",
+          "text-cyan-100",
+        );
+        snackbar.classList.add(
+          "bg-emerald-600/95",
+          "border-green-400/50",
+          "text-white",
+        );
+        snackbar.classList.add("animate-bounce");
+        clearTimeout(builderTourState.celebrationTimer);
+        builderTourState.celebrationTimer = setTimeout(() => {
+          snackbar.classList.remove("animate-bounce");
+          snackbar.classList.add("hidden");
+        }, 2600);
       }
       function getBuilderTutorialSteps() {
         return [
@@ -8899,48 +9124,138 @@
             secondaryAction: () => dismissBuilderTutorial(true),
           },
           {
-            title: "Insert Templates",
+            title: "Open Insert",
             message:
-              "Open Templates to drop in ready-made sections fast, then tweak them with the visual styler.",
+              "Click Insert to open the element tools where your first block begins.",
+            targetSelector: "#tab-insert",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-tab-opened",
+            onEvent: (payload) => payload.tab === "insert",
+          },
+          {
+            title: "Open Elements",
+            message:
+              "Now click Elements. This opens the component picker for your first container.",
+            targetSelector: "#insert-elements-trigger",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "element-picker-opened",
+          },
+          {
+            title: "Create Your First Element",
+            message:
+              "Click the Container tile. The formatter popup will open so you can design the block before placing it.",
+            targetSelector: "#element-picker-item-div",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "inspector-opened",
+            onEvent: (payload) => {
+              if (payload.type !== "div") return false;
+              builderTourState.context.pendingType = "div";
+              return true;
+            },
+          },
+          {
+            title: "Apply Your First Block",
+            message:
+              "For this first step, just click Apply. You do not need to style anything yet.",
+            targetSelector: "#inspector-confirm-btn",
+            successHint: "Great, click Apply to insert the first block.",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "inspector-applied",
+            onEvent: (payload) => {
+              if (payload.type !== "div") return false;
+              builderTourState.context.lastCreatedElementId = payload.elementId || "";
+              const insertedEl = payload.elementId
+                ? document.getElementById(payload.elementId)
+                : null;
+              if (insertedEl) {
+                setTimeout(() => {
+                  removeCanvasElement(insertedEl);
+                }, 220);
+              }
+              return true;
+            },
+          },
+          {
+            title: "Open Design",
+            message:
+              "Now move to Design so Workflow AI can show you a quick full-page look.",
+            targetSelector: "#tab-design",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-tab-opened",
+            onEvent: (payload) => {
+              if (payload.tab !== "design") return false;
+              setTimeout(() => {
+                openDesignModal("templates");
+                renderBuilderTutorialStep();
+              }, 120);
+              return true;
+            },
+          },
+          {
+            title: "Choose Spotlight",
+            message:
+              "Pick Spotlight to give the page a dramatic studio background.",
+            getTarget: () =>
+              document.getElementById("design-preset-spotlight") ||
+              document.querySelector('#design-modal-body button[id="design-preset-spotlight"]'),
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "design-preset-applied",
+            onEvent: (payload) => payload.kind === "spotlight",
+          },
+          {
+            title: "Close Design",
+            message:
+              "Great. Now click the X to close the design popup and return to the main builder tabs.",
+            targetSelector: "#design-modal-close",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
+            secondaryLabel: "Dismiss",
+            secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "design-modal-closed",
+          },
+          {
+            title: "Open Templates",
+            message:
+              "Now open Templates. Workflow AI will scroll the tabs into view if needed.",
             targetSelector: "#tab-templates",
-            primaryLabel: "Next",
-            primaryAction: advanceBuilderTutorial,
+            primaryLabel: "Waiting...",
+            primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
+            waitFor: "builder-tab-opened",
+            onEvent: (payload) => payload.tab === "templates",
           },
           {
-            title: "Export Your Work",
+            title: "Insert Login Form",
             message:
-              "When your page is ready, open File to import, save drafts, or export the final HTML.",
-            targetSelector: "#tab-file",
-            primaryLabel: "Next",
-            primaryAction: advanceBuilderTutorial,
+              "Choose the Login Form first. It is the fastest way to drop in a real structured section.",
+            targetSelector: "#builder-template-login",
+            primaryLabel: "Waiting...",
+            primaryAction: null,
             secondaryLabel: "Dismiss",
             secondaryAction: () => dismissBuilderTutorial(true),
-          },
-          {
-            title: "Monetize Later",
-            message:
-              "After exporting your project, click Monetize your work to open AdSense resources and keep moving toward launch.",
-            targetSelector: "#more-features-toggle",
-            primaryLabel: loggedIn ? "Finish" : "Next",
-            primaryAction: loggedIn
-              ? completeBuilderTutorial
-              : advanceBuilderTutorial,
-            secondaryLabel: "Dismiss",
-            secondaryAction: () => dismissBuilderTutorial(true),
-          },
-          {
-            title: "Continue With Workflow AI",
-            message:
-              "Login to continue with Workflow AI step by step until you publish your first website.",
-            targetSelector: "#user-section",
-            primaryLabel: "Dismiss",
-            primaryAction: () => dismissBuilderTutorial(true),
-            secondaryLabel: "Login",
-            secondaryAction: () => {
-              dismissBuilderTutorial(true);
-              showLogin();
+            waitFor: "starter-inserted",
+            onEvent: (payload) => {
+              if (payload.kind !== "login") return false;
+              return true;
             },
           },
         ];
@@ -8951,7 +9266,9 @@
             title: "Workflow AI Guide",
             message:
               "Would you like Workflow AI to guide you through the Web Builder with short friendly tips?",
-            targetSelector: document.getElementById("editor-welcome")?.classList.contains("hidden")
+            targetSelector: document
+              .getElementById("editor-welcome")
+              ?.classList.contains("hidden")
               ? "#studio-workspace"
               : "#editor-welcome .feature-gate-card",
             primaryLabel: "Yes",
@@ -8963,6 +9280,14 @@
         builderTourState.stepIndex = 0;
         builderTourState.active = true;
         renderBuilderTutorialStep();
+      }
+      function restartBuilderTutorial() {
+        closeBuilderTutorial();
+        builderTourState.dismissedThisSession = false;
+        if (!loggedIn) {
+          sessionStorage.removeItem("medialab_builder_tutorial_guest_done");
+        }
+        openBuilderTutorialPrompt();
       }
       function startBuilderTutorial() {
         if (!isBuilderActive()) {
@@ -8979,28 +9304,37 @@
         if (!builderTourState.active) return;
         const nextIndex = builderTourState.stepIndex + 1;
         if (nextIndex >= builderTourState.steps.length) {
-          completeBuilderTutorial();
+          showBuilderCelebration(
+            "Congratulation, you built your first website using MediaLab.",
+          );
+          finishBuilderTutorial();
           return;
         }
         builderTourState.stepIndex = nextIndex;
         renderBuilderTutorialStep();
       }
-      function positionBuilderTutorialHighlight(target) {
+      function positionBuilderTutorialHighlight(target, shouldScroll = true) {
         const overlay = document.getElementById("builder-tour-overlay");
         const highlight = document.getElementById("builder-tour-highlight");
         const pointer = document.getElementById("builder-tour-pointer");
         const card = document.getElementById("builder-tour-card");
         if (!overlay || !highlight || !pointer || !card) return;
+        overlay.style.setProperty("z-index", "1000000", "important");
+        highlight.style.setProperty("z-index", "1000002", "important");
+        pointer.style.setProperty("z-index", "1000003", "important");
+        card.style.setProperty("z-index", "1000004", "important");
         if (!target) {
           highlight.classList.add("hidden");
           pointer.classList.add("hidden");
           return;
         }
-        target.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
+        if (shouldScroll) {
+          target.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
+        }
         const rect = target.getBoundingClientRect();
         const pad = 8;
         highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
@@ -9016,6 +9350,20 @@
         pointer.style.left = `${pointerLeft}px`;
         pointer.style.top = `${pointerTop}px`;
         pointer.classList.remove("hidden");
+        const cardWidth = Math.min(window.innerWidth * 0.92, 384);
+        const gap = 18;
+        const fitsBelow = rect.bottom + gap + 220 < window.innerHeight;
+        const cardTop = fitsBelow
+          ? rect.bottom + gap
+          : Math.max(12, rect.top - 182);
+        const cardLeft = Math.min(
+          window.innerWidth - cardWidth - 12,
+          Math.max(12, rect.left + rect.width / 2 - cardWidth / 2),
+        );
+        card.style.left = `${cardLeft}px`;
+        card.style.top = `${cardTop}px`;
+        card.style.bottom = "auto";
+        card.style.transform = "none";
       }
       function renderBuilderTutorialStep() {
         const overlay = document.getElementById("builder-tour-overlay");
@@ -9025,22 +9373,30 @@
         const dismissBtn = document.getElementById("builder-tour-dismiss");
         const nextBtn = document.getElementById("builder-tour-next");
         const step = builderTourState.steps[builderTourState.stepIndex];
-        if (!overlay || !card || !title || !message || !dismissBtn || !nextBtn || !step) {
+        if (
+          !overlay ||
+          !card ||
+          !title ||
+          !message ||
+          !dismissBtn ||
+          !nextBtn ||
+          !step
+        ) {
           closeBuilderTutorial();
           return;
         }
         overlay.classList.remove("hidden");
         card.classList.remove("hidden");
+        overlay.style.setProperty("z-index", "1000000", "important");
+        card.style.setProperty("z-index", "1000004", "important");
         title.textContent = step.title;
         message.textContent = step.message;
         dismissBtn.textContent = step.secondaryLabel || "Dismiss";
         nextBtn.textContent = step.primaryLabel || "Next";
-        const target = step.targetSelector
-          ? document.querySelector(step.targetSelector)
-          : null;
-        positionBuilderTutorialHighlight(target);
+        const target = getBuilderTutorialTarget(step);
+        positionBuilderTutorialHighlight(target, true);
       }
-      async function completeBuilderTutorial() {
+      async function persistBuilderTutorialCompletion() {
         builderTourState.dismissedThisSession = true;
         if (loggedIn && currentUser && !currentUser.builderTutorialSeen) {
           try {
@@ -9058,6 +9414,18 @@
         } else if (!loggedIn) {
           sessionStorage.setItem("medialab_builder_tutorial_guest_done", "1");
         }
+      }
+      function finishBuilderTutorial() {
+        builderTourState.dismissedThisSession = true;
+        closeBuilderTutorial();
+        setTimeout(() => {
+          persistBuilderTutorialCompletion().catch((error) => {
+            console.warn("Builder tutorial completion skipped:", error);
+          });
+        }, 120);
+      }
+      async function completeBuilderTutorial() {
+        await persistBuilderTutorialCompletion();
         closeBuilderTutorial();
       }
       function dismissBuilderTutorial(markGuestDone = false) {
@@ -9079,6 +9447,12 @@
         highlight?.classList.add("hidden");
         pointer?.classList.add("hidden");
         card?.classList.add("hidden");
+        if (card) {
+          card.style.removeProperty("top");
+          card.style.removeProperty("left");
+          card.style.removeProperty("bottom");
+          card.style.removeProperty("transform");
+        }
       }
       function normalizeCustomCssRules(rules = []) {
         const safeRules = Array.isArray(rules) ? rules : [];
@@ -9106,7 +9480,9 @@
         body.dataset.baseInlineCss = baseCss;
         body.style.cssText = baseCss;
         rules.forEach((rule) => {
-          const selector = String(rule.selector || "").trim().toLowerCase();
+          const selector = String(rule.selector || "")
+            .trim()
+            .toLowerCase();
           const styleText = String(rule.styles || "").trim();
           if (!styleText) return;
           if (
@@ -9442,7 +9818,7 @@ ${payload.body || "  "}
         <div class="absolute -top-10 left-0 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all z-[60]">
             <div class="drag-handle w-7 h-7 bg-gray-950 text-white rounded-lg border border-white/10 shadow-2xl flex items-center justify-center cursor-move pointer-events-auto"><i class="fas fa-arrows-alt text-[10px]"></i></div>
             <button onclick="openSmartInspector('${type}', this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-cyan-400 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-sliders-h text-[10px]"></i></button>
-            <button onclick="this.closest('.canvas-element').remove(); saveToHistory();" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
+            <button onclick="handleBuilderDeleteAction(this.closest('.canvas-element'))" class="w-7 h-7 bg-gray-950 text-red-500 rounded-lg border border-white/10 flex items-center justify-center pointer-events-auto"><i class="fas fa-trash-alt text-[10px]"></i></button>
         </div>`;
       }
       function dockStarterSelection() {
@@ -9451,12 +9827,13 @@ ${payload.body || "  "}
         if (!canvas || !target) return;
         const compact = canvas.clientWidth < 640;
         const inset = compact ? 12 : 24;
-        const topInset = compact ? 16 : 24;
+        const topInset = compact ? 42 : 56;
         const naturalWidth = target.offsetWidth || 0;
         const maxWidth = Math.max(180, canvas.clientWidth - inset * 2);
-        const scale = compact && naturalWidth > maxWidth
-          ? Math.max(0.68, maxWidth / naturalWidth)
-          : 1;
+        const scale =
+          compact && naturalWidth > maxWidth
+            ? Math.max(0.68, maxWidth / naturalWidth)
+            : 1;
         const rotateMatch = String(target.style.transform || "").match(
           /rotate\([^)]+\)/,
         );
@@ -9596,10 +9973,43 @@ ${payload.body || "  "}
         URL.revokeObjectURL(codeUrl);
       }
       let builderSnackbarTimer = null;
-      function showBuilderSnackbar(message = "Done") {
+      function showBuilderSnackbar(message = "Done", tone = "info") {
         const bar = document.getElementById("builder-snackbar");
         if (!bar) return;
         bar.textContent = message;
+        bar.style.setProperty("z-index", "2000000", "important");
+        bar.classList.remove(
+          "bg-slate-950/92",
+          "bg-emerald-600/95",
+          "bg-rose-600/95",
+          "border-cyan-400/20",
+          "text-cyan-100",
+          "border-green-500/40",
+          "text-green-100",
+          "border-green-400/50",
+          "border-red-500/40",
+          "text-red-100",
+          "text-white",
+        );
+        if (tone === "success") {
+          bar.classList.add(
+            "bg-emerald-600/95",
+            "border-green-400/50",
+            "text-white",
+          );
+        } else if (tone === "error") {
+          bar.classList.add(
+            "bg-rose-600/95",
+            "border-red-400/50",
+            "text-white",
+          );
+        } else {
+          bar.classList.add(
+            "bg-slate-950/92",
+            "border-cyan-400/20",
+            "text-cyan-100",
+          );
+        }
         bar.classList.remove("hidden");
         clearTimeout(builderSnackbarTimer);
         builderSnackbarTimer = setTimeout(() => {
@@ -9678,6 +10088,11 @@ ${payload.body || "  "}
           p === "backgroundImageUrl" ||
           p === "backgroundSize";
         syncInspectorUI(needsControlRefresh);
+        handleBuilderTutorialEvent("inspector-style-updated", {
+          property: p,
+          value: v,
+          page: inspectorPages[inspectorPageIndex] || "",
+        });
       }
       function updateAttr(p, v) {
         currentInspectorState.attributes[p] = v;
@@ -9886,6 +10301,10 @@ ${payload.body || "  "}
           (inspectorPageIndex + dir + inspectorPages.length) %
           inspectorPages.length;
         syncInspectorUI();
+        handleBuilderTutorialEvent("inspector-page-opened", {
+          page: inspectorPages[inspectorPageIndex] || "",
+          index: inspectorPageIndex,
+        });
       }
       function toggleElementPicker(event) {
         const picker = document.getElementById("element-picker");
@@ -9918,6 +10337,7 @@ ${payload.body || "  "}
         picker.style.top = `${top}px`;
         picker.style.left = `${left}px`;
         picker.style.transform = "none";
+        handleBuilderTutorialEvent("element-picker-opened", { opened: true });
       }
       function closeSmartInspector() {
         const modal = document.getElementById("smart-inspector");
@@ -10064,4 +10484,3 @@ ${payload.body || "  "}
     </script>
   </body>
 </html>
-
