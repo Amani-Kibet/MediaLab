@@ -30,6 +30,12 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 const app = express();
 const httpServer = createServer(app);
 
+app.engine("ejs", (filePath, _options, callback) => {
+  fs.readFile(filePath, "utf8", callback);
+});
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
+
 // --- 1. PRO PRODUCTION SETUP ---
 // This is critical for Render/Heroku to handle HTTPS cookies correctly
 app.set("trust proxy", 1);
@@ -259,6 +265,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Serving
+app.get("/", (_req, res) => {
+  res.render("index");
+});
+app.get("/admin", (_req, res) => {
+  res.render("admin");
+});
 app.use(express.static(path.join(__dirname, "client")));
 app.use("/uploads", express.static(uploadDir));
 app.use("/exports", express.static(exportDir));
@@ -485,6 +497,49 @@ app.get("/api/upgrade-request/status", async (req, res) => {
   }
 });
 
+app.post("/api/account/cancel-premium", async (req, res) => {
+  try {
+    if (!req.user?._id) {
+      return res.status(401).json({ success: false, message: "Login required." });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    user.isPro = false;
+    await user.save();
+
+    await UpgradeRequest.findOneAndUpdate(
+      {
+        $or: [{ userId: req.user._id }, { email: String(user.email || "").toLowerCase() }],
+        status: "granted",
+      },
+      {
+        $set: {
+          status: "closed",
+          reviewedAt: new Date(),
+          reviewedBy: "user-cancelled",
+        },
+      },
+      { sort: { createdAt: -1 } },
+    );
+
+    await createUsageLog({
+      ...buildUsageIdentity(req),
+      action: "premium-cancelled",
+      summary: "cancelled premium plan",
+      source: "profile",
+    });
+
+    res.json({ success: true, isPro: false });
+  } catch (error) {
+    console.error("Cancel premium failed:", error);
+    res.status(500).json({ success: false, message: "Could not cancel premium right now." });
+  }
+});
+
 app.get("/api/builder-drafts", async (req, res) => {
   try {
     if (!req.user) {
@@ -645,6 +700,25 @@ app.patch("/api/admin/feedbacks/:id", async (req, res) => {
   } catch (error) {
     console.error("Admin feedback update failed:", error);
     res.status(500).json({ success: false, message: "Could not update feedback." });
+  }
+});
+
+app.delete("/api/admin/feedbacks/:id", async (req, res) => {
+  try {
+    const feedback = await Feedback.findByIdAndDelete(req.params.id).lean();
+
+    if (!feedback) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Feedback not found." });
+    }
+
+    res.json({ success: true, feedback });
+  } catch (error) {
+    console.error("Admin feedback delete failed:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Could not delete feedback." });
   }
 });
 

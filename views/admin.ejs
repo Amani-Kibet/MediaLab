@@ -742,7 +742,7 @@
                 <div>Time: ${formatDate(item.createdAt)}</div>
               </div>
               <div class="flex flex-wrap gap-2 mt-4">
-                <button onclick="completeFeedback('${item._id}')" class="px-3.5 py-2 rounded-xl bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold hover:bg-cyan-300 transition-all">Complete</button>
+                <button onclick="updateFeedback('${item._id}', { status: '${item.status === "completed" ? "open" : "completed"}' })" class="px-3.5 py-2 rounded-xl bg-cyan-400 text-slate-950 text-xs sm:text-sm font-bold hover:bg-cyan-300 transition-all">${item.status === "completed" ? "Reopen" : "Complete"}</button>
                 <button onclick="updateFeedback('${item._id}', { hidden: ${item.hidden ? "false" : "true"} })" class="px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-xs sm:text-sm font-bold hover:bg-white/10 transition-all">${item.hidden ? "Unflag" : "Flag"}</button>
               </div>
             </div>
@@ -925,22 +925,6 @@
         const data = await res.json();
         if (!data.success) {
           alert(data.message || "Could not update feedback.");
-          return;
-        }
-        await loadAdminData();
-      }
-
-      async function completeFeedback(id) {
-        const confirmed = confirm(
-          "Complete this feedback and delete it from the database?",
-        );
-        if (!confirmed) return;
-        const res = await fetch(`/api/admin/feedbacks/${id}`, {
-          method: "DELETE",
-        });
-        const data = await res.json();
-        if (!data.success) {
-          alert(data.message || "Could not delete feedback.");
           return;
         }
         await loadAdminData();

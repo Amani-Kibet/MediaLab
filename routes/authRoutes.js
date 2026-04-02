@@ -151,11 +151,13 @@ router.post("/dev-login", express.json(), async (req, res) => {
       name: "Developer Access",
       email: allowedEmail,
       password: "dev-only",
+      profilePicture: "/favicon.png",
       provider: "developer",
       lastLogin: new Date(),
     });
   } else {
     user.lastLogin = new Date();
+    user.profilePicture = "/favicon.png";
     await user.save();
   }
 
