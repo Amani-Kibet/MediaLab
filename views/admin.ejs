@@ -311,6 +311,12 @@
         location: "",
         time: "",
       };
+      let logFilters = {
+        name: "",
+        email: "",
+        tool: "",
+        date: "",
+      };
       const ADMIN_PASSWORD = "spiderman";
       const ADMIN_ACCESS_KEY = "medialab_admin_access";
 
@@ -359,6 +365,52 @@
 
       function formatLogSummary(item) {
         return item.summary || item.action || "activity";
+      }
+
+      function updateLogFilter(key, value) {
+        logFilters[key] = value;
+        renderLogs();
+      }
+
+      function captureLogFilterFocus() {
+        const active = document.activeElement;
+        if (!active || active.tagName !== "INPUT") return null;
+        const key = active.getAttribute("data-log-filter");
+        if (!key) return null;
+        return {
+          key,
+          start: active.selectionStart ?? String(active.value || "").length,
+          end: active.selectionEnd ?? String(active.value || "").length,
+        };
+      }
+
+      function restoreLogFilterFocus(state) {
+        if (!state) return;
+        requestAnimationFrame(() => {
+          const input = document.querySelector(
+            `[data-log-filter="${state.key}"]`,
+          );
+          if (!input) return;
+          input.focus({ preventScroll: true });
+          if (typeof input.setSelectionRange === "function") {
+            input.setSelectionRange(state.start, state.end);
+          }
+        });
+      }
+
+      function getFilteredLogs() {
+        return adminUsageLogs.filter((item) => {
+          const name = String(item.name || "").toLowerCase();
+          const email = String(item.email || "").toLowerCase();
+          const tool = String(item.source || item.metadata?.toolType || item.metadata?.toolId || "").toLowerCase();
+          const created = formatDate(item.createdAt).toLowerCase();
+          return (
+            (!logFilters.name || name.includes(logFilters.name.toLowerCase())) &&
+            (!logFilters.email || email.includes(logFilters.email.toLowerCase())) &&
+            (!logFilters.tool || tool.includes(logFilters.tool.toLowerCase())) &&
+            (!logFilters.date || created.includes(logFilters.date.toLowerCase()))
+          );
+        });
       }
 
       function animateCountValue(target, nextValue) {
@@ -797,11 +849,12 @@
       function renderLogs() {
         const el = document.getElementById("tab-logs");
         if (!el) return;
+        const focusState = captureLogFilterFocus();
         if (!adminUsageLogs.length) {
           el.innerHTML = `<div class="rounded-[1.5rem] border border-dashed border-white/10 p-8 text-center text-slate-400">No usage logs saved yet.</div>`;
           return;
         }
-        const activities = [...adminUsageLogs].reverse().slice(-140);
+        const activities = [...getFilteredLogs()].reverse().slice(-140);
         el.innerHTML = `
           <div id="activity-terminal" class="terminal-shell terminal-shell-window rounded-[1.6rem] border border-cyan-500/12 shadow-[0_25px_80px_rgba(2,6,23,0.35)] overflow-hidden">
             <button onclick="toggleTerminalPane('activity-terminal')" class="w-full flex items-center justify-between gap-3 px-5 py-4 border-b border-white/8">
@@ -815,6 +868,14 @@
                 <svg class="terminal-chevron h-4 w-4 text-slate-500 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 011.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"></path></svg>
               </div>
             </button>
+            <div class="border-b border-white/8 px-4 py-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                <input data-log-filter="name" value="${escapeHtml(logFilters.name)}" oninput="updateLogFilter('name', this.value)" placeholder="Filter by name" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
+                <input data-log-filter="email" value="${escapeHtml(logFilters.email)}" oninput="updateLogFilter('email', this.value)" placeholder="Filter by email" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
+                <input data-log-filter="tool" value="${escapeHtml(logFilters.tool)}" oninput="updateLogFilter('tool', this.value)" placeholder="Filter by tool/source" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
+                <input data-log-filter="date" value="${escapeHtml(logFilters.date)}" oninput="updateLogFilter('date', this.value)" placeholder="Filter by date" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400" />
+              </div>
+            </div>
             <div class="terminal-body overflow-y-auto px-4 py-4" style="max-height:min(62vh, calc(100vh - 320px));">
               ${activities
                 .map((item, index) => {
@@ -866,6 +927,7 @@
             node.scrollTop = node.scrollHeight;
           });
         });
+        restoreLogFilterFocus(focusState);
       }
 
       function upsertLiveLog(log) {

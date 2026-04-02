@@ -1,6 +1,7 @@
 import express from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { IPinfoWrapper } from "node-ipinfo";
 import User from "../models/User.js";
 import { Resend } from "resend";
 import dotenv from "dotenv";
@@ -9,6 +10,71 @@ dotenv.config();
 
 const router = express.Router();
 const resend = new Resend(process.env.RESEND_API_KEY);
+const ipinfoToken = process.env.IPINFO_TOKEN || process.env.IPINFO_API_TOKEN || "";
+const ipinfoWrapper = ipinfoToken ? new IPinfoWrapper(ipinfoToken, undefined, 4000) : null;
+
+const extractClientIp = (req) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  const rawIp = Array.isArray(forwarded)
+    ? forwarded[0]
+    : typeof forwarded === "string"
+      ? forwarded.split(",")[0]
+      : req.ip || req.socket?.remoteAddress || "";
+  return String(rawIp || "")
+    .replace(/^::ffff:/, "")
+    .trim();
+};
+
+const isLocalIp = (ip = "") =>
+  ["127.0.0.1", "::1", "localhost"].includes(String(ip).toLowerCase());
+
+const buildLocationLabel = (ipinfo = {}) => {
+  const geo = ipinfo.geo || ipinfo;
+  const parts = [geo.city, geo.region, geo.country]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  return parts.join(", ");
+};
+
+const updateUserLocationOnLogin = async (req, user) => {
+  try {
+    if (!user) return;
+    const clientIp = extractClientIp(req);
+    if (!clientIp) return;
+
+    const fallbackLocation = isLocalIp(clientIp)
+      ? `Local IP (${clientIp})`
+      : `IP ${clientIp}`;
+
+    if (!ipinfoWrapper) {
+      if (fallbackLocation !== user.location) {
+        user.location = fallbackLocation;
+        await user.save();
+      }
+      return;
+    }
+
+    const ipinfo = await ipinfoWrapper.lookupIp(clientIp);
+    const nextLocation = buildLocationLabel(ipinfo);
+    const finalLocation = nextLocation || fallbackLocation;
+    if (!finalLocation || finalLocation === user.location) return;
+    user.location = finalLocation;
+    await user.save();
+  } catch (error) {
+    console.warn("IPinfo location lookup skipped:", error.message);
+    try {
+      const clientIp = extractClientIp(req);
+      if (!clientIp || !user) return;
+      const fallbackLocation = isLocalIp(clientIp)
+        ? `Local IP (${clientIp})`
+        : `IP ${clientIp}`;
+      if (fallbackLocation !== user.location) {
+        user.location = fallbackLocation;
+        await user.save();
+      }
+    } catch {}
+  }
+};
 
 // --- 1. WELCOME EMAIL (Improved Error Handling) ---
 const sendWelcomeEmail = async (userEmail, userName) => {
@@ -119,7 +185,8 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/?login=failed" }),
-  (req, res) => {
+  async (req, res) => {
+    await updateUserLocationOnLogin(req, req.user);
     // Manually force session save before redirecting (Fixes Render "Session Lag")
     req.session.save((err) => {
       if (err) {
@@ -160,6 +227,8 @@ router.post("/dev-login", express.json(), async (req, res) => {
     user.profilePicture = "/favicon.png";
     await user.save();
   }
+
+  await updateUserLocationOnLogin(req, user);
 
   req.login(user, (err) => {
     if (err) {

@@ -591,7 +591,7 @@ app.post("/api/builder-drafts", async (req, res) => {
 
     user.builderDrafts = user.builderDrafts
       .sort((a, b) => new Date(a.savedAt) - new Date(b.savedAt))
-      .slice(-12);
+      .slice(-10);
 
     await user.save();
     await createUsageLog({

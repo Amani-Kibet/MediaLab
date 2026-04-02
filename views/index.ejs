@@ -3093,6 +3093,8 @@
           currentUser = null;
           currentPremiumRequest = null;
           updateUserProfileUi();
+          updateSidebarHistory([]);
+          renderBuilderDrafts();
           document.getElementById("profile-menu").classList.add("hidden");
           document.getElementById("studio").classList.add("hidden");
           document.getElementById("landing").classList.remove("hidden");
@@ -4194,22 +4196,49 @@
         // 0. PROJECT HISTORY / LIBRARY
         // =============================================================
         if (id === "history") {
-          const projects = currentUser
-            ? currentUser.projects
-            : JSON.parse(
-                localStorage.getItem("medialab_guest_history") || "[]",
-              );
+          const projects = currentUser?.projects || [];
+          const drafts = currentUser?.builderDrafts || [];
           html = `
             <div class="animate-fadeIn">
-                <div class="flex justify-between items-center mb-8">
+                <div class="mb-10">
                     <h2 class="text-3xl font-semibold text-white tracking-tighter">Project Library</h2>
-                    <button onclick="clearAllHistory()" class="text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-all">
-                        <i class="fas fa-broom mr-2"></i>Clear Cache
-                    </button>
+                    <p class="text-sm text-gray-500 mt-3">${loggedIn ? "Your completed exports and builder drafts are saved to your account." : "Sign in to keep project history and drafts."}</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    ${renderHistoryItems(projects)}
-                </div>
+                ${
+                  !loggedIn
+                    ? `<div class="feature-gate-shell max-w-3xl">
+                        <div class="feature-gate-card">
+                          <div class="feature-gate-badge">Login Required</div>
+                          <div class="feature-gate-icon"><i class="fas fa-folder-open text-4xl text-cyan-400"></i></div>
+                          <h3 class="feature-gate-title">Your library is cloud-saved</h3>
+                          <p class="feature-gate-text">Sign in to access project history and builder drafts across sessions.</p>
+                          <button onclick="showLogin()" class="feature-gate-button active:scale-95">
+                            <span>Sign In to Continue</span>
+                            <i class="fas fa-arrow-right"></i>
+                          </button>
+                        </div>
+                      </div>`
+                    : `<div class="space-y-10">
+                        <div>
+                          <div class="flex items-center justify-between mb-5">
+                            <h3 class="text-xl font-semibold text-white">Completed History</h3>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">${projects.length}/10</span>
+                          </div>
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${renderHistoryItems(projects)}
+                          </div>
+                        </div>
+                        <div>
+                          <div class="flex items-center justify-between mb-5">
+                            <h3 class="text-xl font-semibold text-white">Drafts</h3>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">${drafts.length}/10</span>
+                          </div>
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${renderDraftItems(drafts)}
+                          </div>
+                        </div>
+                      </div>`
+                }
             </div>`;
         }
         // =============================================================
@@ -4357,6 +4386,8 @@
                     <div id="builder-panel-arrange" class="builder-popover hidden">
                         <div class="builder-popover-grid">
                             <button onclick="duplicateSelectedElement(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-clone text-cyan-400"></i><span>Duplicate<small>Clone selected object</small></span></button>
+                            <button onclick="shiftSelectedLayer('forward'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-layer-group text-cyan-400"></i><span>Bring Forward<small>Move above nearby layers</small></span></button>
+                            <button onclick="shiftSelectedLayer('backward'); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-layer-group text-cyan-400"></i><span>Send Backward<small>Move behind nearby layers</small></span></button>
                             <button onclick="groupSelectedElements(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-object-group text-cyan-400"></i><span>Group<small>Combine selection</small></span></button>
                             <button onclick="ungroupSelectedElements(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-object-ungroup text-cyan-400"></i><span>Ungroup<small>Break selected group</small></span></button>
                             <button onclick="toggleSelectedLock(); hideBuilderPanels();" class="builder-cmd"><i class="fas fa-lock text-cyan-400"></i><span>Lock<small>Protect placement</small></span></button>
@@ -5889,31 +5920,15 @@
       // Function to render projects in the sidebar
       function updateSidebarHistory(projects) {
         const list = document.getElementById("project-history-list");
-        if (!projects || projects.length === 0) return;
-        list.innerHTML = projects
-          .map(
-            (p) => `
-    <div class="bg-gray-800/50 p-3 rounded-xl border border-gray-700 group hover:border-cyan-500 transition-all cursor-pointer">
-      <div class="flex justify-between items-start">
-        <span class="text-[10px] text-cyan-400 font-bold uppercase">${p.toolType}</span>
-        <span class="text-[9px] text-gray-500">${new Date(p.createdAt).toLocaleDateString()}</span>
-      </div>
-      <p class="text-xs text-gray-300 truncate mt-1">${p.fileName}</p>
-      <a href="${p.fileUrl}" download class="hidden group-hover:block text-[10px] text-white mt-2 underline">Download again</a>
-    </div>
-  `,
-          )
-          .join("");
-      }
-      function updateSidebarHistory(projects) {
-        const list = document.getElementById("project-history-list");
         if (!list) return;
-        // If guest, ensure projects are pulled from localStorage
         const displayProjects =
-          projects ||
-          JSON.parse(localStorage.getItem("medialab_guest_history") || "[]");
+          loggedIn && currentUser
+            ? Array.isArray(projects)
+              ? projects
+              : currentUser.projects || []
+            : [];
         if (displayProjects.length === 0) {
-          list.innerHTML = `<p class="text-[10px] text-gray-600 italic px-5">No recent projects.</p>`;
+          list.innerHTML = `<p class="text-[10px] text-gray-600 italic px-5">${loggedIn ? "No recent projects." : "Sign in to keep project history."}</p>`;
           return;
         }
         list.innerHTML = [...displayProjects]
@@ -5932,8 +5947,36 @@
           )
           .join("");
       }
+      function renderDraftItems(drafts) {
+        if (!drafts || drafts.length === 0) {
+          return `<div class="col-span-full py-10 text-center text-gray-500 bg-gray-900/50 rounded-[2rem] border border-dashed border-gray-800">
+                  <p class="text-sm font-medium">No saved drafts yet</p>
+                </div>`;
+        }
+        return [...drafts]
+          .reverse()
+          .map(
+            (draft, index) => `
+        <button onclick="switchTool('web-builder'); setTimeout(() => { loadBuilderDraftByIndex(${drafts.length - 1 - index}); launchBossMode(); }, 120);" class="w-full text-left bg-gray-900 border border-gray-800 p-6 rounded-[2rem] hover:border-cyan-500/50 transition-all group shadow-xl">
+            <div class="flex justify-between items-start gap-4">
+                <div>
+                    <span class="bg-cyan-500/10 text-cyan-400 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-cyan-500/10">Draft</span>
+                    <h4 class="text-white font-semibold mt-5 text-lg">${draft.name}</h4>
+                </div>
+                <span class="text-[10px] text-gray-600 font-bold">${new Date(draft.savedAt || Date.now()).toLocaleDateString()}</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">Open this draft in the builder workspace.</p>
+        </button>
+    `,
+          )
+          .join("");
+      }
       // This function saves new projects (call this when a conversion finishes)
       function saveProjectToHistory(project) {
+        if (!loggedIn || !currentUser) {
+          updateSidebarHistory([]);
+          return;
+        }
         logUsageActivity(
           "project-saved",
           `saved project ${project?.fileName || project?.title || "Untitled"}`,
@@ -5943,59 +5986,36 @@
             fileName: project?.fileName || project?.title || "",
           },
         );
-        if (!loggedIn) {
-          let guestHistory = JSON.parse(
-            localStorage.getItem("medialab_guest_history") || "[]",
-          );
-          guestHistory = guestHistory.filter(
-            (item) => item.fileUrl !== project?.fileUrl,
-          );
-          guestHistory.push({
-            ...project,
-            createdAt: new Date().toISOString(),
-            isGuest: true,
-          });
-          guestHistory = guestHistory
-            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-            .slice(-10);
-          localStorage.setItem(
-            "medialab_guest_history",
-            JSON.stringify(guestHistory),
-          );
-        } else {
-          currentUser = currentUser || {};
-          currentUser.projects = Array.isArray(currentUser.projects)
-            ? currentUser.projects
-            : [];
-          currentUser.projects = currentUser.projects.filter(
-            (item) => item.fileUrl !== project?.fileUrl,
-          );
-          currentUser.projects.push({
-            ...project,
-            createdAt: new Date().toISOString(),
-          });
-          currentUser.projects = currentUser.projects
-            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-            .slice(-10);
-          fetch("/api/history-projects", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ project }),
+        currentUser.projects = Array.isArray(currentUser.projects)
+          ? currentUser.projects
+          : [];
+        currentUser.projects = currentUser.projects.filter(
+          (item) => item.fileUrl !== project?.fileUrl,
+        );
+        currentUser.projects.push({
+          ...project,
+          createdAt: new Date().toISOString(),
+        });
+        currentUser.projects = currentUser.projects
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+          .slice(-10);
+        fetch("/api/history-projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ project }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && Array.isArray(data.projects)) {
+              currentUser.projects = data.projects;
+              updateSidebarHistory(currentUser.projects);
+            }
           })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.success && Array.isArray(data.projects)) {
-                currentUser.projects = data.projects;
-                updateSidebarHistory(currentUser.projects);
-              }
-            })
-            .catch((error) => {
-              console.warn("Project history sync skipped:", error);
-            });
-        }
-        // Refresh the sidebar automatically
-        updateSidebarHistory(currentUser ? currentUser.projects : null);
+          .catch((error) => {
+            console.warn("Project history sync skipped:", error);
+          });
+        updateSidebarHistory(currentUser.projects);
       }
 
       // ====================== MEDIALAB PWA ENGINE ======================
@@ -6836,14 +6856,14 @@
         selectElement(wrap);
       }
       function getBuilderDrafts() {
-        return loggedIn ? currentUser?.builderDrafts || [] : guestBuilderDrafts;
+        return loggedIn ? currentUser?.builderDrafts || [] : [];
       }
       function renderBuilderDrafts() {
         const list = document.getElementById("builder-drafts-list");
         if (!list) return;
         const drafts = getBuilderDrafts();
         if (!drafts.length) {
-          list.innerHTML = `<div class="text-[11px] text-slate-500 px-2 py-3">${loggedIn ? "No saved drafts yet." : "Guest drafts are temporary until you log in."}</div>`;
+          list.innerHTML = `<div class="text-[11px] text-slate-500 px-2 py-3">${loggedIn ? "No saved drafts yet." : "Sign in to save builder drafts."}</div>`;
           return;
         }
         list.innerHTML = drafts
@@ -6884,44 +6904,26 @@
           pageBackground: getCanvasPageStyleState(canvas).background,
           isAutoSave,
         };
-        if (loggedIn) {
-          try {
-            const res = await fetch("/api/builder-drafts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              keepalive,
-              body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (!data.success)
-              throw new Error(data.message || "Could not save draft.");
-            if (currentUser) currentUser.builderDrafts = data.drafts || [];
-          } catch (error) {
-            if (!silent)
-              alert(error.message || "Could not save draft right now.");
-            return;
-          }
-        } else {
-          if (isAutoSave) {
-            const autosaveIndex = guestBuilderDrafts.findIndex(
-              (draft) => draft.isAutoSave,
-            );
-            if (autosaveIndex >= 0)
-              guestBuilderDrafts.splice(autosaveIndex, 1, payload);
-            else guestBuilderDrafts.push(payload);
-          } else {
-            guestBuilderDrafts.push(payload);
-          }
-          guestBuilderDrafts = guestBuilderDrafts.slice(-12);
+        if (!loggedIn) {
+          if (!silent) showLogin();
+          return;
         }
-        if (!silent && typeof saveProjectToHistory === "function") {
-          saveProjectToHistory({
-            title: draftName,
-            tool: "Web Builder",
-            fileUrl: "#builder-draft",
-            createdAt: new Date().toISOString(),
+        try {
+          const res = await fetch("/api/builder-drafts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            keepalive,
+            body: JSON.stringify(payload),
           });
+          const data = await res.json();
+          if (!data.success)
+            throw new Error(data.message || "Could not save draft.");
+          if (currentUser) currentUser.builderDrafts = data.drafts || [];
+        } catch (error) {
+          if (!silent)
+            alert(error.message || "Could not save draft right now.");
+          return;
         }
         renderBuilderDrafts();
       }
@@ -7164,151 +7166,81 @@
           return;
         }
         if (kind === "login") {
-          const panelLeft = 320;
-          const panelTop = 88;
+          const canvasW = canvas.clientWidth;
+          const cardW = 400;
+          const cardH = 520;
+          const startX = Math.max(20, canvasW / 2 - cardW / 2);
+          const startY = 80;
+          let currentY = startY + 50;
           addObject(
             "div",
             {
-              width: "420px",
-              height: "500px",
-              left: `${panelLeft}px`,
-              top: `${panelTop}px`,
-              backgroundMode: "gradient",
-              backgroundColor: "rgba(255,255,255,0.98)",
-              backgroundColorSecondary: "rgba(241,245,249,0.92)",
-              borderRadius: "28px",
-              padding: "32px",
-              borderWidth: "1px",
-              borderColor: "rgba(255,255,255,0.7)",
-              boxShadow: "0 32px 86px rgba(15, 23, 42, 0.18)",
-              backdropFilterBlur: "14px",
+              width: `${cardW}px`,
+              height: `${cardH}px`,
+              left: `${startX}px`,
+              top: `${startY}px`,
+              backgroundMode: "solid",
+              backgroundColor: "#ffffff",
+              backgroundColorSecondary: "#ffffff",
+              borderRadius: "32px",
+              boxShadow: "0 40px 100px rgba(0,0,0,0.1)",
             },
-            { id: `login_${Date.now()}` },
+            { id: `login_bg_${Date.now()}` },
           );
           addObject(
             "text",
             {
-              width: "260px",
-              height: "42px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 42}px`,
-              fontSize: "26px",
+              width: "300px",
+              height: "40px",
+              left: `${startX + 50}px`,
+              top: `${currentY}px`,
+              fontSize: "28px",
               fontWeight: "800",
-              color: "#111827",
+              color: "#1e293b",
+              textAlign: "center",
             },
-            { text: "Welcome back" },
+            { text: "Welcome Back" },
           );
-          addObject(
-            "text",
-            {
-              width: "280px",
-              height: "34px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 84}px`,
-              fontSize: "14px",
-              color: "#64748b",
-              fontWeight: "500",
-              lineHeight: "1.45",
-            },
-            { text: "Sign in to continue to your workspace." },
-          );
-          addObject(
-            "text",
-            {
-              width: "110px",
-              height: "20px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 146}px`,
-              fontSize: "12px",
-              color: "#111827",
-              fontWeight: "600",
-            },
-            { text: "Email" },
-          );
+          currentY += 90;
           addObject(
             "input",
             {
-              width: "340px",
-              height: "54px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 172}px`,
-              borderRadius: "18px",
-              backgroundMode: "solid",
-              backgroundColor: "#ffffff",
-              backgroundColorSecondary: "#ffffff",
-              borderWidth: "1px",
-              borderColor: "#cfd8e3",
-              boxShadow: "0 10px 22px rgba(15, 23, 42, 0.05)",
-              padding: "0 20px",
-              color: "#111827",
+              width: "300px",
+              height: "55px",
+              left: `${startX + 50}px`,
+              top: `${currentY}px`,
+              borderRadius: "16px",
             },
-            { placeholder: "name@company.com" },
+            { placeholder: "Email address" },
           );
-          addObject(
-            "text",
-            {
-              width: "110px",
-              height: "20px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 244}px`,
-              fontSize: "12px",
-              color: "#111827",
-              fontWeight: "600",
-            },
-            { text: "Password" },
-          );
+          currentY += 80;
           addObject(
             "input",
             {
-              width: "340px",
-              height: "54px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 270}px`,
-              borderRadius: "18px",
-              backgroundMode: "solid",
-              backgroundColor: "#ffffff",
-              backgroundColorSecondary: "#ffffff",
-              borderWidth: "1px",
-              borderColor: "#cfd8e3",
-              boxShadow: "0 10px 22px rgba(15, 23, 42, 0.05)",
-              padding: "0 20px",
-              color: "#111827",
+              width: "300px",
+              height: "55px",
+              left: `${startX + 50}px`,
+              top: `${currentY}px`,
+              borderRadius: "16px",
             },
-            { placeholder: "Enter password" },
+            { placeholder: "Password" },
           );
+          currentY += 100;
           addObject(
             "button",
             {
-              width: "340px",
-              height: "52px",
-              left: `${panelLeft + 40}px`,
-              top: `${panelTop + 356}px`,
-              borderRadius: "18px",
-              backgroundMode: "gradient",
-              backgroundColor: "#0f172a",
-              backgroundColorSecondary: "#155e75",
+              width: "300px",
+              height: "55px",
+              left: `${startX + 50}px`,
+              top: `${currentY}px`,
+              borderRadius: "16px",
+              backgroundMode: "solid",
+              backgroundColor: "#0891b2",
+              backgroundColorSecondary: "#0891b2",
               color: "#ffffff",
-              boxShadow: "0 18px 32px rgba(8, 47, 73, 0.22)",
-              fontWeight: "700",
+              fontWeight: "800",
             },
             { text: "Sign In" },
-          );
-          addObject(
-            "a",
-            {
-              width: "180px",
-              height: "28px",
-              left: `${panelLeft + 120}px`,
-              top: `${panelTop + 428}px`,
-              backgroundMode: "solid",
-              backgroundColor: "transparent",
-              backgroundColorSecondary: "transparent",
-              color: "#475569",
-              fontSize: "12px",
-              fontWeight: "600",
-              boxShadow: "none",
-            },
-            { text: "Forgot password?", href: "#" },
           );
           autoGroupStarterElements(startCount);
           return;
@@ -7898,6 +7830,14 @@
         e.preventDefault();
         const isResizer = e.target.classList.contains("resizer");
         const isDragHandle = e.target.closest(".drag-handle");
+        const isAlreadySingleSelected =
+          !multiSelectMode &&
+          selectedElements.length === 1 &&
+          selectedElements[0] === el;
+        if (isAlreadySingleSelected && !isResizer && !isDragHandle) {
+          deselectAll();
+          return;
+        }
         if (multiSelectMode && !isResizer && !isDragHandle) {
           if (!selectedElements.includes(el)) {
             addElementSelection(el);
@@ -8143,11 +8083,11 @@
         };
         const typeDefaults = defaults[type] || defaults.div;
         return {
+          top: styles.top,
+          left: styles.left,
+          zIndex: styles.zIndex,
           width: styles.width || typeDefaults.width || "260px",
           height: styles.height || typeDefaults.height || "100px",
-          top: styles.top || "150px",
-          left: styles.left || "150px",
-          zIndex: styles.zIndex || "10",
           padding: styles.padding || typeDefaults.padding || "16px",
           borderRadius:
             styles.borderRadius || typeDefaults.borderRadius || "18px",
@@ -8456,6 +8396,70 @@
         }
         selectedElements = [];
         selectedEl = null;
+        saveToHistory();
+      }
+      function getSelectedBuilderTargets() {
+        return selectedElements.length > 0
+          ? selectedElements
+          : selectedEl
+            ? [selectedEl]
+            : [];
+      }
+      function getCanvasTopLevelElements() {
+        const canvas = document.getElementById("web-canvas");
+        if (!canvas) return [];
+        return Array.from(canvas.children).filter((child) =>
+          child.classList?.contains("canvas-element"),
+        );
+      }
+      function getElementLayerValue(el) {
+        return parseInt(el?.style?.zIndex || "10", 10) || 10;
+      }
+      function normalizeCanvasLayerOrder() {
+        const elements = getCanvasTopLevelElements();
+        elements
+          .map((el, index) => ({
+            el,
+            zIndex: getElementLayerValue(el),
+            index,
+          }))
+          .sort((a, b) => a.zIndex - b.zIndex || a.index - b.index)
+          .forEach((entry, index) => {
+            entry.el.style.zIndex = String(index + 1);
+          });
+      }
+      function shiftSelectedLayer(direction) {
+        const targets = getSelectedBuilderTargets();
+        if (!targets.length) return;
+        const targetSet = new Set(targets);
+        const allElements = getCanvasTopLevelElements();
+        if (!allElements.length) return;
+        normalizeCanvasLayerOrder();
+        const selectedLayers = targets.map((el) => getElementLayerValue(el));
+        const minLayer = Math.min(...selectedLayers);
+        const maxLayer = Math.max(...selectedLayers);
+        const siblingLayers = allElements
+          .filter((el) => !targetSet.has(el))
+          .map((el) => getElementLayerValue(el))
+          .sort((a, b) => a - b);
+        let delta = 0;
+        if (direction === "forward") {
+          const nextLayer = siblingLayers.find((value) => value > maxLayer);
+          delta = nextLayer ? nextLayer - maxLayer : 1;
+        } else {
+          const previousLayers = siblingLayers.filter((value) => value < minLayer);
+          const previousLayer = previousLayers.length
+            ? previousLayers[previousLayers.length - 1]
+            : null;
+          delta = previousLayer !== null ? previousLayer - minLayer : 1 - minLayer;
+        }
+        if (delta === 0) return;
+        targets.forEach((el) => {
+          const nextLayer = Math.max(1, getElementLayerValue(el) + delta);
+          el.style.zIndex = String(nextLayer);
+        });
+        normalizeCanvasLayerOrder();
+        syncSelectedElementState();
         saveToHistory();
       }
       function toggleSelectedLock() {
