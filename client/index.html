@@ -7450,18 +7450,7 @@
               },
             );
           });
-          finishStarterInsert({ skipTutorialEvent: true });
-          setTimeout(() => {
-            const step = builderTourState.steps[builderTourState.stepIndex];
-            if (
-              builderTourState.active &&
-              step?.title === "Insert Login Form"
-            ) {
-              advanceBuilderTutorial();
-              return;
-            }
-            handleBuilderTutorialEvent("starter-inserted", { kind: "login" });
-          }, 120);
+          finishStarterInsert();
           return;
         }
         if (kind === "login") {
@@ -7541,7 +7530,28 @@
             },
             { text: "Sign In" },
           );
-          finishStarterInsert();
+          const tutorialStep = builderTourState.steps[builderTourState.stepIndex];
+          const shouldAdvanceTutorialDirectly =
+            builderTourState.active &&
+            tutorialStep?.title === "Insert Login Form";
+          finishStarterInsert({
+            skipTutorialEvent: shouldAdvanceTutorialDirectly,
+          });
+          if (shouldAdvanceTutorialDirectly) {
+            showBuilderSnackbar(
+              "Great, your first website section is ready.",
+              "success",
+            );
+            setTimeout(() => {
+              if (
+                builderTourState.active &&
+                builderTourState.steps[builderTourState.stepIndex]?.title ===
+                  "Insert Login Form"
+              ) {
+                advanceBuilderTutorial();
+              }
+            }, 80);
+          }
           return;
         }
         if (kind === "contact") {
