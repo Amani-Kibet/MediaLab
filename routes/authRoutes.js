@@ -28,12 +28,14 @@ const extractClientIp = (req) => {
 const isLocalIp = (ip = "") =>
   ["127.0.0.1", "::1", "localhost"].includes(String(ip).toLowerCase());
 
-const buildLocationLabel = (ipinfo = {}) => {
+const buildLocationLabel = (ipinfo = {}, clientIp = "") => {
   const geo = ipinfo.geo || ipinfo;
-  const parts = [geo.city, geo.region, geo.country]
+  const parts = [geo.country, geo.region, geo.city, geo.postalCode || geo.postal]
     .map((value) => String(value || "").trim())
     .filter(Boolean);
-  return parts.join(", ");
+  if (!parts.length) return "";
+  const ipPrefix = clientIp ? `IP ${clientIp}` : "IP";
+  return `${ipPrefix} (${parts.join(" > ")})`;
 };
 
 const updateUserLocationOnLogin = async (req, user) => {
@@ -55,7 +57,7 @@ const updateUserLocationOnLogin = async (req, user) => {
     }
 
     const ipinfo = await ipinfoWrapper.lookupIp(clientIp);
-    const nextLocation = buildLocationLabel(ipinfo);
+    const nextLocation = buildLocationLabel(ipinfo, clientIp);
     const finalLocation = nextLocation || fallbackLocation;
     if (!finalLocation || finalLocation === user.location) return;
     user.location = finalLocation;
