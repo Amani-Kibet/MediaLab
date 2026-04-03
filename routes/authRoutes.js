@@ -382,6 +382,17 @@ passport.use(
 router.get(
   "/google",
   passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "select_account",
+  }),
+);
+
+router.get("/google-adsense", (req, res, next) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.redirect("/?adsense=login-required");
+  }
+  req.session.googleAuthMode = "adsense";
+  return passport.authenticate("google", {
     scope: [
       "profile",
       "email",
@@ -390,8 +401,8 @@ router.get(
     accessType: "offline",
     includeGrantedScopes: true,
     prompt: "consent select_account",
-  }),
-);
+  })(req, res, next);
+});
 
 // Callback Route
 router.get(
@@ -399,13 +410,15 @@ router.get(
   passport.authenticate("google", { failureRedirect: "/?login=failed" }),
   async (req, res) => {
     await updateUserLocationOnLogin(req, req.user);
+    const authMode = String(req.session?.googleAuthMode || "").trim();
+    if (req.session) delete req.session.googleAuthMode;
     // Manually force session save before redirecting (Fixes Render "Session Lag")
     req.session.save((err) => {
       if (err) {
         console.error("❌ Session Save Error:", err);
         return res.redirect("/?login=error");
       }
-      res.redirect("/?loggedIn=true");
+      res.redirect(authMode === "adsense" ? "/?adsense=connected" : "/?loggedIn=true");
     });
   },
 );

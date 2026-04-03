@@ -1978,6 +1978,14 @@
         logUsageActivity("google-login-start", "started Google login", "auth");
         window.location.href = "/api/auth/google";
       }
+      function googleAdsenseLogin() {
+        logUsageActivity(
+          "google-adsense-connect-start",
+          "started Google AdSense connect",
+          "adsense",
+        );
+        window.location.href = "/api/auth/google-adsense";
+      }
       async function emailLogin() {
         const email = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value.trim();
@@ -4971,6 +4979,27 @@
           }
           window.history.replaceState({}, document.title, "/");
         }
+        const adsenseState = urlParams.get("adsense");
+        if (adsenseState) {
+          await checkAuth();
+          if (adsenseState === "connected") {
+            showStudioStatusSnackbar(
+              "Google AdSense access connected. You can continue linking your site now.",
+              "success",
+            );
+            setTimeout(() => {
+              openAdsenseLinkModal();
+            }, 180);
+          } else if (adsenseState === "login-required") {
+            showStudioStatusSnackbar("Sign in first before connecting AdSense.", "error");
+          } else {
+            showStudioStatusSnackbar(
+              `AdSense connection status: ${adsenseState.replace(/-/g, " ")}`,
+              "error",
+            );
+          }
+          window.history.replaceState({}, document.title, "/");
+        }
         console.log(
           "%c✅ MediaLab - Full Final Script with Independent Vertical Tools Scroll",
           "color:#22d3ee; font-weight:bold",
@@ -6358,6 +6387,11 @@
         if (!normalizedFiles.length) {
           throw new Error("No project files were selected.");
         }
+        if (normalizedFiles.length > 250) {
+          throw new Error(
+            "This project is too large for smooth browser preview right now. Keep it under 250 files for the best experience.",
+          );
+        }
         const htmlEntries = normalizedFiles.filter(({ path }) =>
           /\.html?$/i.test(path),
         );
@@ -6391,6 +6425,15 @@
         }
         const assetMap = {};
         const cssContentMap = {};
+        const totalBytes = normalizedFiles.reduce(
+          (sum, item) => sum + Number(item.file?.size || 0),
+          0,
+        );
+        if (totalBytes > 35 * 1024 * 1024) {
+          throw new Error(
+            "This project folder is too large for instant hosted preview right now. Keep it under about 35MB.",
+          );
+        }
         for (let index = 0; index < normalizedFiles.length; index += 1) {
           const { file, path } = normalizedFiles[index];
           const relativePath = makeProjectRelative(path);

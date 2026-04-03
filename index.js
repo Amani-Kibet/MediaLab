@@ -37,6 +37,7 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
 const httpServer = createServer(app);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "spiderman";
 
 app.engine("ejs", (filePath, _options, callback) => {
   fs.readFile(filePath, "utf8", callback);
@@ -57,6 +58,58 @@ const io = new Server(httpServer, {
     credentials: true,
   },
 });
+
+function createMemoryRateLimiter({
+  windowMs = 60 * 1000,
+  max = 30,
+  message = "Too many requests. Please slow down and try again shortly.",
+} = {}) {
+  const bucket = new Map();
+  return (req, res, next) => {
+    const key = `${req.ip || "unknown"}:${req.path}`;
+    const now = Date.now();
+    const entry = bucket.get(key);
+    if (!entry || now - entry.start > windowMs) {
+      bucket.set(key, { start: now, count: 1 });
+      return next();
+    }
+    entry.count += 1;
+    bucket.set(key, entry);
+    if (entry.count > max) {
+      return res.status(429).json({ success: false, message });
+    }
+    return next();
+  };
+}
+
+const authRateLimit = createMemoryRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 24,
+  message: "Too many authentication requests. Please wait a few minutes and try again.",
+});
+const publishRateLimit = createMemoryRateLimiter({
+  windowMs: 2 * 60 * 1000,
+  max: 10,
+  message: "Too many publish attempts in a short time. Please wait a moment and try again.",
+});
+const accountRateLimit = createMemoryRateLimiter({
+  windowMs: 5 * 60 * 1000,
+  max: 15,
+  message: "Too many account actions. Please wait a little and try again.",
+});
+const adminRateLimit = createMemoryRateLimiter({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: "Admin request limit reached. Please wait a moment.",
+});
+
+function requireAdminApi(req, res, next) {
+  const provided = String(req.headers["x-admin-password"] || "").trim();
+  if (!provided || provided !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: "Admin authorization failed." });
+  }
+  return next();
+}
 
 async function createUsageLog({
   user = null,
@@ -576,15 +629,18 @@ mongoose
 
 app.use(
   session({
+    name: "medialab.sid",
     secret: process.env.SESSION_SECRET || "medialab-secret-key",
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       ttl: 24 * 60 * 60, // 1 day
     }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
+      httpOnly: true,
       // CRITICAL: On Render, secure must be true and sameSite must be 'none' for Google Auth
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -601,6 +657,15 @@ app.get("/", (_req, res) => {
 });
 app.get("/admin", (_req, res) => {
   res.render("admin");
+});
+app.get("/privacy-policy.html", (_req, res) => {
+  res.render("privacy");
+});
+app.get("/terms-and-services.html", (_req, res) => {
+  res.render("terms");
+});
+app.get("/contact-support.html", (_req, res) => {
+  res.render("support");
 });
 const WEBSITE_TEMPLATE_VIEWS = {
   candycrush: "templates/candycrush",
@@ -620,9 +685,9 @@ app.use("/uploads", express.static(uploadDir));
 app.use("/exports", express.static(exportDir));
 
 // --- 4. API ROUTES ---
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRateLimit, authRoutes);
 
-app.post("/api/github/setup-repository", async (req, res) => {
+app.post("/api/github/setup-repository", publishRateLimit, async (req, res) => {
   if (!req.isAuthenticated() || !req.user) {
     return res
       .status(401)
@@ -673,7 +738,7 @@ app.post("/api/github/setup-repository", async (req, res) => {
   }
 });
 
-app.post("/api/github/publish", express.json({ limit: "10mb" }), async (req, res) => {
+app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }), async (req, res) => {
   if (!req.isAuthenticated() || !req.user) {
     return res
       .status(401)
@@ -820,7 +885,7 @@ app.post("/api/github/publish", express.json({ limit: "10mb" }), async (req, res
   }
 });
 
-app.post("/api/github/publish-folder", express.json({ limit: "50mb" }), async (req, res) => {
+app.post("/api/github/publish-folder", publishRateLimit, express.json({ limit: "50mb" }), async (req, res) => {
   if (!req.isAuthenticated() || !req.user) {
     return res
       .status(401)
@@ -875,6 +940,24 @@ app.post("/api/github/publish-folder", express.json({ limit: "50mb" }), async (r
       return res.status(400).json({
         success: false,
         message: "That project folder did not contain any publishable files.",
+      });
+    }
+    if (safeFiles.length > 250) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This project folder is too large for one-click publish right now. Keep it under 250 files for the smoothest deploy.",
+      });
+    }
+    const totalBytes = safeFiles.reduce((sum, file) => {
+      const base64 = String(file.contentBase64 || "");
+      return sum + Math.ceil((base64.length * 3) / 4);
+    }, 0);
+    if (totalBytes > 35 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This project folder is too large for GitHub one-click publish right now. Keep the upload under about 35MB.",
       });
     }
 
@@ -2229,7 +2312,7 @@ app.post("/api/account/cancel-premium", async (req, res) => {
   }
 });
 
-app.post("/api/account/withdrawals", async (req, res) => {
+app.post("/api/account/withdrawals", accountRateLimit, async (req, res) => {
   try {
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: "Login required." });
@@ -2301,6 +2384,7 @@ app.post("/api/account/withdrawals", async (req, res) => {
     await user.save();
     req.user.accountBalance = user.accountBalance;
     req.user.lastWithdrawalRequestedAt = user.lastWithdrawalRequestedAt;
+    io.emit("admin:withdrawal-updated", request.toObject());
 
     await createUsageLog({
       ...buildUsageIdentity(req),
@@ -2395,7 +2479,7 @@ app.post("/api/builder-drafts", async (req, res) => {
   }
 });
 
-app.get("/api/admin/feedbacks", async (_req, res) => {
+app.get("/api/admin/feedbacks", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     const feedbacks = await Feedback.find({}).sort({ createdAt: -1 }).lean();
     res.json({ success: true, feedbacks });
@@ -2405,7 +2489,7 @@ app.get("/api/admin/feedbacks", async (_req, res) => {
   }
 });
 
-app.get("/api/admin/usage-logs", async (_req, res) => {
+app.get("/api/admin/usage-logs", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     const logs = await UsageLog.find({})
       .sort({ createdAt: -1 })
@@ -2420,7 +2504,7 @@ app.get("/api/admin/usage-logs", async (_req, res) => {
   }
 });
 
-app.get("/api/admin/downloads", async (_req, res) => {
+app.get("/api/admin/downloads", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     const downloads = await Download.find({})
       .sort({ createdAt: -1 })
@@ -2433,7 +2517,20 @@ app.get("/api/admin/downloads", async (_req, res) => {
   }
 });
 
-app.get("/api/admin/upgrade-requests", async (_req, res) => {
+app.get("/api/admin/withdrawals", adminRateLimit, requireAdminApi, async (_req, res) => {
+  try {
+    const withdrawals = await WithdrawalRequest.find({})
+      .sort({ createdAt: -1 })
+      .limit(300)
+      .lean();
+    res.json({ success: true, withdrawals });
+  } catch (error) {
+    console.error("Admin withdrawals fetch failed:", error);
+    res.status(500).json({ success: false, message: "Could not load withdrawals." });
+  }
+});
+
+app.get("/api/admin/upgrade-requests", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     const requests = await UpgradeRequest.find({
       status: { $in: ["pending", "reviewing", "received"] },
@@ -2450,7 +2547,7 @@ app.get("/api/admin/upgrade-requests", async (_req, res) => {
   }
 });
 
-app.delete("/api/admin/usage-logs", async (_req, res) => {
+app.delete("/api/admin/usage-logs", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     await UsageLog.deleteMany({});
     io.emit("admin:usage-log-cleared", {
@@ -2471,7 +2568,7 @@ app.delete("/api/admin/usage-logs", async (_req, res) => {
   }
 });
 
-app.patch("/api/admin/feedbacks/:id", async (req, res) => {
+app.patch("/api/admin/feedbacks/:id", adminRateLimit, requireAdminApi, async (req, res) => {
   try {
     const updates = {};
     if (typeof req.body?.status === "string") {
@@ -2498,7 +2595,7 @@ app.patch("/api/admin/feedbacks/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/admin/feedbacks/:id", async (req, res) => {
+app.delete("/api/admin/feedbacks/:id", adminRateLimit, requireAdminApi, async (req, res) => {
   try {
     const feedback = await Feedback.findByIdAndDelete(req.params.id).lean();
 
@@ -2517,7 +2614,7 @@ app.delete("/api/admin/feedbacks/:id", async (req, res) => {
   }
 });
 
-app.patch("/api/admin/upgrade-requests/:id", async (req, res) => {
+app.patch("/api/admin/upgrade-requests/:id", adminRateLimit, requireAdminApi, async (req, res) => {
   try {
     const nextStatus = String(req.body?.status || "").trim().toLowerCase();
     if (!["granted", "denied", "reviewing", "pending"].includes(nextStatus)) {
@@ -2587,7 +2684,60 @@ app.patch("/api/admin/upgrade-requests/:id", async (req, res) => {
   }
 });
 
-app.get("/api/admin/analytics", async (_req, res) => {
+app.patch("/api/admin/withdrawals/:id", adminRateLimit, requireAdminApi, async (req, res) => {
+  try {
+    const nextStatus = String(req.body?.status || "").trim().toLowerCase();
+    if (!["processing", "paid", "failed"].includes(nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid withdrawal status.",
+      });
+    }
+
+    const request = await WithdrawalRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: "Withdrawal request not found." });
+    }
+
+    const previousStatus = request.status;
+    request.status = nextStatus;
+    request.metadata = {
+      ...(request.metadata || {}),
+      reviewedAt: new Date(),
+    };
+    await request.save();
+
+    if (previousStatus !== "failed" && nextStatus === "failed") {
+      const user = await User.findById(request.userId);
+      if (user) {
+        user.accountBalance = Number(
+          (Number(user.accountBalance || 0) + Number(request.amount || 0)).toFixed(2),
+        );
+        await user.save();
+      }
+    }
+
+    await createUsageLog({
+      email: request.email,
+      name: request.name,
+      action: "withdrawal-admin-update",
+      summary: `marked withdrawal ${request._id} as ${nextStatus}`,
+      source: "admin",
+      metadata: { withdrawalRequestId: request._id, status: nextStatus },
+    });
+
+    io.emit("admin:withdrawal-updated", request.toObject());
+    return res.json({ success: true, request });
+  } catch (error) {
+    console.error("Admin withdrawal update failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Could not update this withdrawal right now.",
+    });
+  }
+});
+
+app.get("/api/admin/analytics", adminRateLimit, requireAdminApi, async (_req, res) => {
   try {
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
@@ -2605,12 +2755,16 @@ app.get("/api/admin/analytics", async (_req, res) => {
       premiumRequests,
       totalUsageLogs,
       totalDownloads,
+      totalWithdrawals,
+      pendingWithdrawals,
+      paidWithdrawals,
       recentErrors,
       newUsers30d,
       newProUsers30d,
       newFeedbacks30d,
       newUsageLogs30d,
       newDownloads30d,
+      newWithdrawals30d,
       newErrors30d,
       newUpgradeRequests30d,
       activeUpgradeRequests30d,
@@ -2639,12 +2793,16 @@ app.get("/api/admin/analytics", async (_req, res) => {
         .lean(),
       UsageLog.countDocuments(),
       Download.countDocuments(),
+      WithdrawalRequest.countDocuments(),
+      WithdrawalRequest.countDocuments({ status: { $in: ["pending", "processing"] } }),
+      WithdrawalRequest.countDocuments({ status: "paid" }),
       UsageLog.countDocuments({ kind: "error" }),
       User.countDocuments({ createdAt: { $gte: last30Days } }),
       User.countDocuments({ isPro: true, createdAt: { $gte: last30Days } }),
       Feedback.countDocuments({ createdAt: { $gte: last30Days } }),
       UsageLog.countDocuments({ createdAt: { $gte: last30Days } }),
       Download.countDocuments({ createdAt: { $gte: last30Days } }),
+      WithdrawalRequest.countDocuments({ createdAt: { $gte: last30Days } }),
       UsageLog.countDocuments({ kind: "error", createdAt: { $gte: last30Days } }),
       UpgradeRequest.countDocuments({ createdAt: { $gte: last30Days } }),
       UpgradeRequest.countDocuments({
@@ -2666,6 +2824,9 @@ app.get("/api/admin/analytics", async (_req, res) => {
         pendingUpgradeRequests,
         totalUsageLogs,
         totalDownloads,
+        totalWithdrawals,
+        pendingWithdrawals,
+        paidWithdrawals,
         recentErrors,
         last30Days: {
           newUsers: newUsers30d,
@@ -2673,6 +2834,7 @@ app.get("/api/admin/analytics", async (_req, res) => {
           feedbacks: newFeedbacks30d,
           usageLogs: newUsageLogs30d,
           downloads: newDownloads30d,
+          withdrawals: newWithdrawals30d,
           errors: newErrors30d,
           upgradeRequests: activeUpgradeRequests30d,
         },
