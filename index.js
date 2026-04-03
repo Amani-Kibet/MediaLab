@@ -184,7 +184,7 @@ function slugifyProjectName(value = "medialab-page") {
   return `${slug || "medialab-page"}.html`;
 }
 
-const GITHUB_PROJECTS_ROOT = "medialab";
+const GITHUB_PUBLIC_ROOT = "public";
 
 function slugifyProjectFolderName(value = "medialab-project") {
   return (
@@ -210,8 +210,12 @@ function normalizeImportedEntryPath(value = "index.html") {
   return normalized || "index.html";
 }
 
+function stripPublicRootFromUrlPath(value = "") {
+  return normalizeRepoFilePath(value).replace(/^public\/?/i, "");
+}
+
 function buildFolderProjectLiveUrl(owner, repo, folderPath, entryPath) {
-  const cleanFolder = normalizeRepoFilePath(folderPath);
+  const cleanFolder = stripPublicRootFromUrlPath(folderPath);
   const cleanEntry = normalizeImportedEntryPath(entryPath);
   if (!cleanFolder) {
     return `https://${owner}.github.io/${repo}/${cleanEntry}`;
@@ -220,6 +224,219 @@ function buildFolderProjectLiveUrl(owner, repo, folderPath, entryPath) {
     return `https://${owner}.github.io/${repo}/${cleanFolder}/`;
   }
   return `https://${owner}.github.io/${repo}/${cleanFolder}/${cleanEntry}`;
+}
+
+function buildGithubRepoScaffold(owner = "user", repoName = "medialab") {
+  const packageJson = JSON.stringify(
+    {
+      name: repoName,
+      version: "1.0.0",
+      private: true,
+      description: "Cloud storage for MediaLab AI projects.",
+      type: "module",
+      scripts: {
+        start: "node index.js",
+        dev: "node index.js",
+      },
+      dependencies: {
+        compression: "^1.7.4",
+        cors: "^2.8.5",
+        dotenv: "^16.4.5",
+        express: "^4.19.2",
+        helmet: "^7.1.0",
+        morgan: "^1.10.0",
+      },
+    },
+    null,
+    2,
+  );
+  const serverIndex = `import compression from "compression";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
+
+dotenv.config();
+
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, "public");
+const port = process.env.PORT || 3000;
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors());
+app.use(compression());
+app.use(morgan("dev"));
+app.use(express.static(publicDir));
+
+app.get("*", (req, res) => {
+  const requestPath = String(req.path || "");
+  if (requestPath.endsWith(".html")) {
+    return res.sendFile(path.join(publicDir, requestPath.replace(/^\\/+/, "")));
+  }
+  return res.sendFile(path.join(publicDir, "index.html"));
+});
+
+app.listen(port, () => {
+  console.log(\`${repoName} static host running on port \${port}\`);
+});
+`;
+  const publicIndexHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaLab Cloud Storage</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(34, 211, 238, 0.18), transparent 42%),
+          linear-gradient(180deg, #07131f 0%, #0f172a 100%);
+        color: #e2e8f0;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .card {
+        width: min(92vw, 760px);
+        border-radius: 28px;
+        padding: 32px;
+        background: rgba(15, 23, 42, 0.86);
+        border: 1px solid rgba(56, 189, 248, 0.22);
+        box-shadow: 0 28px 80px rgba(2, 6, 23, 0.4);
+      }
+      h1 { margin: 0 0 12px; font-size: clamp(2rem, 5vw, 3.25rem); }
+      p { margin: 0 0 18px; color: #cbd5e1; line-height: 1.6; }
+      a {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #06b6d4, #22c55e);
+        color: #03111a;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      code {
+        color: #67e8f9;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="card">
+      <p>MediaLab Git Host</p>
+      <h1>${owner}'s Cloud Workspace</h1>
+      <p>Your published sites live inside <code>/public/</code>. The included Node host serves them from the root path so each project feels like a standard deployed site.</p>
+      <a href="./">Open Published Projects</a>
+    </section>
+  </body>
+</html>`;
+  const gitignore = `node_modules
+.env
+.DS_Store
+npm-debug.log*
+`;
+  return [
+    { path: "package.json", content: packageJson },
+    { path: "index.js", content: serverIndex },
+    { path: ".gitignore", content: gitignore },
+    { path: "public/index.html", content: publicIndexHtml },
+    { path: "public/.gitkeep", content: "" },
+  ];
+}
+
+async function ensureGithubRepoScaffold(octokit, owner, repo) {
+  const scaffoldFiles = buildGithubRepoScaffold(owner, repo);
+  for (const file of scaffoldFiles) {
+    await upsertGithubFile({
+      octokit,
+      owner,
+      repo,
+      path: file.path,
+      message: `Initialize ${file.path} for MediaLab hosting`,
+      contentBase64: Buffer.from(file.content, "utf8").toString("base64"),
+    });
+  }
+}
+
+function injectIntoHead(html = "", injected = "") {
+  const source = String(html || "");
+  const payload = String(injected || "").trim();
+  if (!payload) return source;
+  if (/<\/head>/i.test(source)) {
+    return source.replace(/<\/head>/i, `${payload}\n  </head>`);
+  }
+  if (/<head[^>]*>/i.test(source)) {
+    return source.replace(/<head[^>]*>/i, (match) => `${match}\n${payload}`);
+  }
+  return source;
+}
+
+function buildPublishedHtmlFromSource({
+  documentHtml = "",
+  projectName = "MediaLab Project",
+  adsenseId = "",
+  adsenseAdCode = "",
+  description = "",
+  keywords = "",
+  includeRepoFavicon = true,
+} = {}) {
+  const source = String(documentHtml || "").trim();
+  if (!source || !/<html[\s>]/i.test(source)) {
+    return buildPublishedHtmlDocument({
+      projectName,
+      htmlContent: source,
+      cssContent: "",
+      interactionScript: "",
+      adsenseId,
+      adsenseAdCode,
+      description,
+      keywords,
+      includeRepoFavicon,
+    });
+  }
+  const safeTitle = String(projectName || "MediaLab Project").trim() || "MediaLab Project";
+  const safeDescription = escapeMetaContent(
+    description || `${safeTitle} published with MediaLab.`,
+  );
+  const safeKeywords = escapeMetaContent(keywords || "MediaLab, website, publish");
+  const trimmedAdCode = String(adsenseAdCode || "").trim();
+  const adsenseTag =
+    trimmedAdCode && /pagead2\.googlesyndication\.com/i.test(trimmedAdCode)
+      ? trimmedAdCode
+      : adsenseId && /^ca-pub-/i.test(String(adsenseId).trim())
+      ? `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${String(
+          adsenseId,
+        ).trim()}" crossorigin="anonymous"></script>`
+      : "";
+  const faviconTag = includeRepoFavicon
+    ? `<link rel="icon" href="/favicon.ico" type="image/x-icon" />`
+    : "";
+  const metaBundle = [
+    faviconTag,
+    `<meta name="description" content="${safeDescription}" />`,
+    `<meta name="keywords" content="${safeKeywords}" />`,
+    `<meta property="og:title" content="${escapeMetaContent(safeTitle)}" />`,
+    `<meta property="og:description" content="${safeDescription}" />`,
+    `<meta property="og:type" content="website" />`,
+    adsenseTag,
+  ]
+    .filter(Boolean)
+    .join("\n    ");
+  let nextHtml = source;
+  if (/<title>[\s\S]*?<\/title>/i.test(nextHtml)) {
+    nextHtml = nextHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${safeTitle.replace(/[<>&"]/g, "")}</title>`);
+  }
+  nextHtml = injectIntoHead(nextHtml, `    ${metaBundle}`);
+  return nextHtml;
 }
 
 async function getGithubFileSha(octokit, owner, repo, path) {
@@ -771,6 +988,7 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
     const htmlContent = String(req.body?.htmlContent || "").trim();
     const cssContent = String(req.body?.cssContent || "").trim();
     const interactionScript = String(req.body?.interactionScript || "").trim();
+    const documentHtml = String(req.body?.documentHtml || "").trim();
     const description = String(req.body?.description || "").trim();
     const keywords = String(req.body?.keywords || "").trim();
 
@@ -791,17 +1009,27 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
     const owner = user.githubUsername;
     const repo = "medialab";
     const filename = slugifyProjectName(projectName);
-    const repoFilePath = normalizeRepoFilePath(`${GITHUB_PROJECTS_ROOT}/${filename}`);
-    const fullHtml = buildPublishedHtmlDocument({
-      projectName,
-      htmlContent,
-      cssContent,
-      interactionScript,
-      adsenseId: user.adsenseId || "",
-      adsenseAdCode: user.adsenseAdCode || "",
-      description,
-      keywords,
-    });
+    const repoFilePath = normalizeRepoFilePath(`${GITHUB_PUBLIC_ROOT}/${filename}`);
+    await ensureGithubRepoScaffold(octokit, owner, repo);
+    const fullHtml = documentHtml
+      ? buildPublishedHtmlFromSource({
+          documentHtml,
+          projectName,
+          adsenseId: user.adsenseId || "",
+          adsenseAdCode: user.adsenseAdCode || "",
+          description,
+          keywords,
+        })
+      : buildPublishedHtmlDocument({
+          projectName,
+          htmlContent,
+          cssContent,
+          interactionScript,
+          adsenseId: user.adsenseId || "",
+          adsenseAdCode: user.adsenseAdCode || "",
+          description,
+          keywords,
+        });
     const htmlSizeBytes = Buffer.byteLength(fullHtml, "utf8");
     const containsBase64Images = /data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(fullHtml);
     const warnings = [];
@@ -821,7 +1049,7 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
       contentBase64: Buffer.from(fullHtml).toString("base64"),
     });
 
-    const liveUrl = `https://${owner}.github.io/${repo}/${GITHUB_PROJECTS_ROOT}/${filename}`;
+    const liveUrl = `https://${owner}.github.io/${repo}/${filename}`;
     const existingProject = user.liveProjects.find(
       (project) => String(project?.fileName || project?.filename || "") === repoFilePath,
     );
@@ -965,10 +1193,11 @@ app.post("/api/github/publish-folder", publishRateLimit, express.json({ limit: "
     }
 
     const folderSlug = slugifyProjectFolderName(projectName);
-    const repoFolderPath = normalizeRepoFilePath(`${GITHUB_PROJECTS_ROOT}/${folderSlug}`);
+    const repoFolderPath = normalizeRepoFilePath(`${GITHUB_PUBLIC_ROOT}/${folderSlug}`);
     const owner = user.githubUsername;
     const repo = "medialab";
     const octokit = buildGithubClient(user);
+    await ensureGithubRepoScaffold(octokit, owner, repo);
 
     for (const file of safeFiles) {
       const repoPath = normalizeRepoFilePath(`${repoFolderPath}/${file.path}`);

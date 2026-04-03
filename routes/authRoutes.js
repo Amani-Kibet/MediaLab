@@ -130,6 +130,111 @@ const formatGithubInitError = (error) => {
 const waitForGithubProvisioning = (ms = 2500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+const buildGithubRepoScaffold = (owner = "user", repoName = "medialab") => {
+  const packageJson = JSON.stringify(
+    {
+      name: repoName,
+      version: "1.0.0",
+      private: true,
+      description: "Cloud storage for MediaLab AI projects.",
+      type: "module",
+      scripts: {
+        start: "node index.js",
+        dev: "node index.js",
+      },
+      dependencies: {
+        compression: "^1.7.4",
+        cors: "^2.8.5",
+        dotenv: "^16.4.5",
+        express: "^4.19.2",
+        helmet: "^7.1.0",
+        morgan: "^1.10.0",
+      },
+    },
+    null,
+    2,
+  );
+  const serverIndex = `import compression from "compression";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
+
+dotenv.config();
+
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.join(__dirname, "public");
+const port = process.env.PORT || 3000;
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors());
+app.use(compression());
+app.use(morgan("dev"));
+app.use(express.static(publicDir));
+
+app.get("*", (req, res) => {
+  const requestPath = String(req.path || "");
+  if (requestPath.endsWith(".html")) {
+    return res.sendFile(path.join(publicDir, requestPath.replace(/^\\/+/, "")));
+  }
+  return res.sendFile(path.join(publicDir, "index.html"));
+});
+
+app.listen(port, () => {
+  console.log(\`${repoName} static host running on port \${port}\`);
+});
+`;
+  const publicIndexHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MediaLab Cloud Storage</title>
+  </head>
+  <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;color:#e2e8f0;font-family:Inter,system-ui,sans-serif;">
+    <main style="width:min(92vw,760px);padding:32px;border-radius:28px;background:rgba(15,23,42,.86);border:1px solid rgba(56,189,248,.22);box-shadow:0 28px 80px rgba(2,6,23,.4);">
+      <p style="margin:0 0 12px;color:#67e8f9;font-weight:800;letter-spacing:.16em;text-transform:uppercase;">MediaLab Git Host</p>
+      <h1 style="margin:0 0 12px;font-size:clamp(2rem,5vw,3.25rem);">${owner}'s Cloud Workspace</h1>
+      <p style="margin:0;color:#cbd5e1;line-height:1.6;">Published sites live inside <strong>/public/</strong>. The included Node host serves them from the root path so each project feels like a standard deployed site.</p>
+    </main>
+  </body>
+</html>`;
+  return [
+    { path: "package.json", content: packageJson },
+    { path: "index.js", content: serverIndex },
+    { path: ".gitignore", content: "node_modules\n.env\n.DS_Store\nnpm-debug.log*\n" },
+    { path: "public/index.html", content: publicIndexHtml },
+    { path: "public/.gitkeep", content: "" },
+  ];
+};
+
+const ensureGithubRepoScaffold = async (octokit, owner, repo) => {
+  for (const file of buildGithubRepoScaffold(owner, repo)) {
+    let sha = "";
+    try {
+      const existing = await octokit.rest.repos.getContent({ owner, repo, path: file.path });
+      if (!Array.isArray(existing.data) && existing.data?.sha) {
+        sha = existing.data.sha;
+      }
+    } catch (error) {
+      if ((error?.status || error?.response?.status) !== 404) throw error;
+    }
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path: file.path,
+      message: `Initialize ${file.path} for MediaLab hosting`,
+      content: Buffer.from(file.content, "utf8").toString("base64"),
+      ...(sha ? { sha } : {}),
+    });
+  }
+};
+
 export const initializeGithubStorageForUser = async (user) => {
   const octokit = buildGithubClient(user);
   const repoName = "medialab";
@@ -156,6 +261,8 @@ export const initializeGithubStorageForUser = async (user) => {
   if (createdRepo) {
     await waitForGithubProvisioning();
   }
+
+  await ensureGithubRepoScaffold(octokit, owner, repoName);
 
   try {
     await octokit.rest.repos.getPages({ owner, repo: repoName });

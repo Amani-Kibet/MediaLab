@@ -8285,6 +8285,10 @@
             alert(
               "GitHub connected. Initialize Cloud Storage in the sidebar to activate the medialab repository and GitHub Pages.",
             );
+          } else if (githubState === "email-mismatch") {
+            alert(
+              "GitHub connection was blocked because the GitHub account email does not match the MediaLab account currently signed in. Sign into the matching GitHub account first, then try again.",
+            );
           } else if (githubState === "login-required") {
             alert("Sign in first before connecting GitHub.");
           } else if (githubState !== "connected") {
@@ -9870,9 +9874,12 @@
           if (!res.ok) {
             throw new Error(`Template request failed: ${res.status}`);
           }
-          const html = await res.text();
+          beginUniversalProgress(`Loading ${labels[slug] || "website"} template...`, 14, 88);
+          let html = await res.text();
+          const ownerName = String(currentUser?.name || "Your Game World").trim() || "Your Game World";
+          html = html.replace(/__MEDIALAB_OWNER_NAME__/g, ownerName);
           builderImportedProject = null;
-          builderRawImportDocument = "";
+          builderRawImportDocument = html;
           builderCodeMode = true;
           updateBuilderUI();
           editor.value = html;
@@ -9881,12 +9888,14 @@
           builderCodeMode = false;
           updateBuilderUI();
           preserveBuilderFullscreenAfterUpload();
+          completeUniversalProgress(`${labels[slug] || "Website"} ready.`);
           showBuilderSnackbar(
             `${labels[slug] || "Website"} loaded into the canvas.`,
             "success",
           );
         } catch (error) {
           console.error("Template load failed:", error);
+          failUniversalProgress("Template loading failed.");
           showBuilderSnackbar(
             "Could not load that website template right now.",
             "error",
@@ -12505,6 +12514,67 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
           input.select();
         }, 40);
       }
+      let universalProgressPulse = null;
+      function getUniversalProgressEls() {
+        return {
+          progressDiv: document.getElementById("universal-progress"),
+          statusText: document.getElementById("universal-status-text"),
+          bar: document.getElementById("universal-bar"),
+          percentLabel: document.getElementById("universal-percent"),
+        };
+      }
+      function clearUniversalProgressPulse() {
+        if (universalProgressPulse) {
+          clearInterval(universalProgressPulse);
+          universalProgressPulse = null;
+        }
+      }
+      function setUniversalProgress({
+        visible = true,
+        message = "Working...",
+        percent = 0,
+        tone = "cyan",
+      } = {}) {
+        const { progressDiv, statusText, bar, percentLabel } = getUniversalProgressEls();
+        if (!progressDiv || !statusText || !bar || !percentLabel) return;
+        if (visible) progressDiv.classList.remove("hidden");
+        else progressDiv.classList.add("hidden");
+        statusText.innerText = message;
+        bar.classList.remove("bg-cyan-400", "bg-green-500", "bg-rose-500");
+        bar.classList.add(
+          tone === "success"
+            ? "bg-green-500"
+            : tone === "error"
+              ? "bg-rose-500"
+              : "bg-cyan-400",
+        );
+        const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+        bar.style.width = `${safePercent}%`;
+        percentLabel.innerText = `${Math.round(safePercent)}%`;
+      }
+      function beginUniversalProgress(message = "Working...", start = 10, cap = 94) {
+        clearUniversalProgressPulse();
+        let current = Math.max(0, Math.min(cap, start));
+        setUniversalProgress({ visible: true, message, percent: current, tone: "cyan" });
+        universalProgressPulse = setInterval(() => {
+          current = Math.min(cap, current + (current < 40 ? 5 : current < 70 ? 3 : 1));
+          setUniversalProgress({ visible: true, message, percent: current, tone: "cyan" });
+        }, 520);
+      }
+      function completeUniversalProgress(message = "Done") {
+        clearUniversalProgressPulse();
+        setUniversalProgress({ visible: true, message, percent: 100, tone: "success" });
+        setTimeout(() => {
+          setUniversalProgress({ visible: false, message: "Ready", percent: 0, tone: "cyan" });
+        }, 1800);
+      }
+      function failUniversalProgress(message = "Failed") {
+        clearUniversalProgressPulse();
+        setUniversalProgress({ visible: true, message, percent: 100, tone: "error" });
+        setTimeout(() => {
+          setUniversalProgress({ visible: false, message: "Ready", percent: 0, tone: "cyan" });
+        }, 2400);
+      }
       function closeBuilderPublishModal() {
         document.getElementById("builder-publish-modal")?.classList.add("hidden");
       }
@@ -12532,29 +12602,27 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
         }
         const isFolderProject = Boolean(builderImportedProject?.files?.length);
         const payload = isFolderProject ? null : buildExportPayload("medialab-page");
-        if (!isFolderProject && !payload?.body?.trim()) {
+        const documentHtml = isFolderProject ? "" : getBuilderEditorDocument();
+        const hasDirectDocument = /<html[\s>]/i.test(String(documentHtml || ""));
+        if (!isFolderProject && !payload?.body?.trim() && !hasDirectDocument) {
           showBuilderSnackbar("Add content to the canvas before publishing.", "error");
           return;
         }
-        const progressDiv = document.getElementById("universal-progress");
-        const statusText = document.getElementById("universal-status-text");
-        const bar = document.getElementById("universal-bar");
-        const percentLabel = document.getElementById("universal-percent");
-        if (progressDiv && statusText && bar && percentLabel) {
-          progressDiv.classList.remove("hidden");
-          statusText.innerText = isFolderProject
-            ? "Uploading full project folder to GitHub Pages..."
-            : "Publishing project to GitHub Pages...";
-          bar.classList.remove("bg-green-500");
-          bar.classList.add("bg-cyan-400");
-          bar.style.width = "18%";
-          percentLabel.innerText = "18%";
-        }
+        beginUniversalProgress(
+          isFolderProject
+            ? "Preparing full project folder for GitHub..."
+            : "Preparing project for GitHub publish...",
+          12,
+          93,
+        );
         try {
-          if (isFolderProject && statusText && bar && percentLabel) {
-            statusText.innerText = "Preparing project files...";
-            bar.style.width = "38%";
-            percentLabel.innerText = "38%";
+          if (isFolderProject) {
+            setUniversalProgress({
+              visible: true,
+              message: "Encoding project files...",
+              percent: 28,
+              tone: "cyan",
+            });
           }
           const folderFiles = isFolderProject
             ? (builderImportedProject.files || []).map((file) => {
@@ -12584,12 +12652,23 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
                 htmlContent: payload.body || "",
                 cssContent: payload.css || "",
                 interactionScript: payload.interactionScript || "",
+                documentHtml: documentHtml || "",
               };
-          if (isFolderProject && statusText && bar && percentLabel) {
-            statusText.innerText = "Pushing project files to GitHub...";
-            bar.style.width = "62%";
-            percentLabel.innerText = "62%";
-          }
+          setUniversalProgress({
+            visible: true,
+            message: isFolderProject
+              ? "Uploading project to GitHub hosting..."
+              : "Uploading page to GitHub hosting...",
+            percent: isFolderProject ? 56 : 38,
+            tone: "cyan",
+          });
+          beginUniversalProgress(
+            isFolderProject
+              ? "GitHub is writing your project files..."
+              : "GitHub is publishing your page...",
+            isFolderProject ? 56 : 38,
+            95,
+          );
           const res = await fetch(endpoint, {
             method: "POST",
             credentials: "include",
@@ -12602,15 +12681,11 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
           }
           currentUser = { ...(currentUser || {}), ...(data.user || {}) };
           updateUserProfileUi();
-          if (statusText && bar && percentLabel) {
-            statusText.innerText = isFolderProject
+          completeUniversalProgress(
+            isFolderProject
               ? "Hosted project published successfully."
-              : "Project published successfully.";
-            bar.classList.remove("bg-cyan-400");
-            bar.classList.add("bg-green-500");
-            bar.style.width = "100%";
-            percentLabel.innerText = "100%";
-          }
+              : "Project published successfully.",
+          );
           await logUsageActivity(
             "github-publish-ui",
             `published ${data.liveProject?.fileName || data.liveUrl || projectName}`,
@@ -12627,36 +12702,12 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
               maybePromptRenderHostingOnboarding(true);
             }, 200);
           }
-          setTimeout(() => {
-            progressDiv?.classList.add("hidden");
-            if (bar) {
-              bar.style.width = "0%";
-              bar.classList.remove("bg-green-500");
-              bar.classList.add("bg-cyan-400");
-            }
-            if (percentLabel) percentLabel.innerText = "0%";
-          }, 3600);
         } catch (error) {
-          if (statusText && bar && percentLabel) {
-            statusText.innerText = "Publishing failed.";
-            bar.classList.remove("bg-cyan-400", "bg-green-500");
-            bar.classList.add("bg-rose-500");
-            bar.style.width = "100%";
-            percentLabel.innerText = "100%";
-          }
+          failUniversalProgress("Publishing failed.");
           showBuilderSnackbar(
             error.message || "Could not publish this project right now.",
             "error",
           );
-          setTimeout(() => {
-            progressDiv?.classList.add("hidden");
-            if (bar) {
-              bar.style.width = "0%";
-              bar.classList.remove("bg-rose-500", "bg-green-500");
-              bar.classList.add("bg-cyan-400");
-            }
-            if (percentLabel) percentLabel.innerText = "0%";
-          }, 3600);
         }
       }
       function refreshBuilderCodeMode() {
@@ -12742,6 +12793,9 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             builderRawImportDocument = builderImportedProject.rootHtml;
             renderRawImportedHtmlPreview(builderImportedProject.rootHtml, false);
             return;
+          }
+          if (builderRawImportDocument) {
+            builderRawImportDocument = editor.value;
           }
           try {
             tryApplyCodeModeToCanvas(true);

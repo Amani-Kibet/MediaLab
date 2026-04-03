@@ -4972,6 +4972,10 @@
             alert(
               "GitHub connected. Initialize Cloud Storage in the sidebar to activate the medialab repository and GitHub Pages.",
             );
+          } else if (githubState === "email-mismatch") {
+            alert(
+              "GitHub connection was blocked because the GitHub account email does not match the MediaLab account currently signed in. Sign into the matching GitHub account first, then try again.",
+            );
           } else if (githubState === "login-required") {
             alert("Sign in first before connecting GitHub.");
           } else if (githubState !== "connected") {
@@ -6557,7 +6561,9 @@
           if (!res.ok) {
             throw new Error(`Template request failed: ${res.status}`);
           }
-          const html = await res.text();
+          let html = await res.text();
+          const ownerName = String(currentUser?.name || "Your Game World").trim() || "Your Game World";
+          html = html.replace(/__MEDIALAB_OWNER_NAME__/g, ownerName);
           builderImportedProject = null;
           builderRawImportDocument = "";
           builderCodeMode = true;
