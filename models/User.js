@@ -37,6 +37,8 @@ const LiveProjectSchema = new mongoose.Schema(
     renderHostedConfirmed: { type: Boolean, default: false },
     renderVerifiedAt: { type: Date, default: null },
     adsensePublisherId: { type: String, default: "", trim: true },
+    monetizationEnabled: { type: Boolean, default: false },
+    monetizationVerifiedAt: { type: Date, default: null },
     lastSyncedAt: { type: Date, default: null },
     updatedAt: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now },
@@ -68,7 +70,7 @@ const UserSchema = new mongoose.Schema({
   adsenseSiteStatus: { type: String, default: "", trim: true },
   adsenseAdCode: { type: String, default: "", select: false },
   faviconFileName: { type: String, default: "", trim: true },
-  accountBalance: { type: Number, default: 12.5, min: 0 },
+  accountBalance: { type: Number, default: 0, min: 0 },
   lastWithdrawalRequestedAt: { type: Date, default: null },
 
   // --- PROJECT HISTORY ---

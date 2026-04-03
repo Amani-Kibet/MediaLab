@@ -2760,6 +2760,7 @@
                   class="h-[420px] w-full bg-white"
                 ></iframe>
               </div>
+              <div id="project-adsense-performance" class="hidden mt-4"></div>
             </div>
           </div>
           <div class="space-y-5">
@@ -3200,7 +3201,7 @@
               Connect your AdSense site
             </h3>
             <p class="text-sm text-slate-400 mt-2">
-              Paste your live MediaLab project URL and Workflow AI will find the matching AdSense account and site automatically.
+              Enter the domain you already host with MediaLab and Workflow AI will find the matching AdSense site automatically.
             </p>
           </div>
           <button
@@ -3212,15 +3213,15 @@
         </div>
         <div class="space-y-5">
           <div class="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-5">
-            <label class="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-black block">Enter your Live Project URL</label>
+            <label class="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-black block">Enter your Project Domain</label>
             <input
               id="adsense-link-url-input"
-              type="url"
-              placeholder="https://username.github.io/medialab/project.html"
+              type="text"
+              placeholder="example.com"
               class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3.5 text-white outline-none focus:border-amber-400 transition-all"
             />
             <p class="mt-3 text-xs leading-6 text-slate-400">
-              MediaLab only accepts URLs that match your own hosted GitHub or Render projects.
+              MediaLab only accepts domains that match your own hosted GitHub Pages or Render projects.
             </p>
           </div>
           <p id="adsense-link-error" class="hidden rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"></p>
@@ -3939,16 +3940,26 @@
                       : ""
                   }
                 </div>
-                <a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex max-w-full items-center gap-2 truncate text-sm text-cyan-300 hover:text-cyan-200">
-                  <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                  <span class="truncate">${primaryUrl}</span>
-                </a>
+                <div class="mt-3 flex items-center gap-2 max-w-full">
+                  <a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex min-w-0 flex-1 items-center gap-2 truncate text-sm text-cyan-300 hover:text-cyan-200">
+                    <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                    <span class="truncate">${primaryUrl}</span>
+                  </a>
+                  <button title="Copy URL" onclick="event.stopPropagation(); copyProjectUrl('${primaryUrl}')" class="h-8 w-8 shrink-0 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                    <i class="fas fa-copy text-[11px]"></i>
+                  </button>
+                </div>
                 ${
                   secondaryUrl
-                    ? `<a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm text-emerald-300 hover:text-emerald-200">
-                        <i class="fas fa-signal text-xs"></i>
-                        <span class="truncate">${secondaryUrl}</span>
-                      </a>`
+                    ? `<div class="mt-2 flex items-center gap-2 max-w-full">
+                        <a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex min-w-0 flex-1 items-center gap-2 truncate text-sm text-emerald-300 hover:text-emerald-200">
+                          <i class="fas fa-signal text-xs"></i>
+                          <span class="truncate">${secondaryUrl}</span>
+                        </a>
+                        <button title="Copy URL" onclick="event.stopPropagation(); copyProjectUrl('${secondaryUrl}')" class="h-8 w-8 shrink-0 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                          <i class="fas fa-copy text-[11px]"></i>
+                        </button>
+                      </div>`
                     : ""
                 }
               </div>
@@ -4155,10 +4166,13 @@
         if (step === 1) {
           content.innerHTML = `
             <div class="rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-              <p class="text-sm text-slate-200">Open Google AdSense, create or review your publisher account, then come back here with your publisher ID.</p>
-              <a href="https://www.google.com/adsense/start/" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white text-slate-950 px-4 py-3 text-sm font-black">
-                <i class="fab fa-google"></i>Open Google AdSense
-              </a>
+              <p class="text-sm text-slate-200">Link your domain to AdSense once, then MediaLab can activate ads only on the specific projects you choose.</p>
+              <div class="mt-4 flex flex-wrap items-center gap-3">
+                <button onclick="openAdsenseLinkModal()" class="inline-flex items-center gap-2 rounded-2xl bg-white text-slate-950 px-4 py-3 text-sm font-black">
+                  <i class="fab fa-google"></i>Link Domain
+                </button>
+                <span class="text-xs text-slate-400">${currentUser?.adsenseSiteUrl ? `Linked: ${currentUser.adsenseSiteUrl}` : "No AdSense domain linked yet."}</span>
+              </div>
             </div>
           `;
           return;
@@ -4166,27 +4180,27 @@
         if (step === 2) {
           content.innerHTML = `
             <div class="rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-              <label class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Publisher ID</label>
-              <input id="project-adsense-id-input" value="${currentUser?.adsenseId || ""}" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-amber-400" placeholder="ca-pub-xxxxxxxxxxxxxxxx" />
-              <button onclick="saveProjectAdsenseId()" class="mt-4 rounded-2xl bg-amber-400 px-4 py-3 text-sm font-black text-slate-950">Save Publisher ID</button>
+              <label class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">ads.txt Upload</label>
+              <div onclick="document.getElementById('project-ads-file-input').click()" class="mt-3 rounded-[1.4rem] border border-dashed border-amber-400/30 bg-amber-500/10 px-4 py-6 text-center cursor-pointer">
+                <i class="fas fa-file-upload text-2xl text-amber-300"></i>
+                <p class="mt-3 text-sm font-semibold text-white">Upload Google ads.txt</p>
+                <p id="project-ads-file-name" class="mt-1 text-xs text-amber-100/70">${pendingAdsTxtFile?.name || "Drop in the exact file Google gave you."}</p>
+              </div>
+              <input id="project-ads-file-input" type="file" accept=".txt,text/plain" class="hidden" onchange="handleAdsTxtSelection(this.files[0])" />
+              <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button onclick="uploadProjectAdsTxt()" class="rounded-2xl bg-amber-400 px-4 py-3 text-sm font-black text-slate-950">Upload ads.txt</button>
+                <button onclick="verifyProjectAdsSetup()" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-slate-100">Verify Setup</button>
+              </div>
+              <p id="project-ads-verify-note" class="mt-3 text-xs text-slate-400">MediaLab will place <span class="font-black text-white">ads.txt</span> at the root of your <span class="font-black text-white">medialab</span> repository.</p>
             </div>
           `;
           return;
         }
         content.innerHTML = `
           <div class="rounded-[1.6rem] border border-white/10 bg-white/5 p-4">
-            <label class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">ads.txt Upload</label>
-            <div onclick="document.getElementById('project-ads-file-input').click()" class="mt-3 rounded-[1.4rem] border border-dashed border-amber-400/30 bg-amber-500/10 px-4 py-6 text-center cursor-pointer">
-              <i class="fas fa-file-upload text-2xl text-amber-300"></i>
-              <p class="mt-3 text-sm font-semibold text-white">Upload Google ads.txt</p>
-              <p id="project-ads-file-name" class="mt-1 text-xs text-amber-100/70">${pendingAdsTxtFile?.name || "Drop in the exact file Google gave you."}</p>
-            </div>
-            <input id="project-ads-file-input" type="file" accept=".txt,text/plain" class="hidden" onchange="handleAdsTxtSelection(this.files[0])" />
-            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button onclick="uploadProjectAdsTxt()" class="rounded-2xl bg-amber-400 px-4 py-3 text-sm font-black text-slate-950">Upload ads.txt</button>
-              <button onclick="verifyProjectAdsSetup()" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-slate-100">Verify Setup</button>
-            </div>
-            <p id="project-ads-verify-note" class="mt-3 text-xs text-slate-400">MediaLab will place <span class="font-black text-white">ads.txt</span> at the root of your <span class="font-black text-white">medialab</span> repository.</p>
+            <label class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Activate Ads On This Project</label>
+            <p class="mt-3 text-sm leading-6 text-slate-300">This keeps monetization project-specific. MediaLab will inject your verified AdSense code only into this project.</p>
+            <button onclick="activateCurrentProjectMonetization()" class="mt-4 rounded-2xl bg-amber-400 px-4 py-3 text-sm font-black text-slate-950">Activate Monetization</button>
           </div>
         `;
       }
@@ -4214,28 +4228,28 @@
         pendingAdsTxtFile = file;
         document.getElementById("project-ads-file-name").textContent = file.name;
       }
-      async function saveProjectAdsenseId() {
-        const input = document.getElementById("project-adsense-id-input");
-        const adsenseId = String(input?.value || "").trim();
+      async function activateCurrentProjectMonetization() {
+        const filename =
+          currentLiveProjectDetail?.fileName || currentLiveProjectDetail?.filename || "";
+        if (!filename) return;
         try {
-          const formData = new FormData();
-          formData.append("adsenseId", adsenseId);
-          const res = await fetch("/api/github/settings", {
+          const res = await fetch("/api/github/monetize-project", {
             method: "POST",
             credentials: "include",
-            body: formData,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename }),
           });
           const data = await res.json();
           if (!res.ok || !data.success) {
-            throw new Error(data.message || "Could not save your AdSense ID.");
+            throw new Error(data.message || "Could not activate monetization.");
           }
           currentUser = { ...(currentUser || {}), ...(data.user || {}) };
           updateUserProfileUi();
-          showBuilderSnackbar("Publisher ID saved.", "success");
-          setMonetizeWizardStep(3);
+          showBuilderSnackbar("Project monetization activated.", "success");
+          closeMonetizeProjectWizard();
           if (currentLiveProjectDetail) await refreshCurrentLiveProjectDetail();
         } catch (error) {
-          showBuilderSnackbar(error.message || "Could not save your AdSense ID.", "error");
+          showBuilderSnackbar(error.message || "Could not activate monetization.", "error");
         }
       }
       async function uploadProjectAdsTxt() {
@@ -4299,12 +4313,26 @@
           .textContent = project?.name || project?.fileName || "Live Project";
         document.getElementById("live-project-detail-subtitle").innerHTML = `
           <div class="flex flex-col gap-2">
-            <a href="${primaryUrl || "#"}" target="_blank" rel="noopener noreferrer" class="text-cyan-300 hover:text-cyan-200">
-              ${primaryUrl || "Live URL unavailable"}
-            </a>
+            <div class="flex items-center gap-2 max-w-full">
+              <a href="${primaryUrl || "#"}" target="_blank" rel="noopener noreferrer" class="min-w-0 flex-1 truncate text-cyan-300 hover:text-cyan-200">
+                ${primaryUrl || "Live URL unavailable"}
+              </a>
+              ${
+                primaryUrl
+                  ? `<button title="Copy URL" onclick="copyProjectUrl('${primaryUrl}')" class="h-8 w-8 shrink-0 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                      <i class="fas fa-copy text-[11px]"></i>
+                    </button>`
+                  : ""
+              }
+            </div>
             ${
               secondaryUrl
-                ? `<a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-300 hover:text-emerald-200">Mirror: ${secondaryUrl}</a>`
+                ? `<div class="flex items-center gap-2 max-w-full">
+                    <a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="min-w-0 flex-1 truncate text-emerald-300 hover:text-emerald-200">Mirror: ${secondaryUrl}</a>
+                    <button title="Copy URL" onclick="copyProjectUrl('${secondaryUrl}')" class="h-8 w-8 shrink-0 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all">
+                      <i class="fas fa-copy text-[11px]"></i>
+                    </button>
+                  </div>`
                 : `<span class="text-amber-300">Render hosting still pending for this project.</span>`
             }
           </div>
@@ -4325,11 +4353,21 @@
         renderProjectStatCard(
           "project-stat-ads",
           "Ads Monitor",
-          monitor?.adsDetected ? "Ads Detected" : "Ads Missing",
-          monitor?.adsDetected ? "green" : "red",
-          monitor?.adsDetected
-            ? "Google AdSense script found in the live HTML."
-            : "This page is not currently serving an AdSense script.",
+          project?.monetizationEnabled
+            ? monitor?.adsDetected
+              ? "Ads Active"
+              : "Check Setup"
+            : "Manual",
+          project?.monetizationEnabled
+            ? monitor?.adsDetected
+              ? "green"
+              : "red"
+            : "amber",
+          project?.monetizationEnabled
+            ? monitor?.adsDetected
+              ? "Google AdSense script found in the live HTML."
+              : "This project is marked for monetization but the ad script is not active yet."
+            : "This project is not monetized until you activate it from the dashboard.",
         );
         renderProjectStatCard(
           "project-stat-ads-txt",
@@ -4344,6 +4382,43 @@
         );
         document.getElementById("live-project-preview-frame").src =
           primaryUrl || "about:blank";
+        const approvedBadge = document.getElementById("project-approved-badge");
+        if (approvedBadge) {
+          approvedBadge.textContent = project?.monetizationEnabled
+            ? monitor?.monetizationApproved
+              ? "Monetization Approved"
+              : "Monetization In Progress"
+            : "Monetization Approved";
+        }
+        const statsMetaNode = document.getElementById("project-adsense-performance");
+        if (statsMetaNode) {
+          if (monitor?.adsPerformance) {
+            statsMetaNode.innerHTML = `
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Earnings</div>
+                  <div class="mt-2 text-lg font-semibold text-white">$${Number(monitor.adsPerformance.estimatedEarnings || 0).toFixed(2)}</div>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">CTR</div>
+                  <div class="mt-2 text-lg font-semibold text-white">${Number(monitor.adsPerformance.ctr || 0).toFixed(2)}%</div>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Clicks</div>
+                  <div class="mt-2 text-lg font-semibold text-white">${formatCompactNumber(monitor.adsPerformance.clicks || 0)}</div>
+                </div>
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Page RPM</div>
+                  <div class="mt-2 text-lg font-semibold text-white">$${Number(monitor.adsPerformance.pageViewsRpm || 0).toFixed(2)}</div>
+                </div>
+              </div>
+            `;
+            statsMetaNode.classList.remove("hidden");
+          } else {
+            statsMetaNode.classList.add("hidden");
+            statsMetaNode.innerHTML = "";
+          }
+        }
       }
       function getPendingRenderHostingProject() {
         if (!loggedIn || !currentUser) return null;
@@ -4378,6 +4453,16 @@
           showBuilderSnackbar("Live URL copied.", "success");
         } catch {
           showBuilderSnackbar("Could not copy the live URL.", "error");
+        }
+      }
+      async function copyProjectUrl(url = "") {
+        const value = String(url || "").trim();
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          showBuilderSnackbar("URL copied.", "success");
+        } catch {
+          showBuilderSnackbar("Could not copy the URL.", "error");
         }
       }
       function showRenderLiveSuccess(project) {
@@ -5100,14 +5185,18 @@
         const errorNode = document.getElementById("adsense-link-error");
         const successNode = document.getElementById("adsense-link-success");
         const reconnectBtn = document.getElementById("adsense-google-reconnect-btn");
-        const liveProjectUrl = String(input?.value || "").trim();
+        const domainName = String(input?.value || "")
+          .trim()
+          .replace(/^https?:\/\//i, "")
+          .replace(/\/.*$/, "")
+          .toLowerCase();
         errorNode?.classList.add("hidden");
         successNode?.classList.add("hidden");
         document.getElementById("adsense-link-checklist")?.classList.add("hidden");
         reconnectBtn?.classList.add("hidden");
-        if (!liveProjectUrl) {
+        if (!domainName) {
           if (errorNode) {
-            errorNode.textContent = "Enter your live project URL first.";
+            errorNode.textContent = "Enter your project domain first.";
             errorNode.classList.remove("hidden");
           }
           input?.focus();
@@ -5122,7 +5211,7 @@
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ liveProjectUrl }),
+            body: JSON.stringify({ domainName }),
           });
           const data = await res.json();
           if (!res.ok || !data.success) {
@@ -5136,7 +5225,7 @@
           document.getElementById("adsense-link-success-title").textContent =
             `Success! We found your AdSense account ${data.adsenseId || ""}.`;
           document.getElementById("adsense-link-success-subtitle").textContent =
-            `${data.siteUrl || liveProjectUrl} is now linked. Status: ${data.siteStatus || "UNKNOWN"}.`;
+            `${data.siteUrl || domainName} is now linked. Status: ${data.siteStatus || "UNKNOWN"}.`;
           successNode?.classList.remove("hidden");
           renderAdsenseChecklist(data.checklist || {});
           showBuilderSnackbar(
@@ -5150,7 +5239,7 @@
           if (errorNode) {
             errorNode.textContent =
               error.message ||
-              "We couldn't find this URL in your AdSense account yet.";
+              "We couldn't find this domain in your AdSense account yet.";
             errorNode.classList.remove("hidden");
           }
         } finally {

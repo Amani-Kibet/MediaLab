@@ -703,6 +703,58 @@ function collectHostedDomains(projects = []) {
   )];
 }
 
+function collectHostedProjectDomains(user) {
+  return collectHostedDomains(Array.isArray(user?.liveProjects) ? user.liveProjects : []);
+}
+
+async function getAdsenseDomainStats(user, targetUrl = "") {
+  const domainName = extractDomainNameFromUrl(targetUrl);
+  if (!user?.googleRefreshToken || !domainName) {
+    return {
+      estimatedEarnings: 0,
+      impressions: 0,
+      pageViewsRpm: 0,
+      clicks: 0,
+      ctr: 0,
+    };
+  }
+  const auth = getAdsenseOAuthClient(user);
+  const adsense = google.adsense({ version: "v2", auth });
+  const accountResponse = await adsense.accounts.list({ pageSize: 1 });
+  const accountName = accountResponse.data?.accounts?.[0]?.name;
+  if (!accountName) {
+    return {
+      estimatedEarnings: 0,
+      impressions: 0,
+      pageViewsRpm: 0,
+      clicks: 0,
+      ctr: 0,
+    };
+  }
+  const metrics = ["ESTIMATED_EARNINGS", "IMPRESSIONS", "PAGE_VIEWS_RPM", "CLICKS"];
+  const report = await adsense.accounts.reports.generate({
+    account: accountName,
+    dateRange: "LAST_7_DAYS",
+    dimensions: ["DOMAIN_NAME"],
+    metrics,
+    filters: [`DOMAIN_NAME==${domainName}`],
+    languageCode: "en",
+    limit: 1,
+  });
+  const totals = report.data?.totals?.cells || report.data?.rows?.[0]?.cells || [];
+  const metricCells = totals.slice(-metrics.length);
+  const impressions = Number(metricCells[1]?.value || 0);
+  const clicks = Number(metricCells[3]?.value || 0);
+  const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+  return {
+    estimatedEarnings: Number(Number(metricCells[0]?.value || 0).toFixed(2)),
+    impressions: Math.round(impressions),
+    pageViewsRpm: Number(Number(metricCells[2]?.value || 0).toFixed(2)),
+    clicks: Math.round(clicks),
+    ctr: Number(ctr.toFixed(2)),
+  };
+}
+
 function isAllowedAdsenseProjectUrl(user, rawUrl = "") {
   const normalized = normalizeRenderUrl(rawUrl);
   if (!normalized) return false;
@@ -1087,8 +1139,8 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
       ? buildPublishedHtmlFromSource({
           documentHtml,
           projectName,
-          adsenseId: user.adsenseId || "",
-          adsenseAdCode: user.adsenseAdCode || "",
+          adsenseId: existingProject?.monetizationEnabled ? user.adsenseId || "" : "",
+          adsenseAdCode: existingProject?.monetizationEnabled ? user.adsenseAdCode || "" : "",
           description,
           keywords,
         })
@@ -1097,8 +1149,8 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
           htmlContent,
           cssContent,
           interactionScript,
-          adsenseId: user.adsenseId || "",
-          adsenseAdCode: user.adsenseAdCode || "",
+          adsenseId: existingProject?.monetizationEnabled ? user.adsenseId || "" : "",
+          adsenseAdCode: existingProject?.monetizationEnabled ? user.adsenseAdCode || "" : "",
           description,
           keywords,
         });
@@ -1142,7 +1194,9 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
       renderUrl: existingProject?.renderUrl || "",
       renderHostedConfirmed: Boolean(existingProject?.renderHostedConfirmed),
       renderVerifiedAt: existingProject?.renderVerifiedAt || null,
-      adsensePublisherId: user.adsenseId || "",
+      adsensePublisherId: existingProject?.monetizationEnabled ? user.adsenseId || "" : "",
+      monetizationEnabled: Boolean(existingProject?.monetizationEnabled),
+      monetizationVerifiedAt: existingProject?.monetizationVerifiedAt || null,
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
       createdAt: existingProject?.createdAt || new Date(),
@@ -1311,7 +1365,9 @@ app.post("/api/github/publish-folder", publishRateLimit, express.json({ limit: "
       renderUrl: existingProject?.renderUrl || "",
       renderHostedConfirmed: Boolean(existingProject?.renderHostedConfirmed),
       renderVerifiedAt: existingProject?.renderVerifiedAt || null,
-      adsensePublisherId: user.adsenseId || "",
+      adsensePublisherId: Boolean(existingProject?.monetizationEnabled) ? user.adsenseId || "" : "",
+      monetizationEnabled: Boolean(existingProject?.monetizationEnabled),
+      monetizationVerifiedAt: existingProject?.monetizationVerifiedAt || null,
       lastSyncedAt: new Date(),
       updatedAt: new Date(),
       createdAt: existingProject?.createdAt || new Date(),
@@ -1809,7 +1865,10 @@ app.get("/api/github/project-monitor", async (req, res) => {
       health.label = "Offline";
     }
 
-    const adsDetected = detectAdsenseScript(html, user.adsenseId || project.adsensePublisherId || "");
+    const adsDetected = detectAdsenseScript(
+      html,
+      project?.monetizationEnabled ? user.adsenseId || project.adsensePublisherId || "" : "",
+    );
 
     let adsTxtVerified = false;
     let adsTxtUrl = "";
@@ -1831,6 +1890,15 @@ app.get("/api/github/project-monitor", async (req, res) => {
       adsTxtUrl = buildAdsTxtCandidateUrls(user)[0] || "";
     }
 
+    let adsPerformance = null;
+    if (project?.monetizationEnabled && user.googleRefreshToken) {
+      try {
+        adsPerformance = await getAdsenseDomainStats(user, liveUrl);
+      } catch (error) {
+        console.warn("Project AdSense stats skipped:", error.message);
+      }
+    }
+
     return res.json({
       success: true,
       project: {
@@ -1841,8 +1909,9 @@ app.get("/api/github/project-monitor", async (req, res) => {
       adsDetected,
       adsTxtVerified,
       adsTxtUrl,
-      monetizationApproved: Boolean(adsDetected && adsTxtVerified && user.adsenseId),
+      monetizationApproved: Boolean(project?.monetizationEnabled && adsDetected && adsTxtVerified && user.adsenseId),
       adsenseId: user.adsenseId || "",
+      adsPerformance,
     });
   } catch (error) {
     console.error("GitHub project monitor failed:", error);
@@ -2108,11 +2177,13 @@ app.post("/api/adsense/link-site", express.json(), async (req, res) => {
   }
 
   try {
+    const submittedDomain = String(req.body?.domainName || "").trim().toLowerCase();
     const liveProjectUrl = normalizeRenderUrl(req.body?.liveProjectUrl || "");
-    if (!liveProjectUrl) {
+    const domainName = submittedDomain || extractDomainNameFromUrl(liveProjectUrl);
+    if (!domainName) {
       return res.status(400).json({
         success: false,
-        message: "Enter your live project URL first.",
+        message: "Enter your project domain first.",
       });
     }
 
@@ -2127,14 +2198,13 @@ app.post("/api/adsense/link-site", express.json(), async (req, res) => {
         message: "Reconnect Google first so MediaLab can read your AdSense data.",
       });
     }
-    if (!isAllowedAdsenseProjectUrl(user, liveProjectUrl)) {
+    const allowedDomains = collectHostedProjectDomains(user);
+    if (!allowedDomains.includes(domainName)) {
       return res.status(403).json({
         success: false,
-        message: "That URL is not recognized as one of your MediaLab projects.",
+        message: "That domain is not recognized as one of your MediaLab hosted project domains.",
       });
     }
-
-    const domainName = extractDomainNameFromUrl(liveProjectUrl);
     const auth = getAdsenseOAuthClient(user);
     const adsense = google.adsense({ version: "v2", auth });
     const accountsResponse = await adsense.accounts.list();
@@ -2164,7 +2234,7 @@ app.post("/api/adsense/link-site", express.json(), async (req, res) => {
       return res.status(404).json({
         success: false,
         message:
-          "We couldn't find this URL in your AdSense account. Make sure you've added this site in your AdSense dashboard under Sites.",
+          "We couldn't find this domain in your AdSense account. Make sure you've added it in your AdSense dashboard under Sites.",
       });
     }
 
@@ -2192,7 +2262,7 @@ app.post("/api/adsense/link-site", express.json(), async (req, res) => {
     }
     user.adsenseAccountName = matchedAccount.name || "";
     user.adsenseSiteUrl =
-      matchedSite.siteUrl || matchedSite.url || matchedSite.domain || liveProjectUrl;
+      matchedSite.siteUrl || matchedSite.url || matchedSite.domain || domainName;
     user.adsenseSiteStatus =
       matchedSite.state || matchedSite.status || matchedSite.platformType || "";
     if (adCode) {
@@ -2241,6 +2311,86 @@ app.post("/api/adsense/link-site", express.json(), async (req, res) => {
         error?.response?.data?.error?.message ||
         error?.message ||
         "Could not link your AdSense site right now.",
+    });
+  }
+});
+
+app.post("/api/github/monetize-project", express.json(), async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ success: false, message: "You need to sign in first." });
+  }
+  try {
+    const filename = String(req.body?.filename || "").trim();
+    if (!filename) {
+      return res.status(400).json({ success: false, message: "Missing project filename." });
+    }
+    const user = await User.findById(req.user._id).select("+githubToken +adsenseAdCode");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    if (!user.githubUsername || !user.githubToken) {
+      return res.status(400).json({ success: false, message: "Connect GitHub first." });
+    }
+    if (!user.adsenseId && !user.adsenseAdCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Link your AdSense domain first before monetizing a project.",
+      });
+    }
+
+    user.liveProjects = Array.isArray(user.liveProjects) ? user.liveProjects : [];
+    const projectIndex = user.liveProjects.findIndex(
+      (item) => String(item?.fileName || item?.filename || "").trim() === filename,
+    );
+    if (projectIndex < 0) {
+      return res.status(404).json({ success: false, message: "Live project not found." });
+    }
+    const project = user.liveProjects[projectIndex];
+    const octokit = buildGithubClient(user);
+    const contentResponse = await octokit.rest.repos.getContent({
+      owner: user.githubUsername,
+      repo: project.repo || "medialab",
+      path: filename,
+    });
+    if (Array.isArray(contentResponse.data) || !contentResponse.data?.content) {
+      return res.status(400).json({
+        success: false,
+        message: "That project entry file could not be monetized automatically.",
+      });
+    }
+    const sourceHtml = Buffer.from(contentResponse.data.content, "base64").toString("utf8");
+    const monetizedHtml = buildPublishedHtmlFromSource({
+      documentHtml: sourceHtml,
+      projectName: project.name || "MediaLab Project",
+      adsenseId: user.adsenseId || "",
+      adsenseAdCode: user.adsenseAdCode || "",
+    });
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner: user.githubUsername,
+      repo: project.repo || "medialab",
+      path: filename,
+      sha: contentResponse.data.sha,
+      message: `Enable monetization for ${filename} from MediaLab`,
+      content: Buffer.from(monetizedHtml, "utf8").toString("base64"),
+    });
+
+    project.monetizationEnabled = true;
+    project.monetizationVerifiedAt = new Date();
+    project.adsensePublisherId = user.adsenseId || "";
+    project.updatedAt = new Date();
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Project monetization enabled.",
+      project,
+      user: toSafeUser(user),
+    });
+  } catch (error) {
+    console.error("Project monetization failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not enable monetization for this project.",
     });
   }
 });
