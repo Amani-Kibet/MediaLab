@@ -2892,6 +2892,7 @@
           <p class="mt-3 text-xs leading-6 text-slate-400">
             Paste the live Render URL for this project. MediaLab will ping it and save it beside your GitHub deployment once it’s reachable.
           </p>
+          <p id="render-hosting-delay-note" class="hidden mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-xs leading-6 text-amber-100"></p>
           <p id="render-hosting-error" class="hidden mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"></p>
           <div class="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
             <button
@@ -3377,6 +3378,7 @@
       let currentRenderHostingProject = null;
       let currentRenderLiveProject = null;
       let renderProjectSyncPoller = null;
+      let renderLongWaitTimer = null;
       let currentAdsenseConsoleReport = null;
       let monetizeWizardStep = 1;
       let pendingAdsTxtFile = null;
@@ -3388,6 +3390,46 @@
       let withdrawMethodsCollapsed = false;
       const LOGIN_REQUIRED_TOOL_IDS = ["image-pdf"];
       const PREMIUM_TOOL_IDS = ["voice-clone", "text-to-speech", "image-edit"];
+      function normalizeHostedBaseUrl(url = "") {
+        return String(url || "").trim().replace(/\/$/, "");
+      }
+      function buildProjectRoutePath(project = {}) {
+        const repoPath = String(project?.repoPath || "")
+          .trim()
+          .replace(/^public\/?/i, "")
+          .replace(/^\/+/, "")
+          .replace(/\/{2,}/g, "/");
+        const entryPath = String(project?.entryPath || "index.html")
+          .trim()
+          .replace(/^\/+/, "")
+          .replace(/\/{2,}/g, "/");
+        if (!repoPath) {
+          const filename = String(project?.fileName || project?.filename || "")
+            .trim()
+            .replace(/^public\/?/i, "")
+            .replace(/^\/+/, "");
+          if (!filename) return "";
+          return /\/index\.html?$/i.test(filename)
+            ? filename.replace(/\/index\.html?$/i, "/")
+            : filename;
+        }
+        if (!entryPath || /^index\.html?$/i.test(entryPath)) return `${repoPath}/`;
+        return `${repoPath}/${entryPath}`;
+      }
+      function getProjectPrimaryUrl(project = {}) {
+        const renderBase = normalizeHostedBaseUrl(project?.renderUrl || "");
+        const routePath = buildProjectRoutePath(project).replace(/^\/+/, "");
+        if (project?.renderHostedConfirmed && renderBase) {
+          return routePath ? `${renderBase}/${routePath}` : renderBase;
+        }
+        return String(project?.liveUrl || project?.url || "").trim();
+      }
+      function getProjectSecondaryUrl(project = {}) {
+        if (project?.renderHostedConfirmed && project?.renderUrl) {
+          return String(project?.liveUrl || project?.url || "").trim();
+        }
+        return String(project?.renderUrl || "").trim();
+      }
       let historyItems = [];
       let currentImages = [];
       let builderTourState = {
@@ -3861,8 +3903,10 @@
             </div>`;
         }
         return projects
-          .map(
-            (project) => `
+          .map((project) => {
+            const primaryUrl = getProjectPrimaryUrl(project);
+            const secondaryUrl = getProjectSecondaryUrl(project);
+            return `
           <div onclick="openLiveProjectDetail('${project.fileName || project.filename}')" class="rounded-[2.3rem] border border-cyan-500/10 bg-gray-900 p-7 shadow-[0_25px_80px_rgba(2,6,23,0.38)] transition-all hover:border-cyan-400/30 cursor-pointer">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
@@ -3886,15 +3930,15 @@
                       : ""
                   }
                 </div>
-                <a href="${project.liveUrl || project.url}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex max-w-full items-center gap-2 truncate text-sm text-cyan-300 hover:text-cyan-200">
+                <a href="${primaryUrl}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex max-w-full items-center gap-2 truncate text-sm text-cyan-300 hover:text-cyan-200">
                   <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                  <span class="truncate">${project.liveUrl || project.url}</span>
+                  <span class="truncate">${primaryUrl}</span>
                 </a>
                 ${
-                  project.renderHostedConfirmed && project.renderUrl
-                    ? `<a href="${project.renderUrl}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm text-emerald-300 hover:text-emerald-200">
+                  secondaryUrl
+                    ? `<a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex max-w-full items-center gap-2 truncate text-sm text-emerald-300 hover:text-emerald-200">
                         <i class="fas fa-signal text-xs"></i>
-                        <span class="truncate">${project.renderUrl}</span>
+                        <span class="truncate">${secondaryUrl}</span>
                       </a>`
                     : ""
                 }
@@ -3905,7 +3949,7 @@
               </div>
             </div>
             <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <button onclick="event.stopPropagation(); openLiveProjectSite('${project.liveUrl || project.url}')" class="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm font-black text-cyan-100 transition-all hover:bg-cyan-500/20">
+              <button onclick="event.stopPropagation(); openLiveProjectSite('${primaryUrl}')" class="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm font-black text-cyan-100 transition-all hover:bg-cyan-500/20">
                 <i class="fas fa-globe mr-2"></i>Open Site
               </button>
               <button onclick="event.stopPropagation(); editLiveProjectCode('${project.fileName || project.filename}', '${(project.name || "").replace(/'/g, "\\'")}')" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-slate-100 transition-all hover:bg-white/10">
@@ -3915,8 +3959,8 @@
                 <i class="fas fa-trash-can mr-2"></i>Delete
               </button>
             </div>
-          </div>`,
-          )
+          </div>`;
+          })
           .join("");
       }
       async function fetchGithubProjects(options = {}) {
@@ -4234,17 +4278,19 @@
       function renderLiveProjectDetail(project, monitor = {}) {
         currentLiveProjectDetail = project || null;
         currentLiveProjectMonitor = monitor || null;
+        const primaryUrl = getProjectPrimaryUrl(project || {});
+        const secondaryUrl = getProjectSecondaryUrl(project || {});
         document
           .getElementById("live-project-detail-title")
           .textContent = project?.name || project?.fileName || "Live Project";
         document.getElementById("live-project-detail-subtitle").innerHTML = `
           <div class="flex flex-col gap-2">
-            <a href="${project?.liveUrl || project?.url || "#"}" target="_blank" rel="noopener noreferrer" class="text-cyan-300 hover:text-cyan-200">
-              ${project?.liveUrl || project?.url || "Live URL unavailable"}
+            <a href="${primaryUrl || "#"}" target="_blank" rel="noopener noreferrer" class="text-cyan-300 hover:text-cyan-200">
+              ${primaryUrl || "Live URL unavailable"}
             </a>
             ${
-              project?.renderHostedConfirmed && project?.renderUrl
-                ? `<a href="${project.renderUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-300 hover:text-emerald-200">Render Host: ${project.renderUrl}</a>`
+              secondaryUrl
+                ? `<a href="${secondaryUrl}" target="_blank" rel="noopener noreferrer" class="text-emerald-300 hover:text-emerald-200">Mirror: ${secondaryUrl}</a>`
                 : `<span class="text-amber-300">Render hosting still pending for this project.</span>`
             }
           </div>
@@ -4283,7 +4329,7 @@
           !monitor?.monetizationApproved,
         );
         document.getElementById("live-project-preview-frame").src =
-          project?.liveUrl || project?.url || "about:blank";
+          primaryUrl || "about:blank";
       }
       function getPendingRenderHostingProject() {
         if (!loggedIn || !currentUser) return null;
@@ -4431,6 +4477,12 @@
         document.getElementById("render-hosting-modal")?.classList.add("hidden");
         currentRenderHostingProject = null;
         document.getElementById("render-hosting-error")?.classList.add("hidden");
+        const note = document.getElementById("render-hosting-delay-note");
+        if (note) note.classList.add("hidden");
+        if (renderLongWaitTimer) {
+          clearTimeout(renderLongWaitTimer);
+          renderLongWaitTimer = null;
+        }
       }
       function openRenderHostingOnboarding(filename = "") {
         const project =
@@ -4452,6 +4504,16 @@
         const input = document.getElementById("render-hosting-url-input");
         if (input) input.value = project.renderUrl || "";
         document.getElementById("render-hosting-error")?.classList.add("hidden");
+        const note = document.getElementById("render-hosting-delay-note");
+        if (note) {
+          note.classList.add("hidden");
+          note.textContent =
+            "The deployment process is taking longer than usual. Make sure your Render service has auto deploy enabled, or you may want to go and deploy manually.";
+        }
+        if (renderLongWaitTimer) clearTimeout(renderLongWaitTimer);
+        renderLongWaitTimer = setTimeout(() => {
+          document.getElementById("render-hosting-delay-note")?.classList.remove("hidden");
+        }, 120000);
         updateRenderDeployUi();
         document.getElementById("render-hosting-modal")?.classList.remove("hidden");
       }

@@ -218,6 +218,30 @@ function stripPublicRootFromUrlPath(value = "") {
   return normalizeRepoFilePath(value).replace(/^public\/?/i, "");
 }
 
+function buildProjectRoutePath(project = {}) {
+  const repoPath = stripPublicRootFromUrlPath(project?.repoPath || "");
+  const entryPath = normalizeImportedEntryPath(project?.entryPath || "index.html");
+  if (!repoPath) {
+    const filename = stripPublicRootFromUrlPath(project?.fileName || project?.filename || "");
+    if (!filename) return "";
+    return /\/index\.html?$/i.test(filename)
+      ? filename.replace(/\/index\.html?$/i, "/")
+      : filename;
+  }
+  if (!entryPath || /^index\.html?$/i.test(entryPath)) {
+    return `${repoPath}/`;
+  }
+  return `${repoPath}/${entryPath}`;
+}
+
+function buildHostedProjectUrl(baseUrl = "", project = {}) {
+  const normalizedBase = normalizeRenderUrl(baseUrl);
+  if (!normalizedBase) return "";
+  const routePath = buildProjectRoutePath(project).replace(/^\/+/, "");
+  if (!routePath) return normalizedBase;
+  return `${normalizedBase}/${routePath}`.replace(/(?<!:)\/{2,}/g, "/");
+}
+
 function buildFolderProjectLiveUrl(owner, repo, folderPath, entryPath) {
   const cleanFolder = stripPublicRootFromUrlPath(folderPath);
   const cleanEntry = normalizeImportedEntryPath(entryPath);
@@ -612,10 +636,14 @@ function buildDefaultRenderServiceName(owner = "client") {
 }
 
 function buildProjectLiveUrl(user, project = {}) {
-  const filename = String(project?.fileName || project?.filename || "").trim();
+  if (project?.renderHostedConfirmed && project?.renderUrl) {
+    return buildHostedProjectUrl(project.renderUrl, project);
+  }
   if (project?.liveUrl || project?.url) return project.liveUrl || project.url;
+  const filename = String(project?.fileName || project?.filename || "").trim();
   if (!user?.githubUsername || !filename) return "";
-  return `https://${user.githubUsername}.github.io/medialab/${filename}`;
+  const routePath = buildProjectRoutePath(project);
+  return `https://${user.githubUsername}.github.io/medialab/${routePath}`;
 }
 
 function buildAdsTxtCandidateUrls(user) {
@@ -1051,7 +1079,9 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
     const owner = user.githubUsername;
     const repo = "medialab";
     const filename = slugifyProjectName(projectName);
-    const repoFilePath = normalizeRepoFilePath(`${GITHUB_PUBLIC_ROOT}/${filename}`);
+    const folderSlug = filename.replace(/\.html$/i, "") || "medialab-page";
+    const repoFolderPath = normalizeRepoFilePath(`${GITHUB_PUBLIC_ROOT}/${folderSlug}`);
+    const repoFilePath = normalizeRepoFilePath(`${repoFolderPath}/index.html`);
     await ensureGithubRepoScaffold(octokit, owner, repo);
     const fullHtml = documentHtml
       ? buildPublishedHtmlFromSource({
@@ -1091,7 +1121,7 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
       contentBase64: Buffer.from(fullHtml).toString("base64"),
     });
 
-    const liveUrl = `https://${owner}.github.io/${repo}/${filename}`;
+    const liveUrl = `https://${owner}.github.io/${repo}/${folderSlug}/`;
     const existingProject = user.liveProjects.find(
       (project) => String(project?.fileName || project?.filename || "") === repoFilePath,
     );
@@ -1099,8 +1129,8 @@ app.post("/api/github/publish", publishRateLimit, express.json({ limit: "10mb" }
       name: projectName,
       fileName: repoFilePath,
       filename: repoFilePath,
-      entryPath: filename,
-      repoPath: "",
+      entryPath: "index.html",
+      repoPath: repoFolderPath,
       projectType: "single",
       repo,
       url: liveUrl,
@@ -1467,7 +1497,7 @@ app.delete("/api/github/project", async (req, res) => {
       (project) => String(project?.fileName || project?.filename || "").trim() === filename,
     );
 
-    if (projectToDelete?.projectType === "folder" && projectToDelete?.repoPath) {
+    if (projectToDelete?.repoPath) {
       await deleteGithubPathRecursive(
         octokit,
         user.githubUsername,
