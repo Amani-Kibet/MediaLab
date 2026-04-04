@@ -9,12 +9,14 @@
       let currentRenderHostingProject = null;
       let currentRenderLiveProject = null;
       let renderProjectSyncPoller = null;
+      let currentLiveProjectHealthPoller = null;
       let renderLongWaitTimer = null;
       let renderServiceIdRevealTimer = null;
       let renderServiceIdStepVisible = false;
       let currentAdsenseConsoleReport = null;
       let monetizeWizardStep = 1;
       let adsenseStatusSyncTimer = null;
+      let userWalletRefreshTimer = null;
       let pendingAdsTxtFile = null;
       let builderRunPreviewUrl = null;
       let customUpgradeFeatureLabel = "";
@@ -24,6 +26,22 @@
       let withdrawMethodsCollapsed = false;
       let currentWithdrawalRequests = [];
       let expandedWithdrawalRequestId = "";
+      let currentReferralStatus = null;
+      let marketplaceItems = [];
+      let marketplaceMySales = [];
+      let marketplaceActiveTab = "sale";
+      let marketplaceDraftListing = {
+        projectId: "",
+        title: "",
+        category: "Game",
+        purpose: "",
+        description: "",
+        price: 0,
+        screenshots: [],
+      };
+      let currentMarketplaceItem = null;
+      let marketplaceCreateStep = 1;
+      let marketplacePreviewVisible = false;
       let currentAppDialogResolver = null;
       const LOGIN_REQUIRED_TOOL_IDS = ["image-pdf"];
       const PREMIUM_TOOL_IDS = ["voice-clone", "text-to-speech", "image-edit"];
@@ -90,6 +108,13 @@
           title: "Web Builder",
           icon: "fa-drafting-compass",
           desc: "Drag & drop professional web pages",
+          isNew: true,
+        },
+        {
+          id: "marketplace",
+          title: "Marketplace",
+          icon: "fa-store",
+          desc: "Sell and discover hosted MediaLab projects",
           isNew: true,
         },
         {
@@ -630,6 +655,555 @@
           })
           .join("");
       }
+      function renderToolLoadingShell(toolId = "console") {
+        const labels = {
+          console: "Loading Console...",
+          marketplace: "Loading Marketplace...",
+          history: "Loading Projects...",
+          "web-builder": "Loading Web Builder...",
+          "image-pdf": "Loading Image to PDF...",
+          "text-doc": "Loading Word Processor...",
+          "video-audio": "Loading Video to Audio...",
+          "text-to-speech": "Loading Text to Speech...",
+          "voice-clone": "Loading Voice Clone...",
+          "image-edit": "Loading AI Editor...",
+        };
+        return `<div class="animate-fadeIn min-h-[320px] flex items-center justify-center">
+          <div class="w-full max-w-lg rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(15,23,42,0.92))] p-8 text-center shadow-[0_24px_80px_rgba(2,6,23,0.36)]">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.6rem] border border-cyan-400/20 bg-cyan-500/10 text-cyan-300 shadow-[0_18px_40px_rgba(34,211,238,0.16)]">
+              <i class="fas fa-spinner animate-spin text-2xl"></i>
+            </div>
+            <h3 class="mt-5 text-2xl font-semibold tracking-tight text-white">${labels[toolId] || "Loading Studio..."}</h3>
+            <p class="mt-3 text-sm leading-6 text-slate-400">MediaLab is preparing your workspace and syncing the latest cloud data.</p>
+          </div>
+        </div>`;
+      }
+      function formatMarketplacePrice(price = 0) {
+        const amount = Number(price || 0);
+        return amount <= 0 ? "Free" : `$${amount.toFixed(2)}`;
+      }
+      function escapeHtmlText(value = "") {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+      function truncateMarketplaceText(value = "", max = 60) {
+        const text = String(value || "").trim();
+        return text.length > max ? `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…` : text;
+      }
+      function renderMarketplaceRating(rating = 0) {
+        const safe = Math.max(0, Math.min(5, Number(rating) || 0));
+        return Array.from(
+          { length: 5 },
+          (_, index) =>
+            `<i class="fas fa-star ${index < Math.round(safe) ? "text-amber-300" : "text-slate-700"}"></i>`,
+        ).join("");
+      }
+      function getMarketplaceStatusBadge(status = "") {
+        const normalized = String(status || "").toLowerCase();
+        if (normalized === "approved") {
+          return `<span class="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Active</span>`;
+        }
+        if (normalized === "sold") {
+          return `<span class="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Purchased</span>`;
+        }
+        return `<span class="inline-flex items-center rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">Pending Approval</span>`;
+      }
+      async function fetchMarketplaceDiscovery() {
+        const res = await fetch("/api/marketplace", { credentials: "include" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Could not load marketplace items.");
+        }
+        marketplaceItems = Array.isArray(data.items) ? data.items : [];
+        return marketplaceItems;
+      }
+      async function fetchMarketplaceMySales() {
+        if (!loggedIn) {
+          marketplaceMySales = [];
+          return [];
+        }
+        const res = await fetch("/api/marketplace/mine", { credentials: "include" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Could not load your marketplace sales.");
+        }
+        marketplaceMySales = Array.isArray(data.items) ? data.items : [];
+        return marketplaceMySales;
+      }
+      async function refreshMarketplaceData() {
+        await Promise.all([
+          fetchMarketplaceDiscovery(),
+          fetchMarketplaceMySales().catch((error) => {
+            console.warn("Marketplace my sales skipped:", error.message);
+            marketplaceMySales = [];
+          }),
+          loggedIn && currentUser?.githubUsername
+            ? fetchGithubProjects({ silent: true }).catch(() => currentUser?.liveProjects || [])
+            : Promise.resolve([]),
+        ]);
+      }
+      function renderMarketplaceCards(items = []) {
+        if (!items.length) {
+          return `<div class="col-span-full rounded-[2.6rem] border border-dashed border-white/10 bg-slate-900/70 p-12 text-center">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.6rem] border border-white/10 bg-white/5 text-cyan-300"><i class="fas fa-store text-2xl"></i></div>
+            <p class="mt-5 text-xl font-semibold text-white">No projects on sale yet</p>
+            <p class="mt-2 text-sm leading-6 text-slate-400">Approved marketplace listings will appear here in a randomized discovery grid.</p>
+          </div>`;
+        }
+        return items
+          .map((item) => `
+            <article onclick="openMarketplaceDetail('${item._id}')" class="group cursor-pointer overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(15,23,42,0.95))] shadow-[0_24px_80px_rgba(2,6,23,0.34)] transition-all hover:-translate-y-1 hover:border-cyan-400/30">
+              <div class="relative h-56 overflow-hidden bg-slate-950">
+                <img src="${escapeHtmlText(item.previewImage || "")}" alt="${escapeHtmlText(item.title || "Marketplace project")}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                <div class="absolute left-4 top-4 rounded-full border border-white/15 bg-slate-950/55 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-xl shadow-[0_16px_40px_rgba(2,6,23,0.3)]">${formatMarketplacePrice(item.price)}</div>
+              </div>
+              <div class="p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <h3 class="truncate text-xl font-semibold tracking-tight text-white">${escapeHtmlText(item.title || "Untitled Project")}</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtmlText(truncateMarketplaceText(item.description || item.purpose || "", 60))}</p>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="text-[11px] text-slate-500">${item.commentsCount || 0} reviews</div>
+                    <div class="mt-2 flex items-center gap-1 text-[11px]">${renderMarketplaceRating(item.averageRating || 0)}</div>
+                  </div>
+                </div>
+                <div class="mt-5 flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="h-10 w-10 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                      ${item.authorAvatar ? `<img src="${escapeHtmlText(item.authorAvatar)}" alt="${escapeHtmlText(item.authorName || "Creator")}" class="h-full w-full object-cover" />` : `<div class="flex h-full w-full items-center justify-center text-cyan-300 font-black">${escapeHtmlText((item.authorName || "M").slice(0, 1).toUpperCase())}</div>`}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-semibold text-white">${escapeHtmlText(item.authorName || "MediaLab Creator")}</p>
+                      <p class="truncate text-[11px] uppercase tracking-[0.18em] text-slate-500">${escapeHtmlText(item.category || "General")}</p>
+                    </div>
+                  </div>
+                  <button onclick="event.stopPropagation(); openMarketplaceDetail('${item._id}')" class="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-200 hover:bg-cyan-500/15 transition-all">
+                    <i class="fas fa-arrow-right"></i>
+                    View
+                  </button>
+                </div>
+              </div>
+            </article>`)
+          .join("");
+      }
+      function renderMarketplaceMySales(items = []) {
+        if (!loggedIn) {
+          return `<div class="rounded-[2rem] border border-dashed border-white/10 bg-slate-900/70 p-10 text-center">
+            <p class="text-xl font-semibold text-white">Sign in to manage your marketplace sales</p>
+            <p class="mt-3 text-sm leading-6 text-slate-400">Your approved, pending, and sold listings will appear here.</p>
+            <button onclick="showLogin()" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-950">Sign In</button>
+          </div>`;
+        }
+        if (!items.length) {
+          return `<div class="rounded-[2rem] border border-dashed border-white/10 bg-slate-900/70 p-10 text-center">
+            <p class="text-xl font-semibold text-white">No sales posted yet</p>
+            <p class="mt-3 text-sm leading-6 text-slate-400">Use the Add New Sale flow to turn one of your hosted projects into a marketplace listing.</p>
+          </div>`;
+        }
+        return `<div class="space-y-4">
+          ${items.map((item) => `
+            <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/80 p-5 shadow-[0_16px_40px_rgba(2,6,23,0.28)]">
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <h3 class="truncate text-xl font-semibold text-white">${escapeHtmlText(item.title || "Untitled Sale")}</h3>
+                    ${getMarketplaceStatusBadge(item.status)}
+                  </div>
+                  <p class="mt-3 text-sm leading-6 text-slate-400">${escapeHtmlText(item.description || item.purpose || "")}</p>
+                  <div class="mt-4 flex flex-wrap gap-5 text-[11px] font-semibold text-slate-400">
+                    <span>${formatMarketplacePrice(item.price)}</span>
+                    <span>${item.commentsCount || 0} comments</span>
+                    <span>${item.purchaseCount || 0} purchases</span>
+                  </div>
+                </div>
+                <button onclick="openMarketplaceDetail('${item._id}')" class="shrink-0 inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-200 hover:bg-cyan-500/15 transition-all">
+                  <i class="fas fa-chart-line"></i>
+                  View Analytics
+                </button>
+              </div>
+            </div>`).join("")}
+        </div>`;
+      }
+      function renderMarketplaceCreatorStep() {
+        const liveProjects = Array.isArray(currentUser?.liveProjects) ? currentUser.liveProjects : [];
+        const options = liveProjects
+          .map((project) => {
+            const value = String(project.fileName || project.filename || "");
+            const selected = marketplaceDraftListing.projectId === value ? "selected" : "";
+            return `<option value="${escapeHtmlText(value)}" ${selected}>${escapeHtmlText(project.name || value || "Untitled Project")}</option>`;
+          })
+          .join("");
+        if (!loggedIn) {
+          return `<div class="rounded-[2rem] border border-dashed border-white/10 bg-slate-900/70 p-10 text-center">
+            <p class="text-xl font-semibold text-white">Sign in to sell your projects</p>
+            <p class="mt-3 text-sm leading-6 text-slate-400">Only logged-in creators can submit MediaLab projects for marketplace review.</p>
+            <button onclick="showLogin()" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-950">Sign In</button>
+          </div>`;
+        }
+        return `<div class="rounded-[2rem] border border-white/10 bg-slate-900/80 p-5 sm:p-6 shadow-[0_20px_60px_rgba(2,6,23,0.3)]">
+          <div class="grid grid-cols-3 gap-2 text-center">
+            ${[1, 2, 3].map((step) => `<button onclick="setMarketplaceCreateStep(${step})" class="rounded-2xl border ${marketplaceCreateStep === step ? "border-cyan-400/25 bg-cyan-500/10 text-cyan-200" : "border-white/10 bg-white/5 text-slate-300"} px-3 py-3 text-[10px] font-black uppercase tracking-[0.18em]">${step}. ${step === 1 ? "Project" : step === 2 ? "Media" : "Pricing"}</button>`).join("")}
+          </div>
+          <div class="mt-6">
+            ${marketplaceCreateStep === 1 ? `
+              <div class="space-y-4">
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose existing MediaLab project</span>
+                  <select onchange="updateMarketplaceDraftField('projectId', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400">
+                    <option value="">Select one of your live projects</option>
+                    ${options}
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Marketplace title</span>
+                  <input value="${escapeHtmlText(marketplaceDraftListing.title)}" oninput="updateMarketplaceDraftField('title', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="Candy Crush Starter Pack" />
+                </label>
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Category</span>
+                  <input value="${escapeHtmlText(marketplaceDraftListing.category)}" oninput="updateMarketplaceDraftField('category', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="Game, Portfolio, SaaS..." />
+                </label>
+              </div>` : marketplaceCreateStep === 2 ? `
+              <div class="space-y-4">
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Purpose</span>
+                  <textarea rows="3" oninput="updateMarketplaceDraftField('purpose', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none resize-none focus:border-cyan-400" placeholder="What problem does this project solve?">${escapeHtmlText(marketplaceDraftListing.purpose)}</textarea>
+                </label>
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Professional description</span>
+                  <textarea rows="5" oninput="updateMarketplaceDraftField('description', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none resize-none focus:border-cyan-400" placeholder="Write a compelling professional description.">${escapeHtmlText(marketplaceDraftListing.description)}</textarea>
+                </label>
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Screenshots (up to 3)</span>
+                  <input type="file" accept="image/*" multiple onchange="handleMarketplaceScreenshotInput(this)" class="mt-3 block w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300" />
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  ${(marketplaceDraftListing.screenshots || []).map((shot, index) => `<div class="relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-slate-950/70">
+                    <img src="${escapeHtmlText(shot)}" class="h-32 w-full object-cover" />
+                    <button onclick="removeMarketplaceScreenshot(${index})" class="absolute right-2 top-2 h-8 w-8 rounded-xl bg-slate-950/75 text-white"><i class="fas fa-times"></i></button>
+                  </div>`).join("")}
+                </div>
+              </div>` : `
+              <div class="space-y-4">
+                <label class="block">
+                  <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Set price</span>
+                  <input type="number" min="0" step="0.01" value="${Number(marketplaceDraftListing.price || 0)}" oninput="updateMarketplaceDraftField('price', this.value)" class="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="0 for free" />
+                </label>
+                <div class="rounded-[1.6rem] border border-cyan-400/15 bg-cyan-500/5 p-4 text-sm text-slate-300">
+                  <p class="font-semibold text-white">Review summary</p>
+                  <p class="mt-2">Project: ${escapeHtmlText(marketplaceDraftListing.title || "Untitled Sale")}</p>
+                  <p class="mt-1">Price: ${formatMarketplacePrice(marketplaceDraftListing.price)}</p>
+                  <p class="mt-1">Screenshots: ${(marketplaceDraftListing.screenshots || []).length}/3</p>
+                </div>
+              </div>`}
+          </div>
+          <div class="mt-6 flex items-center justify-between gap-3">
+            <button onclick="setMarketplaceCreateStep(${Math.max(1, marketplaceCreateStep - 1)})" ${marketplaceCreateStep === 1 ? "disabled" : ""} class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-200 ${marketplaceCreateStep === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"}">Back</button>
+            ${marketplaceCreateStep < 3 ? `<button onclick="setMarketplaceCreateStep(${marketplaceCreateStep + 1})" class="rounded-2xl bg-cyan-500 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-cyan-400">Continue</button>` : `<button onclick="submitMarketplaceListing()" class="rounded-2xl bg-emerald-400 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-emerald-300">Submit for Review</button>`}
+          </div>
+        </div>`;
+      }
+      function renderMarketplacePane() {
+        if (marketplaceActiveTab === "mine") return renderMarketplaceMySales(marketplaceMySales);
+        if (marketplaceActiveTab === "create") return renderMarketplaceCreatorStep();
+        return `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">${renderMarketplaceCards(marketplaceItems)}</div>`;
+      }
+      function renderMarketplaceTool() {
+        return `<div class="animate-fadeIn space-y-8">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 class="text-3xl font-semibold tracking-tighter text-white">Project Marketplace</h2>
+              <p class="mt-3 text-sm leading-6 text-slate-400">A curated marketplace for hosted MediaLab projects with discovery, creator tools, and admin-reviewed purchases.</p>
+            </div>
+            <div class="rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
+              <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Discovery Pool</div>
+              <div class="mt-2 text-lg font-semibold text-white">${marketplaceItems.length} live listings</div>
+            </div>
+          </div>
+          <div class="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(15,23,42,0.92))] p-5 sm:p-6 shadow-[0_24px_80px_rgba(2,6,23,0.34)]">
+            <div class="flex flex-wrap gap-3">
+              <button onclick="setMarketplaceTab('sale')" class="rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] ${marketplaceActiveTab === "sale" ? "bg-cyan-500 text-slate-950" : "border border-white/10 bg-white/5 text-slate-200"}">On Sale</button>
+              <button onclick="setMarketplaceTab('mine')" class="rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] ${marketplaceActiveTab === "mine" ? "bg-cyan-500 text-slate-950" : "border border-white/10 bg-white/5 text-slate-200"}">My Sales</button>
+              <button onclick="setMarketplaceTab('create')" class="rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] ${marketplaceActiveTab === "create" ? "bg-cyan-500 text-slate-950" : "border border-white/10 bg-white/5 text-slate-200"}">Add New Sale +</button>
+            </div>
+            <div class="mt-6">${renderMarketplacePane()}</div>
+          </div>
+        </div>`;
+      }
+      function mountMarketplaceTool() {
+        const area = document.getElementById("tool-display");
+        if (!area) return;
+        area.innerHTML = renderMarketplaceTool();
+      }
+      function setMarketplaceTab(tab = "sale") {
+        marketplaceActiveTab = tab;
+        mountMarketplaceTool();
+      }
+      function setMarketplaceCreateStep(step = 1) {
+        marketplaceCreateStep = Math.max(1, Math.min(3, Number(step) || 1));
+        if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+      }
+      function updateMarketplaceDraftField(field, value) {
+        marketplaceDraftListing = {
+          ...marketplaceDraftListing,
+          [field]: field === "price" ? Number(value || 0) : String(value || ""),
+        };
+      }
+      function handleMarketplaceScreenshotInput(input) {
+        const files = Array.from(input?.files || []).slice(0, 3);
+        if (!files.length) return;
+        Promise.all(
+          files.map((file) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result || ""));
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            }),
+          ),
+        )
+          .then((images) => {
+            marketplaceDraftListing = {
+              ...marketplaceDraftListing,
+              screenshots: [...(marketplaceDraftListing.screenshots || []), ...images].slice(0, 3),
+            };
+            mountMarketplaceTool();
+          })
+          .catch(() => showBuilderSnackbar("Could not load those screenshots.", "error"));
+      }
+      function removeMarketplaceScreenshot(index) {
+        marketplaceDraftListing = {
+          ...marketplaceDraftListing,
+          screenshots: (marketplaceDraftListing.screenshots || []).filter((_, itemIndex) => itemIndex !== index),
+        };
+        mountMarketplaceTool();
+      }
+      async function submitMarketplaceListing() {
+        if (!loggedIn) {
+          showLogin();
+          return;
+        }
+        beginUniversalProgress("Submitting marketplace listing for review...", 18, 92);
+        try {
+          const res = await fetch("/api/marketplace", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(marketplaceDraftListing),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not submit the listing.");
+          }
+          completeUniversalProgress("Marketplace listing submitted.");
+          marketplaceDraftListing = {
+            projectId: "",
+            title: "",
+            category: "Game",
+            purpose: "",
+            description: "",
+            price: 0,
+            screenshots: [],
+          };
+          marketplaceCreateStep = 1;
+          marketplaceActiveTab = "mine";
+          await refreshMarketplaceData();
+          mountMarketplaceTool();
+          showBuilderSnackbar("Project submitted for marketplace review.", "success");
+        } catch (error) {
+          failUniversalProgress("Marketplace submit failed.");
+          showBuilderSnackbar(error.message || "Could not submit this marketplace listing.", "error");
+        }
+      }
+      function closeMarketplaceDetail() {
+        currentMarketplaceItem = null;
+        marketplacePreviewVisible = false;
+        document.getElementById("marketplace-detail-modal")?.classList.add("hidden");
+      }
+      function renderMarketplaceDetail(item) {
+        const body = document.getElementById("marketplace-detail-body");
+        const title = document.getElementById("marketplace-detail-title");
+        const subtitle = document.getElementById("marketplace-detail-subtitle");
+        if (!body || !title || !subtitle || !item) return;
+        title.textContent = item.title || "Marketplace Project";
+        subtitle.textContent = `${item.category || "General"} project by ${item.authorName || "MediaLab Creator"}`;
+        const gallery = (Array.isArray(item.screenshots) && item.screenshots.length
+          ? item.screenshots
+          : [item.previewImage]).slice(0, 3);
+        body.innerHTML = `
+          <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] gap-6">
+            <div class="space-y-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                ${gallery.map((shot) => `<div class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-slate-950"><img src="${escapeHtmlText(shot || item.previewImage || "")}" class="h-56 w-full object-cover" /></div>`).join("")}
+              </div>
+              <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/80 p-5">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Live Preview</p>
+                    <p class="mt-2 text-sm text-slate-400">Test the hosted project before you decide.</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button onclick="toggleMarketplacePreview()" class="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-200">Live Preview</button>
+                    <button onclick="window.open('${escapeInlineJsString(item.liveUrl || "")}', '_blank', 'noopener')" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-100">Open Site</button>
+                  </div>
+                </div>
+                <div id="marketplace-preview-wrap" class="${marketplacePreviewVisible ? "" : "hidden"} mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950">
+                  <iframe src="${escapeHtmlText(item.liveUrl || "")}" class="h-[420px] w-full bg-white" title="Marketplace preview"></iframe>
+                </div>
+              </div>
+              <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/80 p-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Professional Description</p>
+                <p class="mt-4 text-sm leading-7 text-slate-300">${escapeHtmlText(item.description || "")}</p>
+                <p class="mt-5 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Purpose</p>
+                <p class="mt-3 text-sm leading-7 text-slate-400">${escapeHtmlText(item.purpose || "")}</p>
+              </div>
+            </div>
+            <div class="space-y-5">
+              <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Price</p>
+                    <p class="mt-2 text-3xl font-black text-white">${formatMarketplacePrice(item.price)}</p>
+                  </div>
+                  ${getMarketplaceStatusBadge(item.status)}
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-sm">${renderMarketplaceRating(item.averageRating || 0)}<span class="ml-2 text-slate-400">${Number(item.averageRating || 0).toFixed(1)} average</span></div>
+                <button onclick="purchaseMarketplaceItem('${item._id}')" class="mt-5 w-full rounded-2xl bg-emerald-400 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-950 hover:bg-emerald-300">Purchase Project</button>
+              </div>
+              <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">About the Author</p>
+                <div class="mt-4 flex items-center gap-3">
+                  <div class="h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                    ${item.authorAvatar ? `<img src="${escapeHtmlText(item.authorAvatar)}" class="h-full w-full object-cover" />` : `<div class="flex h-full w-full items-center justify-center text-cyan-300 font-black">${escapeHtmlText((item.authorName || "M").slice(0, 1).toUpperCase())}</div>`}
+                  </div>
+                  <div>
+                    <p class="text-base font-semibold text-white">${escapeHtmlText(item.authorName || "MediaLab Creator")}</p>
+                    <p class="text-sm text-slate-400">${escapeHtmlText(item.category || "General")}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5">
+                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Comments</p>
+                <div class="mt-4 space-y-3 max-h-[280px] overflow-y-auto pr-1">
+                  ${(item.comments || []).length ? item.comments.map((comment) => `<div class="rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4">
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm font-semibold text-white">${escapeHtmlText(comment.name || "MediaLab user")}</p>
+                      <div class="flex items-center gap-1 text-[11px]">${renderMarketplaceRating(comment.rating || 5)}</div>
+                    </div>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtmlText(comment.text || "")}</p>
+                  </div>`).join("") : `<p class="text-sm text-slate-400">No comments yet. Be the first to review this project.</p>`}
+                </div>
+                <div class="mt-4 grid grid-cols-[110px_minmax(0,1fr)] gap-3">
+                  <select id="marketplace-comment-rating" class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-white outline-none">
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                  </select>
+                  <textarea id="marketplace-comment-text" rows="3" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none resize-none focus:border-cyan-400" placeholder="Leave a professional review"></textarea>
+                </div>
+                <button onclick="submitMarketplaceComment()" class="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-200 hover:bg-cyan-500/15">Post Comment</button>
+              </div>
+            </div>
+          </div>`;
+      }
+      async function openMarketplaceDetail(id) {
+        if (!id) return;
+        document.getElementById("marketplace-detail-modal")?.classList.remove("hidden");
+        document.getElementById("marketplace-detail-title").textContent = "Loading marketplace project";
+        document.getElementById("marketplace-detail-subtitle").textContent = "Preparing live preview, comments, and creator details...";
+        document.getElementById("marketplace-detail-body").innerHTML = renderToolLoadingShell("marketplace");
+        try {
+          const res = await fetch(`/api/marketplace/${encodeURIComponent(id)}`, {
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not open this marketplace item.");
+          }
+          currentMarketplaceItem = data.item;
+          marketplacePreviewVisible = false;
+          renderMarketplaceDetail(currentMarketplaceItem);
+        } catch (error) {
+          closeMarketplaceDetail();
+          showBuilderSnackbar(error.message || "Could not open this marketplace item.", "error");
+        }
+      }
+      function toggleMarketplacePreview() {
+        marketplacePreviewVisible = !marketplacePreviewVisible;
+        if (currentMarketplaceItem) renderMarketplaceDetail(currentMarketplaceItem);
+      }
+      async function submitMarketplaceComment() {
+        if (!currentMarketplaceItem?._id) return;
+        if (!loggedIn) {
+          showLogin();
+          return;
+        }
+        const text = String(document.getElementById("marketplace-comment-text")?.value || "").trim();
+        const rating = Number(document.getElementById("marketplace-comment-rating")?.value || 5);
+        if (!text) {
+          showBuilderSnackbar("Write a review first.", "error");
+          return;
+        }
+        try {
+          const res = await fetch(`/api/marketplace/${encodeURIComponent(currentMarketplaceItem._id)}/comment`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, rating }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not post your comment.");
+          }
+          currentMarketplaceItem = data.item;
+          renderMarketplaceDetail(currentMarketplaceItem);
+          await refreshMarketplaceData();
+          if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+          showBuilderSnackbar("Comment posted.", "success");
+        } catch (error) {
+          showBuilderSnackbar(error.message || "Could not post that comment.", "error");
+        }
+      }
+      async function purchaseMarketplaceItem(id) {
+        if (!loggedIn) {
+          showLogin();
+          return;
+        }
+        const confirmed = await openAppDialog({
+          chip: "Marketplace Purchase",
+          title: "Start purchase request?",
+          message: "MediaLab will create a pending purchase for admin review before the project is transferred to your builder dashboard.",
+          confirmLabel: "Continue",
+          cancelLabel: "Cancel",
+        });
+        if (!confirmed) return;
+        beginUniversalProgress("Submitting purchase request...", 20, 92);
+        try {
+          const res = await fetch(`/api/marketplace/${encodeURIComponent(id)}/purchase`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not submit this purchase.");
+          }
+          completeUniversalProgress("Purchase request sent.");
+          await refreshMarketplaceData();
+          if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+          showBuilderSnackbar("Purchase request is pending admin approval.", "success");
+        } catch (error) {
+          failUniversalProgress("Purchase failed.");
+          showBuilderSnackbar(error.message || "Could not process this purchase.", "error");
+        }
+      }
       async function fetchGithubProjects(options = {}) {
         if (!loggedIn || !currentUser?.githubUsername) return [];
         const previousProjects = Array.isArray(currentUser?.liveProjects)
@@ -751,6 +1325,10 @@
         );
       }
       function closeLiveProjectDetail() {
+        if (currentLiveProjectHealthPoller) {
+          clearInterval(currentLiveProjectHealthPoller);
+          currentLiveProjectHealthPoller = null;
+        }
         document
           .getElementById("live-project-detail-modal")
           ?.classList.add("hidden");
@@ -760,6 +1338,18 @@
         currentLiveProjectDetail = null;
         currentLiveProjectMonitor = null;
         pendingAdsTxtFile = null;
+      }
+      function startLiveProjectHealthPolling() {
+        if (currentLiveProjectHealthPoller) {
+          clearInterval(currentLiveProjectHealthPoller);
+          currentLiveProjectHealthPoller = null;
+        }
+        if (!currentLiveProjectDetail) return;
+        currentLiveProjectHealthPoller = setInterval(() => {
+          if (document.hidden) return;
+          if (!currentLiveProjectDetail) return;
+          refreshCurrentLiveProjectDetail({ silent: true, preservePreview: false });
+        }, 60 * 1000);
       }
       function renderProjectStatCard(targetId, label, value, tone = "cyan", meta = "") {
         const node = document.getElementById(targetId);
@@ -1007,12 +1597,23 @@
           );
           return;
         }
-        if (currentUser?.adsenseConnected && !currentUser?.adsenseApprovedAt) {
+        const adsenseState = String(
+          currentLiveProjectMonitor?.adsenseSiteStatus ||
+            currentUser?.adsenseSiteStatus ||
+            "",
+        )
+          .trim()
+          .toUpperCase();
+        if (
+          ["REQUIRES_REVIEW", "GETTING_READY", "PENDING", "PENDING_REVIEW", "REVIEWING"].includes(
+            adsenseState,
+          )
+        ) {
           openAppDialog({
             chip: "AdSense Pending",
             title: "Google approval still pending",
             message:
-              "Google hasn't approved your AdSense request yet. Please check the status in Console. Once verified, you can monetize this page.",
+              "Google is still reviewing your site. Check your status at adsense.google.com, then return here once the site is ready.",
             tone: "error",
             confirmLabel: "OK",
           });
@@ -1798,6 +2399,7 @@
             .getElementById("live-project-detail-modal")
             ?.classList.remove("hidden");
           closeMonetizeProjectWizard();
+          startLiveProjectHealthPolling();
         } catch (error) {
           const fallbackProject = (currentUser?.liveProjects || []).find(
             (project) =>
@@ -1821,6 +2423,7 @@
               .getElementById("live-project-detail-modal")
               ?.classList.remove("hidden");
             closeMonetizeProjectWizard();
+            startLiveProjectHealthPolling();
             showBuilderSnackbar(
               "Project dashboard opened with limited monitor data.",
               "success",
@@ -1830,14 +2433,39 @@
           showBuilderSnackbar(error.message || "Could not open the project monitor right now.", "error");
         }
       }
-      async function refreshCurrentLiveProjectDetail() {
+      async function refreshCurrentLiveProjectDetail(options = {}) {
         const filename = String(
           currentLiveProjectDetail?.fileName ||
             currentLiveProjectDetail?.filename ||
             "",
         ).trim();
         if (!filename) return;
-        await openLiveProjectDetail(filename);
+        if (!options.silent) {
+          await openLiveProjectDetail(filename);
+          return;
+        }
+        try {
+          const res = await fetch(
+            `/api/github/project-monitor?filename=${encodeURIComponent(filename)}`,
+            { credentials: "include" },
+          );
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not refresh project monitor.");
+          }
+          renderLiveProjectDetail(data.project, data);
+          if (!options.preservePreview) {
+            const previewFrame = document.getElementById("live-project-preview-frame");
+            if (previewFrame) {
+              const primaryUrl = getProjectPrimaryUrl(data.project || {});
+              previewFrame.src = primaryUrl
+                ? `${primaryUrl}${primaryUrl.includes("?") ? "&" : "?"}ml_preview=${Date.now()}`
+                : "about:blank";
+            }
+          }
+        } catch (error) {
+          console.warn("Silent project monitor refresh skipped:", error.message);
+        }
       }
       function handleOpenCurrentLiveProject() {
         openLiveProjectSite(
@@ -2208,6 +2836,52 @@
           return currentWithdrawalRequests;
         }
       }
+      async function fetchReferralStatus() {
+        if (!loggedIn || !currentUser) return null;
+        try {
+          const res = await fetch("/api/referrals/status", {
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not load referral info.");
+          }
+          currentReferralStatus = data;
+          if (data.user) currentUser = { ...(currentUser || {}), ...data.user };
+          updateReferralUi();
+          return data;
+        } catch (error) {
+          console.warn("Referral status skipped:", error.message);
+          return currentReferralStatus;
+        }
+      }
+      function updateReferralUi() {
+        const linkNode = document.getElementById("account-referral-link");
+        const summaryNode = document.getElementById("account-referral-summary");
+        if (linkNode) {
+          linkNode.textContent =
+            currentReferralStatus?.referralLink ||
+            "https://medialab-6b20.onrender.com/";
+        }
+        if (summaryNode) {
+          summaryNode.textContent = currentReferralStatus
+            ? `${Number(currentReferralStatus.referralInstallCount || 0)} installs • ${formatCurrency(
+                currentReferralStatus.referralEarnings || 0,
+              )} earned`
+            : "Rewards appear here after your referrals install the app.";
+        }
+      }
+      async function copyReferralLink() {
+        const link = String(
+          currentReferralStatus?.referralLink || "https://medialab-6b20.onrender.com/",
+        ).trim();
+        try {
+          await navigator.clipboard.writeText(link);
+          showBuilderSnackbar("Referral link copied.", "success");
+        } catch {
+          showBuilderSnackbar("Could not copy the referral link.", "error");
+        }
+      }
       function updateWithdrawalStatusSummary() {
         const latest = Array.isArray(currentWithdrawalRequests)
           ? currentWithdrawalRequests[0]
@@ -2226,9 +2900,12 @@
           line.className = `text-sm mt-2 font-semibold ${getWithdrawalStatusTone(latest.status)}`;
         }
         if (subline) {
-          subline.textContent = `Latest via ${formatPayoutMethod(latest.method)} on ${formatDate(
-            latest.createdAt,
-          )}. Click for more details.`;
+          subline.textContent =
+            latest.status === "failed" && latest.deniedReason
+              ? `Denied reason: ${latest.deniedReason}`
+              : `Latest via ${formatPayoutMethod(latest.method)} on ${formatDate(
+                  latest.createdAt,
+                )}. Click for more details.`;
         }
       }
       function renderWithdrawalStatusModal() {
@@ -2258,6 +2935,11 @@
           <div class="mt-3 space-y-1 text-sm text-slate-300">
             <div>${formatPayoutMethod(latest.method)} · ${latest.destination}</div>
             <div class="text-slate-400">${formatDate(latest.createdAt)}</div>
+            ${
+              latest.deniedReason
+                ? `<div class="break-words text-rose-300">Reason: ${latest.deniedReason}</div>`
+                : ""
+            }
           </div>
         `;
         listNode.innerHTML = currentWithdrawalRequests
@@ -2284,7 +2966,13 @@
                   <div>Amount: ${formatCurrency(item.amount)}</div>
                   <div>Fee: ${formatCurrency(item.fee || 0)}</div>
                   <div>Requested: ${formatDate(item.createdAt)}</div>
+                  <div>Reviewed: ${item.reviewedAt ? formatDate(item.reviewedAt) : "Waiting"}</div>
                   <div>Status: ${formatWithdrawalStatus(item.status)}</div>
+                  ${
+                    item.deniedReason
+                      ? `<div class="break-words text-rose-300">Denied reason: ${item.deniedReason}</div>`
+                      : ""
+                  }
                 </div>
               </div>
             `;
@@ -2371,6 +3059,31 @@
           adsenseStatusSyncTimer = null;
         }
       }
+      function startUserWalletRefreshLoop() {
+        if (userWalletRefreshTimer) {
+          clearInterval(userWalletRefreshTimer);
+          userWalletRefreshTimer = null;
+        }
+        if (!loggedIn) return;
+        userWalletRefreshTimer = setInterval(async () => {
+          if (document.hidden) return;
+          try {
+            const res = await fetch("/api/auth/me", { credentials: "include" });
+            const data = await res.json();
+            if (res.ok && data?.success && data.user) {
+              currentUser = { ...(currentUser || {}), ...(data.user || {}) };
+              updateUserProfileUi();
+              updateReferralUi();
+            }
+          } catch {}
+        }, 60 * 1000);
+      }
+      function stopUserWalletRefreshLoop() {
+        if (userWalletRefreshTimer) {
+          clearInterval(userWalletRefreshTimer);
+          userWalletRefreshTimer = null;
+        }
+      }
       function hasAdsenseStats(report) {
         if (!report?.connected || !report?.stats) return false;
         const stats = report.stats || {};
@@ -2404,16 +3117,16 @@
         if (balanceValue) balanceValue.textContent = formatCurrency(balance);
         if (balanceNote) {
           balanceNote.textContent = canWithdraw
-            ? "Your balance is ready for payout."
-            : "Minimum withdrawal is $5.";
+            ? "Your MediaLab payout balance is ready for withdrawal."
+            : "Minimum MediaLab withdrawal is $5.";
         }
         if (withdrawBtn) {
           withdrawBtn.disabled = !canWithdraw;
-          withdrawBtn.title = canWithdraw ? "Open withdrawal form" : "Minimum withdrawal is $5";
+          withdrawBtn.title = canWithdraw ? "Open withdrawal form" : "Minimum MediaLab withdrawal is $5";
         }
         minimumNote?.classList.toggle("hidden", canWithdraw);
         if (minimumNote) {
-          minimumNote.textContent = "Minimum withdrawal is $5";
+          minimumNote.textContent = "Minimum MediaLab withdrawal is $5";
         }
         if (adsenseWithdrawBtn) {
           adsenseWithdrawBtn.disabled = !adsensePayoutEligible;
@@ -2426,6 +3139,13 @@
               : canWithdraw
                 ? "Your AdSense approval is still pending."
                 : "AdSense payouts unlock when your balance reaches at least $5 and Google approval is complete.";
+        }
+        if (adsenseWithdrawNote && !currentUser?.adsenseConnected) {
+          adsenseWithdrawNote.textContent =
+            "This is separate from your MediaLab payout balance. Connect AdSense first, then use Google’s official payout center.";
+        } else if (adsenseWithdrawNote && adsensePayoutEligible) {
+          adsenseWithdrawNote.textContent =
+            "This is separate from your MediaLab payout balance. Your AdSense revenue is eligible for Google payout.";
         }
         if (accountName) accountName.textContent = currentUser?.name || "User";
         if (accountEmail) accountEmail.textContent = currentUser?.email || "user@example.com";
@@ -2451,26 +3171,44 @@
         fetchWithdrawalRequests().then(() => {
           updateWithdrawalStatusSummary();
         });
+        fetchReferralStatus();
       }
       async function openAdsenseWithdrawalCenter() {
-        const balance = getCurrentBalance();
-        if (balance < 5) {
-          showBuilderSnackbar("Not eligible yet. Minimum withdrawal is $5.", "error");
-          return;
-        }
-        if (!isAdsenseApprovedUser()) {
-          alert(
-            "Your AdSense account is not eligible for payout yet. Please connect and wait for Google approval first.",
+        try {
+          const res = await fetch("/api/adsense/withdrawal-eligibility", {
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not check AdSense eligibility.");
+          }
+          if (!data.eligible) {
+            await openAppDialog({
+              chip: "Not Eligible",
+              title: "AdSense payout threshold not reached",
+              message: `Current progress: $${Number(data.currentBalance || 0).toFixed(2)} of $${Number(data.threshold || 100).toFixed(2)}. Google unlocks payouts once your AdSense balance reaches the official threshold.`,
+              tone: "error",
+              confirmLabel: "OK",
+            });
+            return;
+          }
+          window.open(
+            data.payoutUrl || "https://adsense.google.com/main/payments",
+            "_blank",
+            "noopener,noreferrer",
           );
-          return;
+          await logUsageActivity(
+            "adsense-payout-center",
+            "opened AdSense payout center",
+            "adsense",
+            { currentBalance: Number(data.currentBalance || 0), threshold: Number(data.threshold || 100) },
+          );
+        } catch (error) {
+          showUserFacingMessage(
+            error.message || "Could not check AdSense payout eligibility right now.",
+            "error",
+          );
         }
-        window.open(getAdsensePayoutCenterUrl(), "_blank", "noopener,noreferrer");
-        await logUsageActivity(
-          "adsense-payout-center",
-          "opened AdSense payout center",
-          "adsense",
-          { balance },
-        );
       }
       function closeWithdrawSuccessModal() {
         document.getElementById("withdraw-success-modal")?.classList.add("hidden");
@@ -3051,6 +3789,9 @@
         loggedIn = false;
         currentUser = null;
         currentPremiumRequest = null;
+        currentReferralStatus = null;
+        stopAdsenseStatusSyncLoop();
+        stopUserWalletRefreshLoop();
         updateUserProfileUi();
         updateSidebarHistory([]);
         renderBuilderDrafts();
@@ -3106,6 +3847,8 @@
             currentUser = devData.user || null;
             await fetchPremiumRequestStatus();
             updateUserProfileUi();
+            startAdsenseStatusSyncLoop();
+            startUserWalletRefreshLoop();
             currentUser.builderDrafts = currentUser.builderDrafts || [];
             updateSidebarHistory(currentUser.projects || []);
             renderBuilderDrafts();
@@ -3137,7 +3880,51 @@
         hideLogin();
         loggedIn = true;
         updateUserProfileUi();
+        startUserWalletRefreshLoop();
         goToStudio();
+      }
+      function storePendingReferralFromUrl() {
+        try {
+          const url = new URL(window.location.href);
+          const ref = String(url.searchParams.get("ref") || "").trim();
+          if (!ref) return;
+          localStorage.setItem("medialab_pending_referral_code", ref);
+        } catch {}
+      }
+      async function claimPendingReferralIfNeeded() {
+        if (!loggedIn || !currentUser) return;
+        const referralCode = String(
+          localStorage.getItem("medialab_pending_referral_code") || "",
+        ).trim();
+        if (!referralCode) return;
+        if (String(currentUser.referredByCode || "").trim()) return;
+        if (String(currentUser.referralCode || "").trim() === referralCode) {
+          localStorage.removeItem("medialab_pending_referral_code");
+          return;
+        }
+        try {
+          const res = await fetch("/api/referrals/claim", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ referralCode }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not save referral link.");
+          }
+          currentUser = { ...(currentUser || {}), ...(data.user || {}) };
+          updateUserProfileUi();
+          localStorage.removeItem("medialab_pending_referral_code");
+          await logUsageActivity(
+            "referral-claimed",
+            `saved referral code ${referralCode}`,
+            "referral",
+            { referralCode },
+          );
+        } catch (error) {
+          console.warn("Referral claim skipped:", error.message);
+        }
       }
       async function checkAuth() {
         try {
@@ -3148,6 +3935,10 @@
             currentUser = data.user;
             await fetchPremiumRequestStatus();
             updateUserProfileUi();
+            startAdsenseStatusSyncLoop();
+            startUserWalletRefreshLoop();
+            await claimPendingReferralIfNeeded();
+            await fetchReferralStatus();
             if (currentUser.projects) {
               updateSidebarHistory(currentUser.projects);
             }
@@ -4141,6 +4932,9 @@
         const area = document.getElementById("tool-display");
         const builderToolbar = document.getElementById("web-builder-toolbar");
         let html = "";
+        if (area) {
+          area.innerHTML = renderToolLoadingShell(id);
+        }
         // 1. Contextual Toolbar Management
         // Only show the specialized Web Builder toolbar when that tool is active
         if (id === "web-builder") {
@@ -4199,11 +4993,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div class="relative overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-[linear-gradient(145deg,rgba(6,182,212,0.18),rgba(15,23,42,0.98))] p-5 sm:p-6 shadow-[0_24px_70px_rgba(8,145,178,0.22)] backdrop-blur-2xl">
                         <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-cyan-300/10 blur-2xl"></div>
-                        <p class="relative text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/80">Current Balance</p>
+                        <p class="relative text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/80">MediaLab Payout Balance</p>
                         <div class="relative mt-4 flex items-end justify-between gap-4">
                           <div>
                             <p class="text-4xl sm:text-5xl font-black text-white tracking-tight">${formatCurrency(balance)}</p>
-                            <p class="mt-2 text-xs leading-5 text-cyan-100/70">Available for creator payouts, secure withdrawals, and future monetization.</p>
+                            <p class="mt-2 text-xs leading-5 text-cyan-100/70">This is your MediaLab wallet balance for creator rewards, secure withdrawals, and platform payouts.</p>
                           </div>
                           <div class="w-14 h-14 rounded-[1.4rem] border border-white/10 bg-white/10 flex items-center justify-center text-cyan-100 text-xl shadow-[0_10px_35px_rgba(34,211,238,0.18)]">
                             <i class="fas fa-wallet"></i>
@@ -4241,7 +5035,7 @@
                     <div class="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(15,23,42,0.82))] backdrop-blur-2xl p-5 sm:p-6 shadow-[0_24px_60px_rgba(2,6,23,0.32)]">
                       <div class="flex items-start justify-between gap-4">
                         <div>
-                          <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">AdSense Performance</p>
+                          <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">AdSense Revenue</p>
                           <h3 class="mt-2 text-2xl font-semibold tracking-tight text-white">Real-time creator stats</h3>
                           <p class="mt-2 text-sm text-slate-400">${
                             adsenseReport?.connected
@@ -4358,6 +5152,21 @@
                 </div>
               </div>
             </div>`;
+        }
+        else if (id === "marketplace") {
+          try {
+            await refreshMarketplaceData();
+            html = renderMarketplaceTool();
+          } catch (error) {
+            html = `<div class="animate-fadeIn rounded-[2rem] border border-rose-500/20 bg-rose-500/10 p-8 text-center">
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.4rem] border border-rose-400/20 bg-white/5 text-rose-200">
+                <i class="fas fa-store-slash text-xl"></i>
+              </div>
+              <h3 class="mt-5 text-2xl font-semibold text-white">Marketplace unavailable</h3>
+              <p class="mt-3 text-sm leading-6 text-slate-300">${escapeHtmlText(error.message || "Could not load marketplace projects right now.")}</p>
+              <button onclick="switchTool('marketplace')" class="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white text-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">Retry</button>
+            </div>`;
+          }
         }
         // =============================================================
         // 0. PROJECT HISTORY / LIBRARY
@@ -6066,6 +6875,7 @@
       // ====================== INIT ======================
       window.onload = async () => {
         renderCards();
+        storePendingReferralFromUrl();
         await checkAuth();
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get("loggedIn") === "true") {
@@ -7702,6 +8512,19 @@
       function insertStarterBlock(kind) {
         const canvas = document.getElementById("web-canvas");
         if (!canvas) return;
+        const starterLabels = {
+          hero: "Landing Hero",
+          feature: "Features Section",
+          login: "Login Form",
+          contact: "Contact Form",
+          pricing: "Pricing Cards",
+          dashboard: "Dashboard Hero",
+        };
+        beginUniversalProgress(
+          `Inserting ${starterLabels[kind] || "template block"}...`,
+          16,
+          88,
+        );
         hideBuilderPanels();
         document.getElementById("element-picker")?.classList.add("hidden");
         const startCount = canvas.querySelectorAll(
@@ -7709,6 +8532,9 @@
         ).length;
         const finishStarterInsert = (options = {}) => {
           autoGroupStarterElements(startCount);
+          completeUniversalProgress(
+            `${starterLabels[kind] || "Template"} inserted.`,
+          );
           if (!options.skipTutorialEvent) {
             handleBuilderTutorialEvent("starter-inserted", { kind });
           }

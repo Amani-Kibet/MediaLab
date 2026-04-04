@@ -29,6 +29,7 @@ import UpgradeRequest from "./models/UpgradeRequest.js";
 import UsageLog from "./models/UsageLog.js";
 import Download from "./models/Download.js";
 import WithdrawalRequest from "./models/WithdrawalRequest.js";
+import MarketplaceItem from "./models/MarketplaceItem.js";
 import {
   createRenderBlueprintInstance,
   extractRenderDeploySuccessPayload,
@@ -792,6 +793,117 @@ function findLiveProjectIndex(user, filename = "") {
   );
 }
 
+function findLiveProject(user, filename = "") {
+  const index = findLiveProjectIndex(user, filename);
+  if (index < 0) return null;
+  return Array.isArray(user?.liveProjects) ? user.liveProjects[index] : null;
+}
+
+function getMarketplacePreviewImage(project = {}) {
+  const url = String(project?.renderUrl || project?.liveUrl || project?.url || "").trim();
+  return url || "https://via.placeholder.com/1200x720/0f172a/e2e8f0?text=MediaLab";
+}
+
+function sanitizeMarketplaceText(value = "", maxLength = 5000) {
+  return String(value || "").trim().slice(0, maxLength);
+}
+
+function normalizeMarketplacePrice(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return 0;
+  return Number(amount.toFixed(2));
+}
+
+function buildMarketplacePublicItem(item = {}) {
+  const comments = Array.isArray(item.comments) ? item.comments : [];
+  const purchases = Array.isArray(item.purchases) ? item.purchases : [];
+  return {
+    _id: item._id,
+    projectId: item.projectId || "",
+    authorId: item.authorId || "",
+    title: item.title || "",
+    description: item.description || "",
+    price: Number(item.price || 0),
+    category: item.category || "General",
+    screenshots: Array.isArray(item.screenshots) ? item.screenshots.slice(0, 3) : [],
+    purpose: item.purpose || "",
+    status: item.status || "pending",
+    authorName: item.authorName || "",
+    authorAvatar: item.authorAvatar || "",
+    liveUrl: item.liveUrl || "",
+    previewImage:
+      (Array.isArray(item.screenshots) && item.screenshots[0]) ||
+      getMarketplacePreviewImage(item),
+    comments: comments.map((comment) => ({
+      _id: comment._id,
+      userId: comment.userId || "",
+      name: comment.name || "MediaLab user",
+      text: comment.text || "",
+      rating: Number(comment.rating || 5),
+      date: comment.date || null,
+    })),
+    commentsCount: comments.length,
+    averageRating: comments.length
+      ? Number(
+          (
+            comments.reduce((sum, comment) => sum + Number(comment.rating || 0), 0) /
+            comments.length
+          ).toFixed(1),
+        )
+      : 0,
+    purchaseCount: purchases.length,
+    pendingPurchases: purchases.filter((purchase) => purchase.status === "pending").length,
+    createdAt: item.createdAt || null,
+    updatedAt: item.updatedAt || null,
+  };
+}
+
+async function fetchMarketplaceSourceHtml(author, projectId = "") {
+  const sourceProject = findLiveProject(author, projectId);
+  if (!sourceProject?.fileName || !author?.githubUsername || !author?.githubToken) {
+    return { sourceProject: sourceProject || null, html: "" };
+  }
+  const octokit = buildGithubClient(author);
+  const response = await octokit.rest.repos.getContent({
+    owner: author.githubUsername,
+    repo: "medialab",
+    path: sourceProject.fileName,
+  });
+  const data = response?.data;
+  if (!data || Array.isArray(data) || !data.content) {
+    return { sourceProject, html: "" };
+  }
+  const html = Buffer.from(String(data.content || ""), "base64").toString("utf8");
+  return { sourceProject, html };
+}
+
+async function transferMarketplaceProjectToBuyer(listing, buyer) {
+  const author = await User.findById(listing.authorId).select("+githubToken");
+  if (!author) {
+    throw new Error("The seller account for this project could not be found.");
+  }
+  const { sourceProject, html } = await fetchMarketplaceSourceHtml(author, listing.projectId);
+  const draftName = `${sanitizeMarketplaceText(listing.title || sourceProject?.name || "Marketplace Project", 80)} Purchase`;
+  buyer.builderDrafts = Array.isArray(buyer.builderDrafts) ? buyer.builderDrafts : [];
+  buyer.builderDrafts = buyer.builderDrafts.filter((draft) => String(draft?.name || "").trim() !== draftName);
+  buyer.builderDrafts.unshift({
+    name: draftName,
+    canvasHtml: html || `<!-- Imported from MediaLab Marketplace: ${draftName} -->`,
+    pageBackground: "#ffffff",
+    isAutoSave: false,
+    savedAt: new Date(),
+  });
+  if (buyer.builderDrafts.length > 10) {
+    buyer.builderDrafts = buyer.builderDrafts.slice(0, 10);
+  }
+  await buyer.save();
+  return {
+    name: draftName,
+    sourceProjectName: sourceProject?.name || listing.title || "",
+    liveUrl: sourceProject?.renderUrl || sourceProject?.liveUrl || listing.liveUrl || "",
+  };
+}
+
 function getAdsenseOAuthClient(user) {
   const refreshToken = decryptGoogleRefreshToken(user?.googleRefreshToken || "");
   if (!refreshToken) {
@@ -1372,6 +1484,9 @@ app.get("/", (_req, res) => {
 });
 app.get("/admin", (_req, res) => {
   res.render("admin");
+});
+app.get("/admin/marketplace", (_req, res) => {
+  res.render("admin-marketplace");
 });
 app.get("/privacy-policy.html", (_req, res) => {
   res.render("privacy");
@@ -2345,6 +2460,387 @@ app.get("/api/github/project-monitor", async (req, res) => {
     });
   }
 });
+
+app.get("/api/marketplace", async (req, res) => {
+  try {
+    const items = await MarketplaceItem.aggregate([
+      { $match: { status: "approved" } },
+      { $sample: { size: 12 } },
+    ]);
+    return res.json({
+      success: true,
+      items: items.map((item) => buildMarketplacePublicItem(item)),
+    });
+  } catch (error) {
+    console.error("Marketplace discovery fetch failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not load marketplace projects right now.",
+    });
+  }
+});
+
+app.get("/api/marketplace/mine", async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "You need to sign in first.",
+    });
+  }
+
+  try {
+    const items = await MarketplaceItem.find({ authorId: req.user._id })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+    return res.json({
+      success: true,
+      items: items.map((item) => buildMarketplacePublicItem(item)),
+    });
+  } catch (error) {
+    console.error("Marketplace my sales fetch failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not load your marketplace listings.",
+    });
+  }
+});
+
+app.get("/api/marketplace/:id", async (req, res) => {
+  try {
+    const item = await MarketplaceItem.findById(req.params.id).lean();
+    if (!item || (item.status !== "approved" && String(item.authorId) !== String(req.user?._id || ""))) {
+      return res.status(404).json({
+        success: false,
+        message: "Marketplace listing not found.",
+      });
+    }
+    return res.json({
+      success: true,
+      item: buildMarketplacePublicItem(item),
+    });
+  } catch (error) {
+    console.error("Marketplace detail fetch failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not load marketplace project details.",
+    });
+  }
+});
+
+app.post("/api/marketplace", publishRateLimit, express.json({ limit: "15mb" }), async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Sign in first before posting a marketplace sale.",
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    const projectId = String(req.body?.projectId || "").trim();
+    const title = sanitizeMarketplaceText(req.body?.title || "", 120);
+    const description = sanitizeMarketplaceText(req.body?.description || "", 1200);
+    const purpose = sanitizeMarketplaceText(req.body?.purpose || "", 800);
+    const category = sanitizeMarketplaceText(req.body?.category || "General", 80) || "General";
+    const price = normalizeMarketplacePrice(req.body?.price);
+    const screenshots = (Array.isArray(req.body?.screenshots) ? req.body.screenshots : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (!projectId || !title || !description || !purpose) {
+      return res.status(400).json({
+        success: false,
+        message: "Pick a project and complete the required marketplace details.",
+      });
+    }
+    const sourceProject = findLiveProject(user, projectId);
+    if (!sourceProject) {
+      return res.status(400).json({
+        success: false,
+        message: "Choose one of your live MediaLab projects before listing it.",
+      });
+    }
+
+    const existing = await MarketplaceItem.findOne({
+      authorId: user._id,
+      projectId,
+      status: { $in: ["pending", "approved"] },
+    });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "This project is already listed in your marketplace sales.",
+      });
+    }
+
+    const item = await MarketplaceItem.create({
+      projectId,
+      authorId: user._id,
+      title,
+      description,
+      price,
+      category,
+      screenshots,
+      purpose,
+      status: "pending",
+      authorName: user.name || user.email || "MediaLab Creator",
+      authorAvatar: user.profilePicture || "",
+      liveUrl: buildProjectLiveUrl(user, sourceProject),
+    });
+
+    await createUsageLog({
+      user,
+      email: user.email,
+      name: user.name,
+      isPro: Boolean(user.isPro),
+      action: "marketplace-listing-create",
+      summary: `submitted marketplace listing ${title}`,
+      source: "marketplace",
+      metadata: { projectId, title, price },
+    });
+
+    return res.json({
+      success: true,
+      message: "Project submitted for marketplace review.",
+      item: buildMarketplacePublicItem(item.toObject()),
+    });
+  } catch (error) {
+    console.error("Marketplace create failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not submit this marketplace listing.",
+    });
+  }
+});
+
+app.post("/api/marketplace/:id/comment", publishRateLimit, express.json(), async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ success: false, message: "Sign in first to comment." });
+  }
+
+  try {
+    const item = await MarketplaceItem.findById(req.params.id);
+    if (!item || item.status !== "approved") {
+      return res.status(404).json({ success: false, message: "Marketplace listing not found." });
+    }
+    const text = sanitizeMarketplaceText(req.body?.text || "", 400);
+    const rating = Math.max(1, Math.min(5, Number(req.body?.rating || 5)));
+    if (!text) {
+      return res.status(400).json({ success: false, message: "Write a comment first." });
+    }
+    item.comments.push({
+      userId: req.user._id,
+      name: req.user.name || req.user.email || "MediaLab user",
+      text,
+      rating,
+      date: new Date(),
+    });
+    item.updatedAt = new Date();
+    await item.save();
+    return res.json({
+      success: true,
+      message: "Comment posted.",
+      item: buildMarketplacePublicItem(item.toObject()),
+    });
+  } catch (error) {
+    console.error("Marketplace comment failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not save your marketplace comment.",
+    });
+  }
+});
+
+app.post("/api/marketplace/:id/purchase", publishRateLimit, express.json(), async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ success: false, message: "Sign in first to purchase." });
+  }
+
+  try {
+    const item = await MarketplaceItem.findById(req.params.id);
+    if (!item || item.status !== "approved") {
+      return res.status(404).json({ success: false, message: "Marketplace listing not found." });
+    }
+    if (String(item.authorId) === String(req.user._id)) {
+      return res.status(400).json({
+        success: false,
+        message: "You already own this project as the seller.",
+      });
+    }
+    const existingPurchase = (Array.isArray(item.purchases) ? item.purchases : []).find(
+      (purchase) =>
+        String(purchase?.buyerId || "") === String(req.user._id) &&
+        ["pending", "approved"].includes(String(purchase?.status || "").toLowerCase()),
+    );
+    if (existingPurchase) {
+      return res.status(400).json({
+        success: false,
+        message:
+          existingPurchase.status === "approved"
+            ? "This project is already in your purchased items."
+            : "Your purchase request is already pending approval.",
+      });
+    }
+    item.purchases.push({
+      buyerId: req.user._id,
+      buyerName: req.user.name || "",
+      buyerEmail: req.user.email || "",
+      status: "pending",
+      createdAt: new Date(),
+    });
+    item.updatedAt = new Date();
+    await item.save();
+
+    await createUsageLog({
+      user: req.user,
+      email: req.user.email,
+      name: req.user.name,
+      isPro: Boolean(req.user.isPro),
+      action: "marketplace-purchase-pending",
+      summary: `requested purchase for marketplace project ${item.title}`,
+      source: "marketplace",
+      metadata: { marketplaceItemId: String(item._id), title: item.title, price: item.price },
+    });
+
+    return res.json({
+      success: true,
+      message: "Purchase request submitted for admin approval.",
+      item: buildMarketplacePublicItem(item.toObject()),
+    });
+  } catch (error) {
+    console.error("Marketplace purchase failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not start this purchase right now.",
+    });
+  }
+});
+
+app.get("/api/admin/marketplace", adminRateLimit, requireAdminApi, async (_req, res) => {
+  try {
+    const [pendingListings, itemsWithPendingPurchases] = await Promise.all([
+      MarketplaceItem.find({ status: "pending" }).sort({ createdAt: -1 }).lean(),
+      MarketplaceItem.find({ "purchases.status": "pending" }).sort({ updatedAt: -1 }).lean(),
+    ]);
+    return res.json({
+      success: true,
+      pendingListings: pendingListings.map((item) => buildMarketplacePublicItem(item)),
+      pendingPurchases: itemsWithPendingPurchases
+        .flatMap((item) =>
+          (Array.isArray(item.purchases) ? item.purchases : [])
+            .filter((purchase) => purchase.status === "pending")
+            .map((purchase) => ({
+              itemId: String(item._id),
+              purchaseId: String(purchase._id),
+              title: item.title,
+              price: Number(item.price || 0),
+              buyerId: purchase.buyerId || "",
+              buyerName: purchase.buyerName || "",
+              buyerEmail: purchase.buyerEmail || "",
+              createdAt: purchase.createdAt || null,
+            })),
+        )
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
+    });
+  } catch (error) {
+    console.error("Admin marketplace fetch failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not load marketplace admin data.",
+    });
+  }
+});
+
+app.patch("/api/admin/marketplace/:id", adminRateLimit, requireAdminApi, express.json(), async (req, res) => {
+  try {
+    const nextStatus = String(req.body?.status || "").trim().toLowerCase();
+    if (!["approved", "sold"].includes(nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Marketplace status must be approved or sold.",
+      });
+    }
+    const item = await MarketplaceItem.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Marketplace listing not found." });
+    }
+    item.status = nextStatus;
+    item.updatedAt = new Date();
+    await item.save();
+    return res.json({
+      success: true,
+      message: `Marketplace listing marked ${nextStatus}.`,
+      item: buildMarketplacePublicItem(item.toObject()),
+    });
+  } catch (error) {
+    console.error("Admin marketplace listing update failed:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Could not update this marketplace listing.",
+    });
+  }
+});
+
+app.patch(
+  "/api/admin/marketplace/:id/purchases/:purchaseId",
+  adminRateLimit,
+  requireAdminApi,
+  express.json(),
+  async (req, res) => {
+    try {
+      const nextStatus = String(req.body?.status || "").trim().toLowerCase();
+      if (!["approved", "failed"].includes(nextStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: "Purchase status must be approved or failed.",
+        });
+      }
+      const item = await MarketplaceItem.findById(req.params.id);
+      if (!item) {
+        return res.status(404).json({ success: false, message: "Marketplace item not found." });
+      }
+      const purchase = (Array.isArray(item.purchases) ? item.purchases : []).find(
+        (entry) => String(entry._id) === String(req.params.purchaseId),
+      );
+      if (!purchase) {
+        return res.status(404).json({ success: false, message: "Purchase request not found." });
+      }
+      purchase.status = nextStatus;
+      purchase.reviewedAt = new Date();
+      item.updatedAt = new Date();
+
+      let transfer = null;
+      if (nextStatus === "approved") {
+        const buyer = await User.findById(purchase.buyerId);
+        if (!buyer) {
+          return res.status(404).json({ success: false, message: "Buyer account not found." });
+        }
+        transfer = await transferMarketplaceProjectToBuyer(item, buyer);
+        item.status = "sold";
+      }
+      await item.save();
+      return res.json({
+        success: true,
+        message:
+          nextStatus === "approved"
+            ? "Purchase approved and transferred to the buyer."
+            : "Purchase marked as failed.",
+        item: buildMarketplacePublicItem(item.toObject()),
+        transfer,
+      });
+    } catch (error) {
+      console.error("Admin marketplace purchase update failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: error?.message || "Could not update marketplace purchase.",
+      });
+    }
+  },
+);
 
 app.post("/api/github/verify-render-hosting", express.json(), async (req, res) => {
   if (!req.isAuthenticated() || !req.user) {
