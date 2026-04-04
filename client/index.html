@@ -1602,7 +1602,6 @@
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <p class="text-[10px] font-black uppercase tracking-[0.22em] text-rose-300">Notifications</p>
-                  <p class="mt-1 text-sm text-slate-400">Latest 10 updates about your projects, sales, wallet, and hosting.</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <button onclick="closeNotificationsDrawer()" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10">
@@ -4934,20 +4933,18 @@
       function renderMarketplaceCreatorStep() {
         const liveProjects = getMarketplaceLiveProjects();
         const draftProjects = getMarketplaceDraftProjects();
-        const selectStyles = `style="color:#020617;background-color:#ffffff;"`;
-        const darkOptionStyle = `style="color:#020617;background-color:#ffffff;"`;
         const liveOptions = liveProjects
           .map((project) => {
             const value = String(project.fileName || project.filename || "");
             const selected = marketplaceDraftListing.projectId === value ? "selected" : "";
-            return `<option value="${escapeHtmlText(value)}" ${selected} ${darkOptionStyle}>${escapeHtmlText(project.name || value || "Untitled Project")}</option>`;
+            return `<option value="${escapeHtmlText(value)}" ${selected} class="bg-slate-950 text-white">${escapeHtmlText(project.name || value || "Untitled Project")}</option>`;
           })
           .join("");
         const draftOptions = draftProjects
           .map((draft) => {
             const value = String(draft?.name || "").trim();
             const selected = marketplaceDraftListing.projectId === value ? "selected" : "";
-            return `<option value="${escapeHtmlText(value)}" ${selected} ${darkOptionStyle}>${escapeHtmlText(value || "Untitled Draft")}</option>`;
+            return `<option value="${escapeHtmlText(value)}" ${selected} class="bg-slate-950 text-white">${escapeHtmlText(value || "Untitled Draft")}</option>`;
           })
           .join("");
         const stepOneReady = canAdvanceMarketplaceStep(1);
@@ -4983,19 +4980,19 @@
               <div class="space-y-4">
                 <label class="block">
                   <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose project type</span>
-                  <select onchange="setMarketplaceSourceType(this.value)" data-marketplace-focus="source-type" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                    <option value="" ${darkOptionStyle}>Select source type</option>
-                    <option value="upload" ${marketplaceDraftListing.sourceType === "upload" ? "selected" : ""} ${darkOptionStyle}>Upload project folder</option>
-                    <option value="draft" ${marketplaceDraftListing.sourceType === "draft" ? "selected" : ""} ${darkOptionStyle}>MediaLab draft</option>
-                    <option value="live" ${marketplaceDraftListing.sourceType === "live" ? "selected" : ""} ${darkOptionStyle}>Live project</option>
+                  <select onchange="setMarketplaceSourceType(this.value)" data-marketplace-focus="source-type" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                    <option value="" class="bg-slate-950 text-white">Select source type</option>
+                    <option value="upload" ${marketplaceDraftListing.sourceType === "upload" ? "selected" : ""} class="bg-slate-950 text-white">Upload project folder</option>
+                    <option value="draft" ${marketplaceDraftListing.sourceType === "draft" ? "selected" : ""} class="bg-slate-950 text-white">MediaLab draft</option>
+                    <option value="live" ${marketplaceDraftListing.sourceType === "live" ? "selected" : ""} class="bg-slate-950 text-white">Live project</option>
                   </select>
                 </label>
                 ${
                   marketplaceDraftListing.sourceType === "draft"
                     ? `<label class="block">
                         <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose draft project</span>
-                        <select onchange="selectMarketplaceDraftProject(this.value)" data-marketplace-focus="draft-select" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                          <option value="" ${darkOptionStyle}>Select one of your drafts</option>
+                        <select onchange="selectMarketplaceDraftProject(this.value)" data-marketplace-focus="draft-select" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                          <option value="" class="bg-slate-950 text-white">Select one of your drafts</option>
                           ${draftOptions}
                         </select>
                       </label>`
@@ -5016,18 +5013,18 @@
                           </div>`
                         : `<div class="rounded-[1.8rem] border border-dashed border-white/10 bg-white/[0.03] p-5">
                             <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Upload Project Folder</p>
-                            <div ondragover="event.preventDefault(); this.classList.add('border-cyan-400/30');" ondragleave="this.classList.remove('border-cyan-400/30');" ondrop="handleMarketplaceUploadDrop(event)" onclick="${marketplaceUploadState.active ? "void(0)" : "document.getElementById('marketplace-upload-input').click()"}" class="mt-4 flex min-h-[170px] ${marketplaceUploadState.active ? "cursor-wait" : "cursor-pointer"} flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-white/10 bg-slate-950/70 px-6 text-center transition-all hover:border-cyan-400/30">
+                            <div id="marketplace-upload-dropzone" ondragover="event.preventDefault(); this.classList.add('border-cyan-400/30');" ondragleave="this.classList.remove('border-cyan-400/30');" ondrop="handleMarketplaceUploadDrop(event)" onclick="${marketplaceUploadState.active ? "void(0)" : "document.getElementById('marketplace-upload-input').click()"}" class="mt-4 flex min-h-[170px] ${marketplaceUploadState.active ? "cursor-wait" : "cursor-pointer"} flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-white/10 bg-slate-950/70 px-6 text-center transition-all hover:border-cyan-400/30">
                               <input id="marketplace-upload-input" type="file" multiple webkitdirectory directory class="hidden" onchange="handleMarketplaceUploadFolderInput(this)" />
                               <div class="flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-cyan-400/20 bg-cyan-500/10 text-cyan-300"><i class="fas fa-folder-open text-xl"></i></div>
-                              <p class="mt-4 text-base font-semibold text-white">${marketplaceUploadState.active ? "Preparing your project..." : "Drag and drop a project folder"}</p>
-                              <p class="mt-2 max-w-md text-sm leading-6 text-slate-400">${marketplaceUploadState.active ? escapeHtmlText(marketplaceUploadState.message || "Scanning files and packaging source...") : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow."}</p>
-                              ${marketplaceUploadState.active ? `<div class="mt-5 w-full max-w-md">
+                              <p id="marketplace-upload-title" class="mt-4 text-base font-semibold text-white">${marketplaceUploadState.active ? "Preparing your project..." : "Drag and drop a project folder"}</p>
+                              <p id="marketplace-upload-message" class="mt-2 max-w-md text-sm leading-6 text-slate-400">${marketplaceUploadState.active ? escapeHtmlText(marketplaceUploadState.message || "Scanning files and packaging source...") : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow."}</p>
+                              ${marketplaceUploadState.active ? `<div id="marketplace-upload-progress" class="mt-5 w-full max-w-md">
                                 <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">
-                                  <span>${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files</span>
-                                  <span>${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%</span>
+                                  <span id="marketplace-upload-count">${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files</span>
+                                  <span id="marketplace-upload-percent">${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%</span>
                                 </div>
                                 <div class="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                                  <div class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width:${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%"></div>
+                                  <div id="marketplace-upload-bar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width:${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%"></div>
                                 </div>
                               </div>` : ""}
                             </div>
@@ -5038,8 +5035,8 @@
                   marketplaceDraftListing.sourceType === "live"
                     ? `<label class="block">
                         <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose live project</span>
-                        <select onchange="selectMarketplaceLiveProject(this.value)" data-marketplace-focus="live-select" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                          <option value="" ${darkOptionStyle}>Select one of your live projects</option>
+                        <select onchange="selectMarketplaceLiveProject(this.value)" data-marketplace-focus="live-select" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                          <option value="" class="bg-slate-950 text-white">Select one of your live projects</option>
                           ${liveOptions}
                         </select>
                       </label>
@@ -5355,7 +5352,29 @@
           ...marketplaceUploadState,
           ...patch,
         };
-        if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+        if (currentStudioToolId !== "marketplace" || marketplaceActiveTab !== "create") return;
+        const title = document.getElementById("marketplace-upload-title");
+        const message = document.getElementById("marketplace-upload-message");
+        const count = document.getElementById("marketplace-upload-count");
+        const percent = document.getElementById("marketplace-upload-percent");
+        const bar = document.getElementById("marketplace-upload-bar");
+        const progress = document.getElementById("marketplace-upload-progress");
+        const dropzone = document.getElementById("marketplace-upload-dropzone");
+        if (title && message && count && percent && bar && progress && dropzone) {
+          title.textContent = marketplaceUploadState.active
+            ? "Preparing your project..."
+            : "Drag and drop a project folder";
+          message.textContent = marketplaceUploadState.active
+            ? String(marketplaceUploadState.message || "Scanning files and packaging source...")
+            : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow.";
+          count.textContent = `${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files`;
+          percent.textContent = `${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%`;
+          bar.style.width = `${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%`;
+          dropzone.classList.toggle("cursor-wait", Boolean(marketplaceUploadState.active));
+          dropzone.classList.toggle("cursor-pointer", !marketplaceUploadState.active);
+          return;
+        }
+        mountMarketplaceTool();
       }
       function setMarketplaceSubmitState(patch = {}) {
         marketplaceSubmitState = {
@@ -7051,12 +7070,38 @@
             project,
           ]),
         );
+        const newlyErrored = (Array.isArray(nextProjects) ? nextProjects : []).find((project) => {
+          const key = String(project?.fileName || project?.filename || "").trim();
+          const previousProject = previousMap.get(key);
+          return (
+            String(project?.renderDeployStatus || "").trim() === "server-error" &&
+            String(previousProject?.renderDeployStatus || "").trim() !== "server-error"
+          );
+        });
         const newlyLive = (Array.isArray(nextProjects) ? nextProjects : []).find((project) =>
           hasRenderProjectTransitionedLive(
             previousMap.get(String(project?.fileName || project?.filename || "").trim()),
             project,
           ),
         );
+        if (newlyErrored) {
+          const projectName =
+            newlyErrored?.projectName ||
+            newlyErrored?.displayName ||
+            newlyErrored?.fileName ||
+            newlyErrored?.filename ||
+            "your project";
+          openAppDialog({
+            chip: "Server Issue",
+            title: "There seems to be a problem with your server",
+            message: `${projectName} is not responding correctly yet. Please contact MediaLab at Community to resolve the issue as soon as possible.`,
+            tone: "danger",
+            confirmLabel: "Open Community",
+            cancelLabel: "Close",
+          }).then((openCommunity) => {
+            if (openCommunity) switchTool("community");
+          });
+        }
         if (!newlyLive) return;
         if (
           currentRenderHostingProject &&
@@ -7618,7 +7663,14 @@
           return;
         }
         if (!notificationsList.length) {
-          list.innerHTML = `<div class="rounded-[1.3rem] border border-dashed border-white/10 p-5 text-center text-sm text-slate-400">No notifications yet.</div>`;
+          list.innerHTML = `
+            <div class="rounded-[1.3rem] border border-dashed border-white/10 bg-white/[0.02] px-5 py-7 text-center">
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300">
+                <i class="fa-regular fa-bell text-xl"></i>
+              </div>
+              <p class="mt-4 text-sm font-semibold text-white">No current notifications</p>
+              <p class="mt-1 text-xs text-slate-400">New updates will appear here automatically.</p>
+            </div>`;
           return;
         }
         list.innerHTML = notificationsList
@@ -10939,7 +10991,7 @@
                         <button id="tab-templates" onclick="toggleBuilderTab('templates', event)" class="builder-tab">Templates</button>
                         <button id="tab-community" onclick="toggleBuilderTab('community', event)" class="builder-tab">Community</button>
                         <button id="builder-code-toggle" onclick="toggleBuilderCodeMode()" class="builder-tab">Code</button>
-                        <button id="tab-exit" onclick="exitStudio(); hideBuilderPanels();" class="builder-tab builder-tab-exit">Exit</button>
+                        <button id="tab-exit" onclick="quickExitStudio(); hideBuilderPanels();" class="builder-tab builder-tab-exit">Exit</button>
                     </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -12880,6 +12932,14 @@
         document.body.classList.remove("builder-mode");
         document.getElementById("studio-workspace").classList.add("hidden");
         document.getElementById("editor-welcome").classList.remove("hidden");
+      }
+      async function quickExitStudio() {
+        if (loggedIn && builderHasCanvasContent()) {
+          try {
+            await saveBuilderDraft({ silent: true, isAutoSave: true });
+          } catch {}
+        }
+        performExitStudio();
       }
       async function exitStudio() {
         if (!builderHasCanvasContent()) {
@@ -17073,12 +17133,11 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             "github",
             { liveUrl: data.liveUrl || "" },
           );
-          showBuilderSnackbar(
-            `Project Live! <a href="${data.liveUrl}" target="_blank" rel="noopener noreferrer" class="underline font-black ml-1">Open</a>`,
-            "success",
-            true,
-          );
           if (data.needsHostingOnboarding) {
+            showBuilderSnackbar(
+              "Your project has been published. Complete hosting setup to go live.",
+              "success",
+            );
             setTimeout(() => {
               maybePromptRenderHostingOnboarding(true);
             }, 200);
@@ -17087,10 +17146,10 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             !data.liveProject?.renderHostedConfirmed
           ) {
             const openDashboard = await openAppDialog({
-              chip: "Deployment Started",
-              title: "Your project deployment has started",
+              chip: "Processing",
+              title: "Your project is being processed",
               message:
-                "Render auto deploy is building this project now. You can track the live status from the Project Dashboard.",
+                "You can continue with other projects, then we'll notify you immediately once it is live.",
               tone: "success",
               confirmLabel: "Open Dashboard",
               cancelLabel: "Stay Here",
@@ -17105,6 +17164,11 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             setTimeout(() => {
               fetchGithubProjects({ silent: true });
             }, 5000);
+          } else {
+            showBuilderSnackbar(
+              "Your project is being processed. We will notify you immediately when it is live.",
+              "success",
+            );
           }
         } catch (error) {
           failUniversalProgress("Publishing failed.");

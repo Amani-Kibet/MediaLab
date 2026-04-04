@@ -2,6 +2,8 @@
       // ====================== STATE ======================
       let loggedIn = false;
       let currentUser = null;
+      let authSessionFailureCount = 0;
+      let lastSuccessfulAuthAt = 0;
       let currentPremiumRequest = null;
       let currentStudioToolId = "image-pdf";
       let currentLiveProjectDetail = null;
@@ -32,6 +34,7 @@
       let currentWithdrawalRequests = [];
       let expandedWithdrawalRequestId = "";
       let currentReferralStatus = null;
+      let githubStorageAutoCreating = false;
       let marketplaceItems = [];
       let marketplaceMySales = [];
       let marketplacePurchasedItems = [];
@@ -39,6 +42,12 @@
       let marketplaceSearchOpen = false;
       let marketplaceSearchField = "title";
       let marketplaceSearchTerm = "";
+      let marketplacePreviewTick = 0;
+      let marketplacePreviewTimer = null;
+      let studioToolSwitchToken = 0;
+      let notificationsList = [];
+      let unreadNotificationCount = 0;
+      let notificationDropdownTimer = null;
       function createEmptyMarketplaceDraftListing() {
         return {
           sourceType: "",
@@ -237,6 +246,19 @@
             "active",
             node.dataset.toolSwitch === currentStudioToolId,
           );
+          if (node.dataset.toolSwitch === currentStudioToolId) {
+            const track = node.closest(".studio-tool-ribbon-track");
+            try {
+              node.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "center",
+              });
+            } catch {}
+            if (track) {
+              track.dataset.activeTool = currentStudioToolId;
+            }
+          }
         });
       }
       function renderPremiumFeatureGate(id) {
@@ -353,6 +375,16 @@
       socket.on("connect", () => {
         clientSocketId = socket.id;
         console.log("Connected to AI Engine. ID:", clientSocketId);
+      });
+      socket.on("user:notification", (payload) => {
+        if (!loggedIn || !currentUser?._id) return;
+        if (String(payload?.userId || "") !== String(currentUser._id || "")) return;
+        fetchNotifications().then(() => {
+          const dropdown = document.getElementById("notification-dropdown");
+          if (dropdown && !dropdown.classList.contains("hidden")) {
+            markAllNotificationsRead({ silent: true });
+          }
+        });
       });
       // UNIVERSAL PROGRESS LISTENER
       socket.on("conversion-progress", (data) => {
@@ -725,6 +757,19 @@
         const amount = Number(price || 0);
         return amount <= 0 ? "Free" : `$${amount.toFixed(2)}`;
       }
+      function getMarketplacePreviewImageAt(item = {}, tick = marketplacePreviewTick) {
+        const shots = Array.isArray(item?.screenshots) && item.screenshots.length
+          ? item.screenshots
+          : [item?.previewImage].filter(Boolean);
+        if (!shots.length) return "";
+        return shots[Math.abs(Number(tick || 0)) % shots.length] || shots[0] || "";
+      }
+      function buildReferralLinkFromCode(code = "") {
+        const normalized = String(code || "").trim();
+        return normalized
+          ? `https://medialab-6b20.onrender.com/${encodeURIComponent(normalized)}`
+          : "https://medialab-6b20.onrender.com/";
+      }
       function renderMarketplacePriceValue(price = 0, className = "") {
         const amount = Number(price || 0);
         if (amount <= 0) {
@@ -897,7 +942,7 @@
                 <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtmlText(truncateMarketplaceText(item.description || item.purpose || "", 90))}</p>
               </div>
               <div class="relative mt-4 h-56 overflow-hidden bg-slate-900">
-                <img src="${escapeHtmlText(item.previewImage || "")}" alt="${escapeHtmlText(item.title || "Marketplace project")}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" data-marketplace-preview-id="${escapeHtmlText(String(item._id || ""))}" alt="${escapeHtmlText(item.title || "Marketplace project")}" class="h-full w-full object-cover transition-all duration-[1400ms] ease-out group-hover:scale-[1.03]" />
                 ${renderMarketplacePriceStamp(item.price)}
               </div>
               <div class="flex items-center justify-between gap-4 px-5 py-4">
@@ -928,6 +973,11 @@
           if (field === "free") {
             return Number(item?.price || 0) === 0;
           }
+          if (field === "category") {
+            return String(item?.category || "")
+              .toLowerCase()
+              .includes(term);
+          }
           if (field === "name") {
             return String(item?.authorName || "")
               .toLowerCase()
@@ -952,10 +1002,19 @@
             <p class="mt-3 text-sm leading-6 text-slate-400">Use the Add New Sale flow to turn one of your hosted projects into a marketplace listing.</p>
           </div>`;
         }
+        const orderedItems = [...items].sort((left, right) => {
+          const leftSold = String(left?.status || "").toLowerCase() === "sold" ? 1 : 0;
+          const rightSold = String(right?.status || "").toLowerCase() === "sold" ? 1 : 0;
+          if (leftSold !== rightSold) return leftSold - rightSold;
+          return new Date(right?.createdAt || right?.updatedAt || 0) - new Date(left?.createdAt || left?.updatedAt || 0);
+        });
         return `<div class="space-y-4">
-          ${items.map((item) => `
+          ${orderedItems.map((item) => `
             <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/80 p-5 shadow-[0_16px_40px_rgba(2,6,23,0.28)]">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="w-full max-w-[220px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/70 shadow-[0_18px_40px_rgba(2,6,23,0.28)]">
+                  <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" data-marketplace-preview-id="${escapeHtmlText(String(item._id || ""))}" class="h-36 w-full object-cover transition-all duration-[1400ms] ease-out" alt="${escapeHtmlText(item.title || "Sale preview")}" />
+                </div>
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-3">
                     <h3 class="truncate text-xl font-semibold text-white">${escapeHtmlText(item.title || "Untitled Sale")}</h3>
@@ -1051,20 +1110,18 @@
       function renderMarketplaceCreatorStep() {
         const liveProjects = getMarketplaceLiveProjects();
         const draftProjects = getMarketplaceDraftProjects();
-        const selectStyles = `style="color:#020617;background-color:#ffffff;"`;
-        const darkOptionStyle = `style="color:#020617;background-color:#ffffff;"`;
         const liveOptions = liveProjects
           .map((project) => {
             const value = String(project.fileName || project.filename || "");
             const selected = marketplaceDraftListing.projectId === value ? "selected" : "";
-            return `<option value="${escapeHtmlText(value)}" ${selected} ${darkOptionStyle}>${escapeHtmlText(project.name || value || "Untitled Project")}</option>`;
+            return `<option value="${escapeHtmlText(value)}" ${selected} class="bg-slate-950 text-white">${escapeHtmlText(project.name || value || "Untitled Project")}</option>`;
           })
           .join("");
         const draftOptions = draftProjects
           .map((draft) => {
             const value = String(draft?.name || "").trim();
             const selected = marketplaceDraftListing.projectId === value ? "selected" : "";
-            return `<option value="${escapeHtmlText(value)}" ${selected} ${darkOptionStyle}>${escapeHtmlText(value || "Untitled Draft")}</option>`;
+            return `<option value="${escapeHtmlText(value)}" ${selected} class="bg-slate-950 text-white">${escapeHtmlText(value || "Untitled Draft")}</option>`;
           })
           .join("");
         const stepOneReady = canAdvanceMarketplaceStep(1);
@@ -1100,19 +1157,19 @@
               <div class="space-y-4">
                 <label class="block">
                   <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose project type</span>
-                  <select onchange="setMarketplaceSourceType(this.value)" data-marketplace-focus="source-type" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                    <option value="" ${darkOptionStyle}>Select source type</option>
-                    <option value="upload" ${marketplaceDraftListing.sourceType === "upload" ? "selected" : ""} ${darkOptionStyle}>Upload project folder</option>
-                    <option value="draft" ${marketplaceDraftListing.sourceType === "draft" ? "selected" : ""} ${darkOptionStyle}>MediaLab draft</option>
-                    <option value="live" ${marketplaceDraftListing.sourceType === "live" ? "selected" : ""} ${darkOptionStyle}>Live project</option>
+                  <select onchange="setMarketplaceSourceType(this.value)" data-marketplace-focus="source-type" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                    <option value="" class="bg-slate-950 text-white">Select source type</option>
+                    <option value="upload" ${marketplaceDraftListing.sourceType === "upload" ? "selected" : ""} class="bg-slate-950 text-white">Upload project folder</option>
+                    <option value="draft" ${marketplaceDraftListing.sourceType === "draft" ? "selected" : ""} class="bg-slate-950 text-white">MediaLab draft</option>
+                    <option value="live" ${marketplaceDraftListing.sourceType === "live" ? "selected" : ""} class="bg-slate-950 text-white">Live project</option>
                   </select>
                 </label>
                 ${
                   marketplaceDraftListing.sourceType === "draft"
                     ? `<label class="block">
                         <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose draft project</span>
-                        <select onchange="selectMarketplaceDraftProject(this.value)" data-marketplace-focus="draft-select" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                          <option value="" ${darkOptionStyle}>Select one of your drafts</option>
+                        <select onchange="selectMarketplaceDraftProject(this.value)" data-marketplace-focus="draft-select" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                          <option value="" class="bg-slate-950 text-white">Select one of your drafts</option>
                           ${draftOptions}
                         </select>
                       </label>`
@@ -1133,18 +1190,18 @@
                           </div>`
                         : `<div class="rounded-[1.8rem] border border-dashed border-white/10 bg-white/[0.03] p-5">
                             <p class="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Upload Project Folder</p>
-                            <div ondragover="event.preventDefault(); this.classList.add('border-cyan-400/30');" ondragleave="this.classList.remove('border-cyan-400/30');" ondrop="handleMarketplaceUploadDrop(event)" onclick="${marketplaceUploadState.active ? "void(0)" : "document.getElementById('marketplace-upload-input').click()"}" class="mt-4 flex min-h-[170px] ${marketplaceUploadState.active ? "cursor-wait" : "cursor-pointer"} flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-white/10 bg-slate-950/70 px-6 text-center transition-all hover:border-cyan-400/30">
+                            <div id="marketplace-upload-dropzone" ondragover="event.preventDefault(); this.classList.add('border-cyan-400/30');" ondragleave="this.classList.remove('border-cyan-400/30');" ondrop="handleMarketplaceUploadDrop(event)" onclick="${marketplaceUploadState.active ? "void(0)" : "document.getElementById('marketplace-upload-input').click()"}" class="mt-4 flex min-h-[170px] ${marketplaceUploadState.active ? "cursor-wait" : "cursor-pointer"} flex-col items-center justify-center rounded-[1.6rem] border border-dashed border-white/10 bg-slate-950/70 px-6 text-center transition-all hover:border-cyan-400/30">
                               <input id="marketplace-upload-input" type="file" multiple webkitdirectory directory class="hidden" onchange="handleMarketplaceUploadFolderInput(this)" />
                               <div class="flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-cyan-400/20 bg-cyan-500/10 text-cyan-300"><i class="fas fa-folder-open text-xl"></i></div>
-                              <p class="mt-4 text-base font-semibold text-white">${marketplaceUploadState.active ? "Preparing your project..." : "Drag and drop a project folder"}</p>
-                              <p class="mt-2 max-w-md text-sm leading-6 text-slate-400">${marketplaceUploadState.active ? escapeHtmlText(marketplaceUploadState.message || "Scanning files and packaging source...") : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow."}</p>
-                              ${marketplaceUploadState.active ? `<div class="mt-5 w-full max-w-md">
+                              <p id="marketplace-upload-title" class="mt-4 text-base font-semibold text-white">${marketplaceUploadState.active ? "Preparing your project..." : "Drag and drop a project folder"}</p>
+                              <p id="marketplace-upload-message" class="mt-2 max-w-md text-sm leading-6 text-slate-400">${marketplaceUploadState.active ? escapeHtmlText(marketplaceUploadState.message || "Scanning files and packaging source...") : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow."}</p>
+                              ${marketplaceUploadState.active ? `<div id="marketplace-upload-progress" class="mt-5 w-full max-w-md">
                                 <div class="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">
-                                  <span>${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files</span>
-                                  <span>${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%</span>
+                                  <span id="marketplace-upload-count">${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files</span>
+                                  <span id="marketplace-upload-percent">${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%</span>
                                 </div>
                                 <div class="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
-                                  <div class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width:${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%"></div>
+                                  <div id="marketplace-upload-bar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-200" style="width:${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%"></div>
                                 </div>
                               </div>` : ""}
                             </div>
@@ -1155,8 +1212,8 @@
                   marketplaceDraftListing.sourceType === "live"
                     ? `<label class="block">
                         <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Choose live project</span>
-                        <select onchange="selectMarketplaceLiveProject(this.value)" data-marketplace-focus="live-select" class="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
-                          <option value="" ${darkOptionStyle}>Select one of your live projects</option>
+                        <select onchange="selectMarketplaceLiveProject(this.value)" data-marketplace-focus="live-select" class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/85 px-4 py-3 text-white outline-none transition-all focus:border-cyan-400 focus:bg-slate-950">
+                          <option value="" class="bg-slate-950 text-white">Select one of your live projects</option>
                           ${liveOptions}
                         </select>
                       </label>
@@ -1239,11 +1296,11 @@
               </div>`}
           </div>
           <div class="mt-6 flex items-center justify-between gap-3">
-            <button onclick="setMarketplaceCreateStep(${Math.max(1, marketplaceCreateStep - 1)})" ${marketplaceCreateStep === 1 ? "disabled" : ""} class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-200 ${marketplaceCreateStep === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"}">Back</button>
+            <button id="marketplace-step-back-btn" onclick="setMarketplaceCreateStep(${Math.max(1, marketplaceCreateStep - 1)})" ${marketplaceCreateStep === 1 ? "disabled" : ""} class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-200 ${marketplaceCreateStep === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"}">Back</button>
             ${
               marketplaceCreateStep < 3
-                ? `<button onclick="${canAdvanceMarketplaceStep(marketplaceCreateStep) ? `setMarketplaceCreateStep(${marketplaceCreateStep + 1})` : "void(0)"}" class="rounded-2xl ${canAdvanceMarketplaceStep(marketplaceCreateStep) ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400" : "bg-slate-700 text-slate-400 cursor-not-allowed"} px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">Continue</button>`
-                : `<button onclick="${stepThreeReady ? "submitMarketplaceListing()" : "void(0)"}" class="rounded-2xl ${stepThreeReady ? "bg-emerald-400 text-slate-950 hover:bg-emerald-300" : "bg-slate-700 text-slate-400 cursor-not-allowed"} px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">Submit for Review</button>`
+                ? `<button id="marketplace-step-next-btn" onclick="${canAdvanceMarketplaceStep(marketplaceCreateStep) ? `setMarketplaceCreateStep(${marketplaceCreateStep + 1})` : "void(0)"}" class="rounded-2xl ${canAdvanceMarketplaceStep(marketplaceCreateStep) ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400" : "bg-slate-700 text-slate-400 cursor-not-allowed"} px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">Continue</button>`
+                : `<button id="marketplace-step-next-btn" onclick="${stepThreeReady ? "submitMarketplaceListing()" : "void(0)"}" class="rounded-2xl ${stepThreeReady ? "bg-emerald-400 text-slate-950 hover:bg-emerald-300" : "bg-slate-700 text-slate-400 cursor-not-allowed"} px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">Submit for Review</button>`
             }
           </div>
         </div>`;
@@ -1252,23 +1309,20 @@
         if (marketplaceActiveTab === "mine") return renderMarketplaceMySales(marketplaceMySales);
         if (marketplaceActiveTab === "purchased") return renderMarketplacePurchased(marketplacePurchasedItems);
         if (marketplaceActiveTab === "create") return renderMarketplaceCreatorStep();
-        return `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">${renderMarketplaceCards(getFilteredMarketplaceItems(marketplaceItems))}</div>`;
+        return `<div id="marketplace-pane" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">${renderMarketplaceCards(getFilteredMarketplaceItems(marketplaceItems))}</div>`;
       }
       function renderMarketplaceTool() {
+        const selectStyles = `style="color:#020617;background-color:#ffffff;"`;
+        const darkOptionStyle = `style="color:#020617;background-color:#ffffff;"`;
         return `<div class="animate-fadeIn relative space-y-8">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 class="text-3xl font-semibold tracking-tighter text-white">Project Marketplace</h2>
-              <p class="mt-3 text-sm leading-6 text-slate-400">A curated marketplace for hosted MediaLab projects with discovery, creator tools, and admin-reviewed purchases.</p>
             </div>
             <div class="flex items-center gap-3">
               <button onclick="toggleMarketplaceSearch()" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 hover:border-cyan-400/25 hover:text-cyan-200 transition-all">
                 <i class="fas fa-search"></i>
               </button>
-              <div class="rounded-[1.6rem] border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
-                <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Discovery Pool</div>
-                <div class="mt-2 text-lg font-semibold text-white">${getFilteredMarketplaceItems(marketplaceItems).length} live listings</div>
-              </div>
             </div>
           </div>
           <div class="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(15,23,42,0.92))] p-5 sm:p-6 shadow-[0_24px_80px_rgba(2,6,23,0.34)]">
@@ -1280,13 +1334,14 @@
             </div>
             ${
               marketplaceActiveTab === "sale"
-                ? `<div class="${marketplaceSearchOpen ? "" : "hidden"} mt-4 flex flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/55 p-3 sm:flex-row">
-                    <select onchange="marketplaceSearchField=this.value; mountMarketplaceTool();" class="w-full sm:w-44 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
+                ? `<div id="marketplace-search-panel" class="${marketplaceSearchOpen ? "" : "hidden"} mt-4 flex flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-slate-950/55 p-3 sm:flex-row">
+                    <select onchange="setMarketplaceSearchField(this.value)" class="w-full sm:w-44 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none focus:border-cyan-400" ${selectStyles}>
                       <option value="title" ${marketplaceSearchField === "title" ? "selected" : ""} ${darkOptionStyle}>Project title</option>
                       <option value="name" ${marketplaceSearchField === "name" ? "selected" : ""} ${darkOptionStyle}>Author name</option>
+                      <option value="category" ${marketplaceSearchField === "category" ? "selected" : ""} ${darkOptionStyle}>Category</option>
                       <option value="free" ${marketplaceSearchField === "free" ? "selected" : ""} ${darkOptionStyle}>Free only</option>
                     </select>
-                    <input ${marketplaceSearchField === "free" ? "disabled" : ""} data-marketplace-focus="sale-search" value="${escapeHtmlText(marketplaceSearchTerm)}" oninput="handleMarketplaceSearchInput(event)" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-cyan-400 disabled:opacity-45" placeholder="${marketplaceSearchField === "name" ? "Search by creator name" : marketplaceSearchField === "free" ? "Showing free projects" : "Search by project title"}" />
+                    <input ${marketplaceSearchField === "free" ? "disabled" : ""} data-marketplace-focus="sale-search" value="${escapeHtmlText(marketplaceSearchTerm)}" oninput="handleMarketplaceSearchInput(event)" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-cyan-400 disabled:opacity-45" placeholder="${marketplaceSearchField === "name" ? "Search by creator name" : marketplaceSearchField === "category" ? "Search by category" : marketplaceSearchField === "free" ? "Showing free projects" : "Search by project title"}" />
                   </div>`
                 : ""
             }
@@ -1333,8 +1388,53 @@
           area.style.minHeight = "";
         });
       }
+      function refreshMarketplacePaneOnly() {
+        const pane = document.getElementById("marketplace-pane");
+        if (!pane) {
+          if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+          return;
+        }
+        pane.outerHTML = renderMarketplacePane();
+      }
+      function rotateMarketplacePreviewFrames() {
+        const images = Array.from(document.querySelectorAll("[data-marketplace-preview-id]"));
+        if (!images.length) return;
+        images.forEach((image) => {
+          const itemId = String(image.getAttribute("data-marketplace-preview-id") || "");
+          if (!itemId) return;
+          const item =
+            marketplaceItems.find((entry) => String(entry?._id || "") === itemId) ||
+            myMarketplaceSales.find((entry) => String(entry?._id || "") === itemId);
+          if (!item) return;
+          const nextImage = getMarketplacePreviewImageAt(item);
+          if (!nextImage || image.getAttribute("src") === nextImage) return;
+          image.setAttribute("src", nextImage);
+        });
+      }
+      function refreshMarketplaceSearchUi() {
+        const panel = document.getElementById("marketplace-search-panel");
+        if (!panel) return;
+        panel.classList.toggle("hidden", !marketplaceSearchOpen);
+      }
+      function startMarketplacePreviewRotation() {
+        if (marketplacePreviewTimer) return;
+        marketplacePreviewTimer = setInterval(() => {
+          if (document.hidden) return;
+          if (currentStudioToolId !== "marketplace") return;
+          if (!["sale", "mine"].includes(String(marketplaceActiveTab || ""))) return;
+          marketplacePreviewTick += 1;
+          rotateMarketplacePreviewFrames();
+        }, 10000);
+      }
+      function stopMarketplacePreviewRotation() {
+        if (!marketplacePreviewTimer) return;
+        clearInterval(marketplacePreviewTimer);
+        marketplacePreviewTimer = null;
+      }
       function setMarketplaceTab(tab = "sale") {
         marketplaceActiveTab = tab;
+        if (["sale", "mine"].includes(String(tab || ""))) startMarketplacePreviewRotation();
+        else stopMarketplacePreviewRotation();
         mountMarketplaceTool();
       }
       function toggleMarketplaceSearch() {
@@ -1343,11 +1443,37 @@
           marketplaceSearchField = "title";
           marketplaceSearchTerm = "";
         }
-        mountMarketplaceTool();
+        refreshMarketplaceSearchUi();
+        refreshMarketplacePaneOnly();
       }
       function setMarketplaceCreateStep(step = 1) {
         marketplaceCreateStep = Math.max(1, Math.min(3, Number(step) || 1));
         if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+      }
+      function syncMarketplaceCreateActions() {
+        const backButton = document.getElementById("marketplace-step-back-btn");
+        const nextButton = document.getElementById("marketplace-step-next-btn");
+        if (backButton) {
+          const backStep = Math.max(1, marketplaceCreateStep - 1);
+          backButton.disabled = marketplaceCreateStep === 1;
+          backButton.setAttribute("onclick", `setMarketplaceCreateStep(${backStep})`);
+          backButton.className = `rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-slate-200 ${marketplaceCreateStep === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"}`;
+        }
+        if (nextButton) {
+          const stepReady = canAdvanceMarketplaceStep(marketplaceCreateStep);
+          if (marketplaceCreateStep < 3) {
+            nextButton.textContent = "Continue";
+            nextButton.setAttribute(
+              "onclick",
+              stepReady ? `setMarketplaceCreateStep(${marketplaceCreateStep + 1})` : "void(0)",
+            );
+            nextButton.className = `rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] ${stepReady ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400" : "bg-slate-700 text-slate-400 cursor-not-allowed"}`;
+          } else {
+            nextButton.textContent = "Submit for Review";
+            nextButton.setAttribute("onclick", stepReady ? "submitMarketplaceListing()" : "void(0)");
+            nextButton.className = `rounded-2xl px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] ${stepReady ? "bg-emerald-400 text-slate-950 hover:bg-emerald-300" : "bg-slate-700 text-slate-400 cursor-not-allowed"}`;
+          }
+        }
       }
       function updateMarketplaceDraftField(field, value) {
         marketplaceDraftListing = {
@@ -1357,10 +1483,19 @@
       }
       function handleMarketplaceLiveInput(event, field) {
         updateMarketplaceDraftField(field, event?.target?.value ?? "");
-        if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+        if (currentStudioToolId === "marketplace" && marketplaceActiveTab === "create") {
+          syncMarketplaceCreateActions();
+        }
       }
       function handleMarketplaceSearchInput(event) {
         marketplaceSearchTerm = String(event?.target?.value || "");
+        refreshMarketplacePaneOnly();
+      }
+      function setMarketplaceSearchField(value = "title") {
+        marketplaceSearchField = String(value || "title");
+        if (marketplaceSearchField === "free") {
+          marketplaceSearchTerm = "";
+        }
         mountMarketplaceTool();
       }
       function captureMarketplaceFocus() {
@@ -1394,7 +1529,29 @@
           ...marketplaceUploadState,
           ...patch,
         };
-        if (currentStudioToolId === "marketplace") mountMarketplaceTool();
+        if (currentStudioToolId !== "marketplace" || marketplaceActiveTab !== "create") return;
+        const title = document.getElementById("marketplace-upload-title");
+        const message = document.getElementById("marketplace-upload-message");
+        const count = document.getElementById("marketplace-upload-count");
+        const percent = document.getElementById("marketplace-upload-percent");
+        const bar = document.getElementById("marketplace-upload-bar");
+        const progress = document.getElementById("marketplace-upload-progress");
+        const dropzone = document.getElementById("marketplace-upload-dropzone");
+        if (title && message && count && percent && bar && progress && dropzone) {
+          title.textContent = marketplaceUploadState.active
+            ? "Preparing your project..."
+            : "Drag and drop a project folder";
+          message.textContent = marketplaceUploadState.active
+            ? String(marketplaceUploadState.message || "Scanning files and packaging source...")
+            : "MediaLab will detect the main HTML entry and prepare it for the marketplace creator flow.";
+          count.textContent = `${Math.max(0, marketplaceUploadState.current)}/${Math.max(1, marketplaceUploadState.total || 1)} files`;
+          percent.textContent = `${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%`;
+          bar.style.width = `${Math.max(0, Math.min(100, Number(marketplaceUploadState.percent || 0)))}%`;
+          dropzone.classList.toggle("cursor-wait", Boolean(marketplaceUploadState.active));
+          dropzone.classList.toggle("cursor-pointer", !marketplaceUploadState.active);
+          return;
+        }
+        mountMarketplaceTool();
       }
       function setMarketplaceSubmitState(patch = {}) {
         marketplaceSubmitState = {
@@ -1865,6 +2022,14 @@
                     <p class="text-sm text-slate-400">${escapeHtmlText(item.category || "General")}</p>
                   </div>
                 </div>
+                <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-slate-200">${Number(item.sellerRatingPercent || 0).toFixed(0)}% seller rating</span>
+                  <span class="text-slate-400">${item.sellerRatingCount || 0} seller reviews</span>
+                </div>
+                <button onclick="rateMarketplaceSeller('${item._id}')" class="mt-4 inline-flex items-center gap-2 rounded-2xl border ${access.approved && !access.isOwner ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/15" : "border-white/10 bg-white/[0.04] text-slate-500 cursor-not-allowed"} px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em]">
+                  <i class="fas fa-user-star"></i>
+                  Rate Seller
+                </button>
               </div>
               <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5">
                 <div class="flex items-center justify-between gap-4">
@@ -2123,6 +2288,46 @@
         } catch (error) {
           failUniversalProgress("Purchase failed.");
           showBuilderSnackbar(error.message || "Could not process this purchase.", "error");
+        }
+      }
+      async function rateMarketplaceSeller(id) {
+        if (!loggedIn) {
+          showLogin();
+          return;
+        }
+        const sourceItem =
+          (currentMarketplaceItem?._id === id ? currentMarketplaceItem : null) ||
+          marketplaceItems.find((item) => item._id === id) ||
+          marketplaceMySales.find((item) => item._id === id) ||
+          null;
+        const access = canInteractWithMarketplaceItem(sourceItem);
+        if (!access.approved) {
+          showBuilderSnackbar("Seller rating unlocks after the project is approved.", "error");
+          return;
+        }
+        if (access.isOwner) {
+          showBuilderSnackbar("You cannot rate your own seller profile.", "error");
+          return;
+        }
+        const value = 5;
+        try {
+          const res = await fetch(`/api/marketplace/${encodeURIComponent(id)}/rate-seller`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not save that seller rating.");
+          }
+          currentMarketplaceItem = data.item;
+          renderMarketplaceDetail(currentMarketplaceItem);
+          await refreshMarketplaceData();
+          if (currentStudioToolId === "marketplace") refreshMarketplacePaneOnly();
+          showBuilderSnackbar("Seller rating saved.", "success");
+        } catch (error) {
+          showBuilderSnackbar(error.message || "Could not save that seller rating.", "error");
         }
       }
       async function fetchGithubProjects(options = {}) {
@@ -3042,12 +3247,38 @@
             project,
           ]),
         );
+        const newlyErrored = (Array.isArray(nextProjects) ? nextProjects : []).find((project) => {
+          const key = String(project?.fileName || project?.filename || "").trim();
+          const previousProject = previousMap.get(key);
+          return (
+            String(project?.renderDeployStatus || "").trim() === "server-error" &&
+            String(previousProject?.renderDeployStatus || "").trim() !== "server-error"
+          );
+        });
         const newlyLive = (Array.isArray(nextProjects) ? nextProjects : []).find((project) =>
           hasRenderProjectTransitionedLive(
             previousMap.get(String(project?.fileName || project?.filename || "").trim()),
             project,
           ),
         );
+        if (newlyErrored) {
+          const projectName =
+            newlyErrored?.projectName ||
+            newlyErrored?.displayName ||
+            newlyErrored?.fileName ||
+            newlyErrored?.filename ||
+            "your project";
+          openAppDialog({
+            chip: "Server Issue",
+            title: "There seems to be a problem with your server",
+            message: `${projectName} is not responding correctly yet. Please contact MediaLab at Community to resolve the issue as soon as possible.`,
+            tone: "danger",
+            confirmLabel: "Open Community",
+            cancelLabel: "Close",
+          }).then((openCommunity) => {
+            if (openCommunity) switchTool("community");
+          });
+        }
         if (!newlyLive) return;
         if (
           currentRenderHostingProject &&
@@ -3183,18 +3414,7 @@
           return;
         }
         const deployUrl = generateDeployUrl(repoUrl);
-        if (renderServiceIdRevealTimer) clearTimeout(renderServiceIdRevealTimer);
-        renderServiceIdRevealTimer = setTimeout(() => {
-          revealRenderServiceIdStep(true);
-        }, 10000);
-        checkFrameSupport().then((supported) => {
-          renderPopupMode = !supported;
-        });
-        renderDeployWindow = window.open(
-          deployUrl,
-          "_blank",
-          "toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=500,height=700",
-        );
+        renderDeployWindow = window.open(deployUrl, "_blank", "noopener,noreferrer");
       }
       function closeRenderHostingOnboarding() {
         document.getElementById("render-hosting-modal")?.classList.add("hidden");
@@ -3537,6 +3757,252 @@
         if (!menu.classList.contains("hidden")) queueProfileMenuAutoHide();
         else clearTimeout(profileMenuTimer);
       }
+      function formatNotificationCount(value = 0) {
+        const total = Number(value || 0);
+        if (total <= 0) return "";
+        return total > 9 ? "9+" : String(total);
+      }
+      function markSessionHealthy() {
+        authSessionFailureCount = 0;
+        lastSuccessfulAuthAt = Date.now();
+      }
+      async function handleAuthSessionFailure(message = "Your session ended. Please sign in again.") {
+        authSessionFailureCount += 1;
+        const withinGracePeriod = Date.now() - Number(lastSuccessfulAuthAt || 0) < 45000;
+        if (withinGracePeriod || authSessionFailureCount < 4) {
+          return false;
+        }
+        await handleSessionExpired(message);
+        return true;
+      }
+      function clearClientAuthState() {
+        loggedIn = false;
+        currentUser = null;
+        currentPremiumRequest = null;
+        currentReferralStatus = null;
+        notificationsList = [];
+        unreadNotificationCount = 0;
+        stopAdsenseStatusSyncLoop();
+        stopUserWalletRefreshLoop();
+        updateUserProfileUi();
+        updateSidebarHistory([]);
+        renderBuilderDrafts();
+        document.getElementById("profile-menu")?.classList.add("hidden");
+        document.getElementById("studio")?.classList.add("hidden");
+        document.getElementById("landing")?.classList.remove("hidden");
+        authSessionFailureCount = 0;
+        lastSuccessfulAuthAt = 0;
+      }
+      function markAuthHealthy() {
+        lastSuccessfulAuthAt = Date.now();
+      }
+      async function confirmSessionStillMissing() {
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          const res = await fetch("/api/auth/me", {
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Cache-Control": "no-store" },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data?.success && data.user) {
+            loggedIn = true;
+            currentUser = data.user;
+            markAuthHealthy();
+            updateUserProfileUi();
+            return false;
+          }
+          return true;
+        } catch {
+          return true;
+        }
+      }
+      async function handleSessionExpired(message = "Your session ended. Please sign in again.") {
+        const withinGraceWindow = Date.now() - Number(lastSuccessfulAuthAt || 0) < 45000;
+        if (withinGraceWindow) {
+          const stillMissing = await confirmSessionStillMissing();
+          if (!stillMissing) return;
+        }
+        clearClientAuthState();
+        showStudioStatusSnackbar(message, "error");
+      }
+      function renderNotificationsUi() {
+        const badge = document.getElementById("notification-badge");
+        const list = document.getElementById("notification-list");
+        if (badge) {
+          const label = formatNotificationCount(unreadNotificationCount);
+          badge.textContent = label;
+          badge.classList.toggle("hidden", !label);
+        }
+        if (!list) return;
+        if (!loggedIn || !currentUser) {
+          list.innerHTML = `<div class="rounded-[1.3rem] border border-dashed border-white/10 p-5 text-center text-sm text-slate-400">Sign in to view your notifications.</div>`;
+          return;
+        }
+        if (!notificationsList.length) {
+          list.innerHTML = `
+            <div class="rounded-[1.3rem] border border-dashed border-white/10 bg-white/[0.02] px-5 py-7 text-center">
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300">
+                <i class="fa-regular fa-bell text-xl"></i>
+              </div>
+              <p class="mt-4 text-sm font-semibold text-white">No current notifications</p>
+              <p class="mt-1 text-xs text-slate-400">New updates will appear here automatically.</p>
+            </div>`;
+          return;
+        }
+        list.innerHTML = notificationsList
+          .map((item) => `
+            <button onclick="openNotificationTarget('${String(item._id || "")}')" class="w-full rounded-[1.3rem] border ${item.isRead ? "border-white/8 bg-white/[0.03]" : "border-rose-400/20 bg-rose-500/10"} px-4 py-4 text-left transition-all hover:border-cyan-400/25 hover:bg-white/[0.05]">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-white">${escapeHtmlText(item.title || "Notification")}</p>
+                  <p class="mt-2 text-sm leading-6 text-slate-300">${escapeHtmlText(item.message || "")}</p>
+                </div>
+                ${item.isRead ? "" : `<span class="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-400"></span>`}
+              </div>
+              <p class="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">${escapeHtmlText(formatDate(item.createdAt || item.date || new Date()))}</p>
+            </button>`)
+          .join("");
+      }
+      async function fetchNotifications() {
+        if (!loggedIn || !currentUser) {
+          notificationsList = [];
+          unreadNotificationCount = 0;
+          renderNotificationsUi();
+          return [];
+        }
+        try {
+          const res = await fetch("/api/notifications", { credentials: "include" });
+          const data = await res.json();
+          if (res.status === 401) {
+            await handleAuthSessionFailure(data.message || "Your session ended. Please sign in again.");
+            return [];
+          }
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not load notifications.");
+          }
+          markSessionHealthy();
+          notificationsList = Array.isArray(data.notifications) ? data.notifications : [];
+          unreadNotificationCount = Number(data.unreadCount || 0);
+          renderNotificationsUi();
+          return notificationsList;
+        } catch (error) {
+          console.warn("Notification fetch skipped:", error.message);
+          return notificationsList;
+        }
+      }
+      async function markAllNotificationsRead(options = {}) {
+        const { silent = false } = options;
+        if (!loggedIn || !currentUser) return;
+        if (!notificationsList.some((item) => !item.isRead)) return;
+        try {
+          const res = await fetch("/api/notifications/read", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const data = await res.json();
+          if (res.status === 401) {
+            await handleAuthSessionFailure(data.message || "Your session ended. Please sign in again.");
+            return;
+          }
+          if (!res.ok || !data.success) throw new Error(data.message || "Could not mark notifications as read.");
+          markSessionHealthy();
+          notificationsList = notificationsList.map((item) => ({ ...item, isRead: true, readAt: new Date().toISOString() }));
+          unreadNotificationCount = Number(data.unreadCount || 0);
+          renderNotificationsUi();
+        } catch (error) {
+          if (!silent) {
+            showBuilderSnackbar(error.message || "Could not update notifications.", "error");
+          }
+        }
+      }
+      function queueNotificationAutoHide() {
+        clearTimeout(notificationDropdownTimer);
+        notificationDropdownTimer = setTimeout(() => {
+          closeNotificationsDrawer();
+        }, 15000);
+      }
+      function closeNotificationsDrawer() {
+        const dropdown = document.getElementById("notification-dropdown");
+        if (!dropdown) return;
+        dropdown.classList.add("hidden");
+      }
+      async function toggleNotifications(event) {
+        event?.stopPropagation();
+        const dropdown = document.getElementById("notification-dropdown");
+        if (!dropdown) return;
+        const shouldOpen = dropdown.classList.contains("hidden");
+        dropdown.classList.toggle("hidden", !shouldOpen);
+        if (shouldOpen) {
+          queueNotificationAutoHide();
+          await fetchNotifications();
+          await markAllNotificationsRead({ silent: true });
+        } else {
+          clearTimeout(notificationDropdownTimer);
+        }
+      }
+      async function openNotificationTarget(notificationId = "") {
+        const notification = notificationsList.find((item) => String(item._id || "") === String(notificationId || ""));
+        if (!notification) return;
+        try {
+          const res = await fetch("/api/notifications/read", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ notificationId }),
+          });
+          if (res.status === 401) {
+            const data = await res.json().catch(() => ({}));
+            await handleAuthSessionFailure(data.message || "Your session ended. Please sign in again.");
+            return;
+          }
+          markSessionHealthy();
+        } catch {}
+        notificationsList = notificationsList.map((item) =>
+          String(item._id || "") === String(notificationId || "")
+            ? { ...item, isRead: true, readAt: new Date().toISOString() }
+            : item,
+        );
+        unreadNotificationCount = Math.max(
+          0,
+          notificationsList.filter((item) => !item.isRead).length,
+        );
+        renderNotificationsUi();
+        closeNotificationsDrawer();
+        const targetType = String(notification.targetType || "").trim();
+        const targetId = String(notification.targetId || "").trim();
+        if (targetType === "marketplace-sale") {
+          marketplaceActiveTab = "mine";
+          await switchTool("marketplace");
+          if (targetId) setTimeout(() => openMarketplaceDetail(targetId), 120);
+          return;
+        }
+        if (targetType === "marketplace-purchased") {
+          marketplaceActiveTab = "purchased";
+          await switchTool("marketplace");
+          if (targetId) setTimeout(() => openMarketplaceDetail(targetId), 120);
+          return;
+        }
+        if (targetType === "wallet") {
+          await switchTool("console");
+          setTimeout(() => openAccountModal(), 100);
+          return;
+        }
+        if (targetType === "live-project") {
+          await switchTool("history");
+          if (targetId) {
+            setTimeout(() => openLiveProjectDetail(encodeURIComponent(String(targetId || ""))), 140);
+          }
+          return;
+        }
+        if (targetType === "console") {
+          await switchTool("console");
+          return;
+        }
+        await switchTool("marketplace");
+      }
       async function fetchPremiumRequestStatus() {
         if (!loggedIn) {
           currentPremiumRequest = null;
@@ -3574,6 +4040,9 @@
         if (!loggedIn || !currentUser) {
           userSection?.classList.add("hidden");
           startBtn?.classList.remove("hidden");
+          notificationsList = [];
+          unreadNotificationCount = 0;
+          renderNotificationsUi();
           stopRenderProjectSyncPolling();
           stopAdsenseStatusSyncLoop();
           renderGithubStorageStatus();
@@ -3613,6 +4082,7 @@
             : "fas fa-crown text-cyan-300";
         }
         renderGithubStorageStatus();
+        fetchNotifications();
         updateAccountModalUi();
         maybePromptRenderHostingOnboarding();
         startRenderProjectSyncPolling();
@@ -3626,6 +4096,7 @@
         const shellClass = isConsole
           ? "rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-2xl p-5 sm:p-6 shadow-[0_20px_60px_rgba(15,23,42,0.35)]"
           : "";
+        const repoLabel = escapeHtmlText(getGithubRepoLabel());
         if (!loggedIn || !currentUser) {
           return `
             <div class="${shellClass}">
@@ -3657,11 +4128,32 @@
                     </div>
                     <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-gray-300">Ready</span>
                   </div>
-                  <p class="mt-1 text-[11px] leading-5 text-gray-400">Link your GitHub account so MediaLab can prepare the <span class="font-black text-white">medialab</span> storage repo for live exports.</p>
+                  <p class="mt-1 text-[11px] leading-5 text-gray-400">Link your GitHub account so MediaLab can prepare the <span class="font-black text-white">${repoLabel}</span> storage repo for live exports.</p>
                   <button onclick="connectGithubStorage()" class="mt-3 inline-flex items-center gap-2 rounded-2xl bg-white text-slate-950 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_12px_30px_rgba(255,255,255,0.12)]">
                     <i class="fab fa-github"></i>
                     Link GitHub Account
                   </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        if (githubStorageAutoCreating && !currentUser.githubRepoCreated) {
+          return `
+            <div class="${shellClass}">
+              <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center text-cyan-300">
+                  <i class="fas fa-spinner animate-spin text-lg"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <p class="text-[10px] font-black uppercase tracking-[0.24em] text-gray-500">GitHub Status</p>
+                      <p class="mt-2 text-sm font-semibold text-white">Auto creating repo</p>
+                    </div>
+                    <span class="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-cyan-300">Working</span>
+                  </div>
+                  <p class="mt-1 text-[11px] leading-5 text-gray-400">MediaLab is preparing the <span class="font-black text-white">${repoLabel}</span> repository with backend host files and <span class="font-black text-white">public/</span> storage.</p>
                 </div>
               </div>
             </div>
@@ -3682,7 +4174,7 @@
                     </div>
                     <span class="inline-flex items-center rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">Setup Needed</span>
                   </div>
-                  <p class="mt-1 text-[11px] leading-5 text-gray-400">Initialize the <span class="font-black text-white">medialab</span> repository and enable GitHub Pages so exports can go live.</p>
+                  <p class="mt-1 text-[11px] leading-5 text-gray-400">Initialize the <span class="font-black text-white">${repoLabel}</span> repository and enable GitHub Pages so exports can go live.</p>
                   <button id="github-storage-init-btn" onclick="setupGithubRepository()" class="mt-3 inline-flex items-center gap-2 rounded-2xl bg-emerald-400 text-slate-950 px-3.5 py-2 text-[11px] font-black uppercase tracking-[0.16em] shadow-[0_14px_36px_rgba(16,185,129,0.26)]">
                     <i class="fas fa-cloud"></i>
                     🚀 Initialize Storage
@@ -3706,7 +4198,7 @@
                   </div>
                   <span class="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300">Live</span>
                 </div>
-                <p class="mt-1 text-[11px] leading-5 text-gray-400">Repository <span class="font-black text-white">medialab</span> is ready under <span class="font-black text-white">@${currentUser.githubUsername}</span> with GitHub Pages enabled.</p>
+                <p class="mt-1 text-[11px] leading-5 text-gray-400">Repository <span class="font-black text-white">${repoLabel}</span> is ready under <span class="font-black text-white">@${currentUser.githubUsername}</span> with GitHub Pages enabled.</p>
               </div>
             </div>
           </div>
@@ -3743,6 +4235,8 @@
           return;
         }
         const trigger = document.getElementById("github-storage-init-btn");
+        githubStorageAutoCreating = true;
+        renderGithubStorageStatus();
         if (trigger && !silent) {
           trigger.disabled = true;
           trigger.innerHTML = `<i class="fas fa-spinner animate-spin"></i> Initializing...`;
@@ -3779,6 +4273,7 @@
             );
           }
         } finally {
+          githubStorageAutoCreating = false;
           renderGithubStorageStatus();
         }
       }
@@ -3871,10 +4366,12 @@
       function updateReferralUi() {
         const linkNode = document.getElementById("account-referral-link");
         const summaryNode = document.getElementById("account-referral-summary");
+        const referralCode = String(
+          currentReferralStatus?.referralCode || currentUser?.referralCode || "",
+        ).trim();
+        const referralLink = buildReferralLinkFromCode(referralCode);
         if (linkNode) {
-          linkNode.textContent =
-            currentReferralStatus?.referralLink ||
-            "https://medialab-6b20.onrender.com/";
+          linkNode.textContent = referralLink;
         }
         if (summaryNode) {
           summaryNode.textContent = currentReferralStatus
@@ -3885,9 +4382,10 @@
         }
       }
       async function copyReferralLink() {
-        const link = String(
-          currentReferralStatus?.referralLink || "https://medialab-6b20.onrender.com/",
+        const referralCode = String(
+          currentReferralStatus?.referralCode || currentUser?.referralCode || "",
         ).trim();
+        const link = buildReferralLinkFromCode(referralCode);
         try {
           await navigator.clipboard.writeText(link);
           showBuilderSnackbar("Referral link copied.", "success");
@@ -4084,9 +4582,12 @@
             const res = await fetch("/api/auth/me", { credentials: "include" });
             const data = await res.json();
             if (res.ok && data?.success && data.user) {
+              markSessionHealthy();
               currentUser = { ...(currentUser || {}), ...(data.user || {}) };
               updateUserProfileUi();
               updateReferralUi();
+            } else if (res.status === 401 || !data?.success) {
+              await handleAuthSessionFailure(data?.message || "Your session ended. Please sign in again.");
             }
           } catch {}
         }, 60 * 1000);
@@ -4095,6 +4596,35 @@
         if (userWalletRefreshTimer) {
           clearInterval(userWalletRefreshTimer);
           userWalletRefreshTimer = null;
+        }
+      }
+      async function syncServerSessionState(options = {}) {
+        const { silent = true } = options;
+        try {
+          const res = await fetch("/api/auth/me", {
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Cache-Control": "no-store" },
+          });
+          const data = await res.json();
+          if (res.ok && data?.success && data.user) {
+            markSessionHealthy();
+            loggedIn = true;
+            currentUser = data.user;
+            updateUserProfileUi();
+            return true;
+          }
+          if (loggedIn || currentUser) {
+            if (silent) {
+              return false;
+            }
+            await handleAuthSessionFailure(
+              silent ? "Your session has ended." : "Your session ended. Please sign in again.",
+            );
+          }
+          return false;
+        } catch {
+          return Boolean(loggedIn && currentUser);
         }
       }
       function hasAdsenseStats(report) {
@@ -4414,6 +4944,55 @@
         if (currentUser?.adsenseConnected) {
           renderAdsensePortalMode();
           document.getElementById("adsense-portal-panel")?.classList.remove("hidden");
+        }
+      }
+      async function disconnectAdsenseAccount() {
+        if (!loggedIn || !currentUser) {
+          showLogin();
+          return;
+        }
+        try {
+          const res = await fetch("/api/adsense/disconnect", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 401) {
+            await handleAuthSessionFailure(data.message || "Your session ended. Please sign in again.");
+            return;
+          }
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || "Could not remove your AdSense account.");
+          }
+          currentUser = { ...(currentUser || {}), ...(data.user || {}) };
+          currentAdsenseConsoleReport = {
+            success: false,
+            connected: false,
+            stats: null,
+            message: "AdSense is not linked yet.",
+          };
+          stopAdsenseStatusSyncLoop();
+          closeAdsenseLinkModal();
+          updateUserProfileUi();
+          showBuilderSnackbar("AdSense account removed from MediaLab.", "success");
+        } catch (error) {
+          showBuilderSnackbar(error.message || "Could not remove AdSense right now.", "error");
+        }
+      }
+      async function openAdsenseConnectionInfo() {
+        const shouldRemove = await openAppDialog({
+          chip: "AdSense Account",
+          title: "Remove linked AdSense account?",
+          message:
+            "Are you sure? This will remove your AdSense connection from MediaLab, clear the saved publisher details, and return the Console to the original link state.",
+          tone: "error",
+          confirmLabel: "Remove Account",
+          cancelLabel: "Keep Linked",
+          destructive: true,
+        });
+        if (shouldRemove) {
+          await disconnectAdsenseAccount();
         }
       }
       function renderAdsenseChecklist(checklist = {}) {
@@ -4947,18 +5526,7 @@
           await logUsageActivity("logout", "logged out", "auth");
           await fetch("/api/auth/logout", { credentials: "include" });
         } catch (e) {}
-        loggedIn = false;
-        currentUser = null;
-        currentPremiumRequest = null;
-        currentReferralStatus = null;
-        stopAdsenseStatusSyncLoop();
-        stopUserWalletRefreshLoop();
-        updateUserProfileUi();
-        updateSidebarHistory([]);
-        renderBuilderDrafts();
-        document.getElementById("profile-menu").classList.add("hidden");
-        document.getElementById("studio").classList.add("hidden");
-        document.getElementById("landing").classList.remove("hidden");
+        clearClientAuthState();
       }
       // Login Functions
       function showLogin() {
@@ -5132,6 +5700,7 @@
           const res = await fetch("/api/auth/me", { credentials: "include" });
           const data = await res.json();
           if (data.success && data.user) {
+            markSessionHealthy();
             loggedIn = true;
             currentUser = data.user;
             await fetchPremiumRequestStatus();
@@ -5156,6 +5725,9 @@
             goToStudio();
             setTimeout(() => maybePromptRenderHostingOnboarding(), 600);
           } else {
+            if (loggedIn || currentUser) {
+              await handleAuthSessionFailure("Your session ended. Please sign in again.");
+            }
             currentPremiumRequest = null;
           }
         } catch (e) {
@@ -6129,16 +6701,28 @@
         }
       }
       async function switchTool(id) {
+        const switchToken = ++studioToolSwitchToken;
         currentStudioToolId = id;
+        try {
+          sessionStorage.setItem("medialab:lastTool", String(id || "console"));
+        } catch {}
         updateStudioToolSwitches();
         logUsageActivity("tool-open", `opened tool ${id}`, "tool-switch", {
           toolId: id,
         });
         const area = document.getElementById("tool-display");
         const builderToolbar = document.getElementById("web-builder-toolbar");
+        const contentArea = document.getElementById("content-area");
         let html = "";
         if (area) {
           area.innerHTML = renderToolLoadingShell(id);
+        }
+        if (contentArea) {
+          contentArea.classList.toggle("overflow-y-auto", id !== "web-builder");
+          contentArea.classList.toggle("overflow-hidden", id === "web-builder");
+        }
+        if (id !== "marketplace") {
+          stopMarketplacePreviewRotation();
         }
         // 1. Contextual Toolbar Management
         // Only show the specialized Web Builder toolbar when that tool is active
@@ -6149,12 +6733,14 @@
         }
         if (LOGIN_REQUIRED_TOOL_IDS.includes(id) && !loggedIn) {
           html = renderLoginRequiredFeatureGate(id);
+          if (switchToken !== studioToolSwitchToken || currentStudioToolId !== id) return;
           area.innerHTML = html;
           showLogin();
           return;
         }
         if (PREMIUM_TOOL_IDS.includes(id) && !hasPremiumAccess()) {
           html = renderPremiumFeatureGate(id);
+          if (switchToken !== studioToolSwitchToken || currentStudioToolId !== id) return;
           area.innerHTML = html;
           return;
         }
@@ -6248,8 +6834,17 @@
                               : "Connect AdSense for real-time earnings, impressions, RPM, and click performance."
                           }</p>
                         </div>
-                        <div class="w-12 h-12 rounded-[1.3rem] border border-amber-400/20 bg-amber-500/10 flex items-center justify-center text-amber-300 shadow-[0_10px_30px_rgba(245,158,11,0.14)]">
-                          <i class="fab fa-google"></i>
+                        <div class="flex items-center gap-2">
+                          ${
+                            adsenseReport?.connected
+                              ? `<button onclick="openAdsenseConnectionInfo()" class="inline-flex h-10 w-10 items-center justify-center rounded-[1rem] border border-white/10 bg-white/5 text-slate-300 hover:border-amber-400/30 hover:text-amber-200 transition-all" aria-label="AdSense account options">
+                                  <i class="fas fa-info text-sm"></i>
+                                </button>`
+                              : ``
+                          }
+                          <div class="w-12 h-12 rounded-[1.3rem] border border-amber-400/20 bg-amber-500/10 flex items-center justify-center text-amber-300 shadow-[0_10px_30px_rgba(245,158,11,0.14)]">
+                            <i class="fab fa-google"></i>
+                          </div>
                         </div>
                       </div>
                         ${
@@ -6366,8 +6961,11 @@
         else if (id === "marketplace") {
           try {
             await refreshMarketplaceData();
+            if (switchToken !== studioToolSwitchToken || currentStudioToolId !== id) return;
+            startMarketplacePreviewRotation();
             html = renderMarketplaceTool();
           } catch (error) {
+            if (switchToken !== studioToolSwitchToken || currentStudioToolId !== id) return;
             html = `<div class="animate-fadeIn rounded-[2rem] border border-rose-500/20 bg-rose-500/10 p-8 text-center">
               <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-[1.4rem] border border-rose-400/20 bg-white/5 text-rose-200">
                 <i class="fas fa-store-slash text-xl"></i>
@@ -6548,6 +7146,7 @@
                                         <button onclick="requestNewBuilderProject(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-file-circle-plus text-cyan-400"></i><span>New Project<small>Clear canvas and start fresh</small></span></button>
                                         <button onclick="saveBuilderDraft(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-floppy-disk text-cyan-400"></i><span>Save Draft<small>Store current project locally</small></span></button>
                                     </div>
+                                    <button onclick="openBuilderDraftChooser(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-folder-open text-cyan-400"></i><span>Draft Projects <small id="builder-drafts-count-label">0 saved projects</small></span></button>
                                     <button onclick="restartBuilderTutorial(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-person-chalkboard text-cyan-400"></i><span>Start Tutorial<small>Replay the Workflow AI guide</small></span></button>
                                     <button onclick="switchTool('history'); exitStudio(); hideStudioMenu();" class="builder-cmd"><i class="fas fa-clock-rotate-left text-cyan-400"></i><span>Project History<small>Open MediaLab history library</small></span></button>
                                     <div>
@@ -6569,7 +7168,7 @@
                         <button id="tab-templates" onclick="toggleBuilderTab('templates', event)" class="builder-tab">Templates</button>
                         <button id="tab-community" onclick="toggleBuilderTab('community', event)" class="builder-tab">Community</button>
                         <button id="builder-code-toggle" onclick="toggleBuilderCodeMode()" class="builder-tab">Code</button>
-                        <button id="tab-exit" onclick="exitStudio(); hideBuilderPanels();" class="builder-tab builder-tab-exit">Exit</button>
+                        <button id="tab-exit" onclick="quickExitStudio(); hideBuilderPanels();" class="builder-tab builder-tab-exit">Exit</button>
                     </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -6678,8 +7277,8 @@
                     </div>
                 </div>
             </div>
-            <div id="canvas-container" onclick="deselectAll(event)" class="flex-1 overflow-y-auto overflow-x-hidden flex justify-center items-start px-2 sm:px-4 pt-2 sm:pt-4 pb-2 sm:pb-4 cursor-default custom-scrollbar">
-                <div class="w-full max-w-[1680px]">
+            <div id="canvas-container" onclick="deselectAll(event)" class="flex-1 overflow-y-auto overflow-x-hidden flex justify-center items-start px-2 sm:px-4 pt-2 sm:pt-4 pb-20 sm:pb-28 cursor-default custom-scrollbar" style="touch-action: pan-x pan-y pinch-zoom;">
+                <div class="flex w-full max-w-[1680px] flex-col items-center">
                     <div class="px-1 sm:px-2 pb-2 flex items-center justify-between">
                         <div class="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Desktop Canvas</div>
                         <div class="hidden sm:flex items-center gap-2 text-[10px] font-bold text-gray-500">
@@ -6690,6 +7289,7 @@
                     </div>
                     <div id="web-canvas" data-page-background="#ffffff" class="builder-grid bg-white w-full max-w-[1680px] min-h-[calc(100vh-5.2rem)] sm:min-h-[calc(100vh-7.2rem)] relative shadow-[0_60px_150px_rgba(0,0,0,0.55)] rounded-[1.2rem] sm:rounded-[2rem] overflow-hidden transition-transform duration-500">
                     </div>
+                    <div class="h-28 sm:h-36"></div>
                 </div>
             </div>
             <div id="element-picker" class="hidden fixed z-[120] bg-gray-950/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] sm:rounded-[3rem] shadow-2xl p-4 sm:p-6 w-[92vw] max-w-[360px] max-h-[72vh] overflow-y-auto animate-fadeIn ring-1 ring-cyan-500/20">
@@ -7115,6 +7715,7 @@
             </div>`;
         }
         // Inject the final HTML into the main viewport
+        if (switchToken !== studioToolSwitchToken || currentStudioToolId !== id || !area) return;
         area.innerHTML = html;
       } // ====================== HELPER: RENDER HISTORY ITEMS ======================
       function handleDragOver(e) {
@@ -8020,6 +8621,25 @@
         else clearTimeout(moreDropdownTimer);
       }
       document.addEventListener("mousedown", (event) => {
+        const notificationShell = document.getElementById("notification-shell");
+        const notificationDropdown = document.getElementById("notification-dropdown");
+        if (
+          notificationShell &&
+          notificationDropdown &&
+          !notificationDropdown.classList.contains("hidden") &&
+          !notificationShell.contains(event.target) &&
+          !notificationDropdown.contains(event.target)
+        ) {
+          closeNotificationsDrawer();
+        } else if (
+          notificationShell &&
+          notificationDropdown &&
+          !notificationDropdown.classList.contains("hidden") &&
+          (notificationShell.contains(event.target) ||
+            notificationDropdown.contains(event.target))
+        ) {
+          queueNotificationAutoHide();
+        }
         const shell = document.getElementById("more-features-shell");
         if (shell && !shell.contains(event.target)) {
           hideMoreDropdown();
@@ -8029,6 +8649,17 @@
         }
       });
       document.addEventListener("mousemove", (event) => {
+        const notificationShell = document.getElementById("notification-shell");
+        const notificationDropdown = document.getElementById("notification-dropdown");
+        if (
+          notificationShell &&
+          notificationDropdown &&
+          !notificationDropdown.classList.contains("hidden") &&
+          (notificationShell.contains(event.target) ||
+            notificationDropdown.contains(event.target))
+        ) {
+          queueNotificationAutoHide();
+        }
         const shell = document.getElementById("more-features-shell");
         const dd = document.getElementById("more-dropdown");
         if (
@@ -8049,6 +8680,14 @@
         if (profileMenu && !profileMenu.classList.contains("hidden")) {
           queueProfileMenuAutoHide();
         }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          syncServerSessionState({ silent: true });
+        }
+      });
+      window.addEventListener("focus", () => {
+        syncServerSessionState({ silent: true });
       });
       document.addEventListener("mousedown", (event) => {
         const userSection = document.getElementById("user-section");
@@ -8131,6 +8770,12 @@
           }
           window.history.replaceState({}, document.title, "/");
         }
+        try {
+          const lastTool = String(sessionStorage.getItem("medialab:lastTool") || "").trim();
+          if (lastTool && lastTool !== currentStudioToolId) {
+            await switchTool(lastTool);
+          }
+        } catch {}
         console.log(
           "%c✅ MediaLab - Full Final Script with Independent Vertical Tools Scroll",
           "color:#22d3ee; font-weight:bold",
@@ -8464,6 +9109,14 @@
         document.body.classList.remove("builder-mode");
         document.getElementById("studio-workspace").classList.add("hidden");
         document.getElementById("editor-welcome").classList.remove("hidden");
+      }
+      async function quickExitStudio() {
+        if (loggedIn && builderHasCanvasContent()) {
+          try {
+            await saveBuilderDraft({ silent: true, isAutoSave: true });
+          } catch {}
+        }
+        performExitStudio();
       }
       async function exitStudio() {
         if (!builderHasCanvasContent()) {
@@ -9307,10 +9960,47 @@
       }
       function renderBuilderDrafts() {
         const list = document.getElementById("builder-drafts-list");
+        const drafts = getBuilderDrafts();
+        const countLabel = document.getElementById("builder-drafts-count-label");
+        if (countLabel) {
+          countLabel.textContent = drafts.length
+            ? `${drafts.length} saved project${drafts.length === 1 ? "" : "s"}`
+            : loggedIn
+              ? "No saved projects yet"
+              : "Sign in to save projects";
+        }
+        if (!list) return;
+        if (!drafts.length) {
+          list.innerHTML = `<button onclick="openBuilderDraftChooser(); hideStudioMenu();" class="w-full rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-4 py-4 text-left text-[11px] text-slate-400 hover:border-cyan-400/20 hover:bg-white/[0.05] transition-all">${loggedIn ? "No saved drafts yet. Open Draft Projects to manage them." : "Sign in to save builder drafts."}</button>`;
+          renderBuilderDraftChooser();
+          return;
+        }
+        const latest = drafts[drafts.length - 1];
+        list.innerHTML = `<button onclick="openBuilderDraftChooser(); hideStudioMenu();" class="w-full rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.07] px-4 py-4 text-left hover:border-cyan-400/25 transition-all">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-bold text-white">${drafts.length} saved project${drafts.length === 1 ? "" : "s"}</div>
+                <div class="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-400">Latest: ${latest?.name ? latest.name : "Untitled Draft"}</div>
+              </div>
+              <i class="fas fa-chevron-right text-cyan-300"></i>
+            </div>
+          </button>`;
+        renderBuilderDraftChooser();
+      }
+      function renderBuilderDraftChooser() {
+        const list = document.getElementById("builder-draft-chooser-list");
+        const meta = document.getElementById("builder-draft-chooser-meta");
         if (!list) return;
         const drafts = getBuilderDrafts();
+        if (meta) {
+          meta.textContent = drafts.length
+            ? `${drafts.length} draft project${drafts.length === 1 ? "" : "s"} ready to reopen in the builder.`
+            : loggedIn
+              ? "No saved drafts yet."
+              : "Sign in to save and reopen builder drafts.";
+        }
         if (!drafts.length) {
-          list.innerHTML = `<div class="text-[11px] text-slate-500 px-2 py-3">${loggedIn ? "No saved drafts yet." : "Sign in to save builder drafts."}</div>`;
+          list.innerHTML = `<div class="rounded-[1.5rem] border border-dashed border-white/10 p-8 text-center text-slate-400">${loggedIn ? "No saved drafts yet." : "Sign in to save builder drafts."}</div>`;
           return;
         }
         list.innerHTML = drafts
@@ -9318,17 +10008,28 @@
           .reverse()
           .map(
             (draft, index) => `
-            <button class="draft-card" onclick="loadBuilderDraftByIndex(${drafts.length - 1 - index}); hideStudioMenu();">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="text-sm font-bold text-white">${draft.name}</div>
-                  <div class="text-[10px] uppercase tracking-[0.18em] text-slate-500 mt-1">${new Date(draft.savedAt).toLocaleString()}</div>
+              <button onclick="switchTool('web-builder'); closeBuilderDraftChooser(); setTimeout(() => { loadBuilderDraftByIndex(${drafts.length - 1 - index}); launchBossMode(); }, 120);" class="w-full rounded-[1.6rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition-all hover:border-cyan-400/25 hover:bg-white/[0.05]">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="truncate text-base font-semibold text-white">${draft.name}</p>
+                    <p class="mt-2 text-[10px] uppercase tracking-[0.18em] text-slate-500">${new Date(draft.savedAt || Date.now()).toLocaleString()}</p>
+                  </div>
+                  <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-500/10 text-cyan-300"><i class="fas fa-arrow-up-right-from-square"></i></span>
                 </div>
-                <i class="fas fa-chevron-right text-slate-500"></i>
-              </div>
-            </button>`,
+              </button>`,
           )
           .join("");
+      }
+      function openBuilderDraftChooser() {
+        renderBuilderDraftChooser();
+        const modal = document.getElementById("builder-draft-chooser-modal");
+        modal?.classList.remove("hidden");
+        modal?.classList.add("flex");
+      }
+      function closeBuilderDraftChooser() {
+        const modal = document.getElementById("builder-draft-chooser-modal");
+        modal?.classList.add("hidden");
+        modal?.classList.remove("flex");
       }
       async function saveBuilderDraft(options = {}) {
         const canvas = document.getElementById("web-canvas");
@@ -12386,6 +13087,8 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
         }
         const modal = document.getElementById("builder-publish-modal");
         const input = document.getElementById("builder-publish-name-input");
+        const descriptionInput = document.getElementById("builder-publish-description-input");
+        const typeSelect = document.getElementById("builder-publish-type-select");
         const repoLabel = document.getElementById("builder-publish-repo-label");
         if (!modal || !input) return;
         if (repoLabel) repoLabel.textContent = getGithubRepoLabel();
@@ -12397,6 +13100,8 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 48);
+        if (descriptionInput) descriptionInput.value = "";
+        if (typeSelect) typeSelect.value = "landing page, website, startup";
         modal.classList.remove("hidden");
         setTimeout(() => {
           input.focus();
@@ -12466,6 +13171,14 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
       }
       function closeBuilderPublishModal() {
         document.getElementById("builder-publish-modal")?.classList.add("hidden");
+      }
+      function resetBuilderPublishForm() {
+        const input = document.getElementById("builder-publish-name-input");
+        const descriptionInput = document.getElementById("builder-publish-description-input");
+        const typeSelect = document.getElementById("builder-publish-type-select");
+        if (input) input.value = "";
+        if (descriptionInput) descriptionInput.value = "";
+        if (typeSelect) typeSelect.value = "landing page, website, startup";
       }
       function handleBuilderPublishKeydown(event) {
         if (event.key === "Enter") {
@@ -12577,6 +13290,12 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
           if (!res.ok || !data.success) {
             throw new Error(data.message || "Could not publish this project.");
           }
+          setUniversalProgress({
+            visible: true,
+            message: "Finalizing deployment details...",
+            percent: 97,
+            tone: "success",
+          });
           currentUser = { ...(currentUser || {}), ...(data.user || {}) };
           updateUserProfileUi();
           completeUniversalProgress(
@@ -12584,18 +13303,18 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
               ? "Hosted project published successfully."
               : "Project published successfully.",
           );
+          resetBuilderPublishForm();
           await logUsageActivity(
             "github-publish-ui",
             `published ${data.liveProject?.fileName || data.liveUrl || projectName}`,
             "github",
             { liveUrl: data.liveUrl || "" },
           );
-          showBuilderSnackbar(
-            `Project Live! <a href="${data.liveUrl}" target="_blank" rel="noopener noreferrer" class="underline font-black ml-1">Open</a>`,
-            "success",
-            true,
-          );
           if (data.needsHostingOnboarding) {
+            showBuilderSnackbar(
+              "Your project has been published. Complete hosting setup to go live.",
+              "success",
+            );
             setTimeout(() => {
               maybePromptRenderHostingOnboarding(true);
             }, 200);
@@ -12604,10 +13323,10 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             !data.liveProject?.renderHostedConfirmed
           ) {
             const openDashboard = await openAppDialog({
-              chip: "Deployment Started",
-              title: "Your project deployment has started",
+              chip: "Processing",
+              title: "Your project is being processed",
               message:
-                "Render auto deploy is building this project now. You can track the live status from the Project Dashboard.",
+                "You can continue with other projects, then we'll notify you immediately once it is live.",
               tone: "success",
               confirmLabel: "Open Dashboard",
               cancelLabel: "Stay Here",
@@ -12622,6 +13341,11 @@ ${payload.interactionScript ? `\n${payload.interactionScript}` : ""}
             setTimeout(() => {
               fetchGithubProjects({ silent: true });
             }, 5000);
+          } else {
+            showBuilderSnackbar(
+              "Your project is being processed. We will notify you immediately when it is live.",
+              "success",
+            );
           }
         } catch (error) {
           failUniversalProgress("Publishing failed.");

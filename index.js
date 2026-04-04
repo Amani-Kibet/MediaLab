@@ -2742,6 +2742,10 @@ app.get("/api/github/projects", async (req, res) => {
               user.confirmedFirstHosting = true;
               user.firstHostingConfirmedAt = new Date();
             }
+          } else if (response.status >= 500) {
+            project.renderDeployStatus = "server-error";
+            project.updatedAt = new Date();
+            projectsChanged = true;
           } else if (!project.renderDeployStatus) {
             project.renderDeployStatus = "deploying";
             projectsChanged = true;
@@ -3173,6 +3177,10 @@ app.get("/api/github/project-monitor", async (req, res) => {
           user.confirmedFirstHosting = true;
           user.firstHostingConfirmedAt = new Date();
         }
+        await user.save();
+      } else if (response.status >= 500 && project.renderUrl) {
+        project.renderDeployStatus = "server-error";
+        project.updatedAt = new Date();
         await user.save();
       }
     } catch (error) {
