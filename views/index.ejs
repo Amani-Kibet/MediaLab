@@ -5635,24 +5635,62 @@
       function handleMarketplaceScreenshotInput(input) {
         const files = Array.from(input?.files || []).slice(0, 4);
         if (!files.length) return;
-        Promise.all(
-          files.map((file) =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result || ""));
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            }),
-          ),
-        )
-          .then((images) => {
+        const availableSlots = Math.max(
+          0,
+          4 - Number((marketplaceDraftListing.screenshots || []).length || 0),
+        );
+        const filesToUpload = files.slice(0, availableSlots);
+        if (!filesToUpload.length) {
+          showBuilderSnackbar("You already have 4 marketplace screenshots.", "error");
+          if (input) input.value = "";
+          return;
+        }
+        beginUniversalProgress("Uploading marketplace screenshots...", 16, 88);
+        let uploaded = 0;
+        const uploadedUrls = [];
+        const uploadNext = async (file) => {
+          const formData = new FormData();
+          formData.append("screenshot", file);
+          const res = await fetch("/api/marketplace/upload-screenshot", {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success || !data.url) {
+            throw new Error(data.message || "Could not upload that screenshot.");
+          }
+          uploaded += 1;
+          uploadedUrls.push(String(data.url || "").trim());
+          const percent = 20 + Math.round((uploaded / Math.max(filesToUpload.length, 1)) * 80);
+          updateUniversalProgress(
+            percent,
+            `Uploading preview ${uploaded} of ${filesToUpload.length}...`,
+          );
+        };
+        (async () => {
+          try {
+            for (const file of filesToUpload) {
+              await uploadNext(file);
+            }
             marketplaceDraftListing = {
               ...marketplaceDraftListing,
-              screenshots: [...(marketplaceDraftListing.screenshots || []), ...images].slice(0, 4),
+              screenshots: [...(marketplaceDraftListing.screenshots || []), ...uploadedUrls].slice(
+                0,
+                4,
+              ),
             };
-            mountMarketplaceTool();
-          })
-          .catch(() => showBuilderSnackbar("Could not load those screenshots.", "error"));
+            completeUniversalProgress("Marketplace screenshots uploaded.");
+            if (currentStudioToolId === "marketplace" && marketplaceActiveTab === "create") {
+              mountMarketplaceTool();
+            }
+          } catch (error) {
+            failUniversalProgress("Screenshot upload failed.");
+            showBuilderSnackbar(error.message || "Could not upload those screenshots.", "error");
+          } finally {
+            if (input) input.value = "";
+          }
+        })();
       }
       function removeMarketplaceScreenshot(index) {
         marketplaceDraftListing = {

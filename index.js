@@ -1116,6 +1116,49 @@ function normalizeMarketplacePrice(value) {
   return Number(amount.toFixed(2));
 }
 
+async function uploadImageToImageKit({
+  fileBuffer,
+  fileName = "medialab-image.png",
+  folder = "/medialab/marketplace",
+  tags = [],
+} = {}) {
+  const publicKey = String(process.env.IMAGEKIT_PUBLIC_KEY || "").trim();
+  const privateKey = String(process.env.IMAGEKIT_PRIVATE_KEY || "").trim();
+  if (!publicKey || !privateKey) {
+    throw new Error("ImageKit keys are not configured yet.");
+  }
+  if (!fileBuffer || !Buffer.isBuffer(fileBuffer) || !fileBuffer.length) {
+    throw new Error("No image file was provided.");
+  }
+  const form = new FormData();
+  form.append("file", new Blob([fileBuffer]), fileName);
+  form.append("fileName", fileName);
+  form.append("folder", folder);
+  if (Array.isArray(tags) && tags.length) {
+    form.append("tags", tags.filter(Boolean).join(","));
+  }
+  form.append("useUniqueFileName", "true");
+  const response = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}`,
+    },
+    body: form,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.url) {
+    throw new Error(
+      payload?.message || payload?.error?.message || "Could not upload this image to ImageKit.",
+    );
+  }
+  return {
+    url: String(payload.url || "").trim(),
+    fileId: String(payload.fileId || "").trim(),
+    thumbnailUrl: String(payload.thumbnailUrl || payload.url || "").trim(),
+    name: String(payload.name || fileName).trim(),
+  };
+}
+
 function buildMarketplacePublicItem(item = {}, viewerId = "") {
   const comments = Array.isArray(item.comments) ? item.comments : [];
   const purchases = Array.isArray(item.purchases) ? item.purchases : [];
@@ -2984,6 +3027,44 @@ const githubSettingsUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 512 * 1024 },
 });
+const marketplaceImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
+
+app.post(
+  "/api/marketplace/upload-screenshot",
+  marketplaceImageUpload.single("screenshot"),
+  async (req, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ success: false, message: "Sign in first." });
+    }
+    try {
+      if (!req.file?.buffer) {
+        return res.status(400).json({ success: false, message: "Choose an image first." });
+      }
+      const uploaded = await uploadImageToImageKit({
+        fileBuffer: req.file.buffer,
+        fileName: req.file.originalname || `marketplace-${Date.now()}.png`,
+        folder: "/medialab/marketplace",
+        tags: ["marketplace", "preview", String(req.user._id || "")],
+      });
+      return res.json({
+        success: true,
+        url: uploaded.url,
+        thumbnailUrl: uploaded.thumbnailUrl,
+        fileId: uploaded.fileId,
+        name: uploaded.name,
+      });
+    } catch (error) {
+      console.error("Marketplace screenshot upload failed:", error);
+      return res.status(500).json({
+        success: false,
+        message: error?.message || "Could not upload this screenshot right now.",
+      });
+    }
+  },
+);
 
 app.post(
   "/api/github/settings",
