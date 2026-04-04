@@ -1605,9 +1605,6 @@
                   <p class="mt-1 text-sm text-slate-400">Latest 10 updates about your projects, sales, wallet, and hosting.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                  <button onclick="markAllNotificationsRead()" class="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300 hover:text-cyan-200">
-                    Mark all read
-                  </button>
                   <button onclick="closeNotificationsDrawer()" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10">
                     <i class="fas fa-times"></i>
                   </button>
@@ -4244,12 +4241,12 @@
       socket.on("user:notification", (payload) => {
         if (!loggedIn || !currentUser?._id) return;
         if (String(payload?.userId || "") !== String(currentUser._id || "")) return;
-        notificationsList = [
-          { ...payload, isRead: false },
-          ...notificationsList.filter((item) => String(item._id || "") !== String(payload?._id || "")),
-        ].slice(0, 40);
-        unreadNotificationCount = notificationsList.filter((item) => !item.isRead).length;
-        renderNotificationsUi();
+        fetchNotifications().then(() => {
+          const dropdown = document.getElementById("notification-dropdown");
+          if (dropdown && !dropdown.classList.contains("hidden")) {
+            markAllNotificationsRead({ silent: true });
+          }
+        });
       });
       // UNIVERSAL PROGRESS LISTENER
       socket.on("conversion-progress", (data) => {
@@ -4807,7 +4804,7 @@
                 <p class="mt-2 text-sm leading-6 text-slate-400">${escapeHtmlText(truncateMarketplaceText(item.description || item.purpose || "", 90))}</p>
               </div>
               <div class="relative mt-4 h-56 overflow-hidden bg-slate-900">
-                <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" alt="${escapeHtmlText(item.title || "Marketplace project")}" class="h-full w-full object-cover transition-all duration-[1400ms] ease-out group-hover:scale-[1.03]" />
+                <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" data-marketplace-preview-id="${escapeHtmlText(String(item._id || ""))}" alt="${escapeHtmlText(item.title || "Marketplace project")}" class="h-full w-full object-cover transition-all duration-[1400ms] ease-out group-hover:scale-[1.03]" />
                 ${renderMarketplacePriceStamp(item.price)}
               </div>
               <div class="flex items-center justify-between gap-4 px-5 py-4">
@@ -4878,7 +4875,7 @@
             <div class="rounded-[1.8rem] border border-white/10 bg-slate-900/80 p-5 shadow-[0_16px_40px_rgba(2,6,23,0.28)]">
               <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="w-full max-w-[220px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/70 shadow-[0_18px_40px_rgba(2,6,23,0.28)]">
-                  <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" class="h-36 w-full object-cover transition-all duration-[1400ms] ease-out" alt="${escapeHtmlText(item.title || "Sale preview")}" />
+                  <img src="${escapeHtmlText(getMarketplacePreviewImageAt(item) || item.previewImage || "")}" data-marketplace-preview-id="${escapeHtmlText(String(item._id || ""))}" class="h-36 w-full object-cover transition-all duration-[1400ms] ease-out" alt="${escapeHtmlText(item.title || "Sale preview")}" />
                 </div>
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-3">
@@ -5185,7 +5182,6 @@
           <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 class="text-3xl font-semibold tracking-tighter text-white">Project Marketplace</h2>
-              <p class="mt-3 text-sm leading-6 text-slate-400">A curated marketplace for hosted MediaLab projects with discovery, creator tools, and admin-reviewed purchases.</p>
             </div>
             <div class="flex items-center gap-3">
               <button onclick="toggleMarketplaceSearch()" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-200 hover:border-cyan-400/25 hover:text-cyan-200 transition-all">
@@ -5264,6 +5260,21 @@
         }
         pane.outerHTML = renderMarketplacePane();
       }
+      function rotateMarketplacePreviewFrames() {
+        const images = Array.from(document.querySelectorAll("[data-marketplace-preview-id]"));
+        if (!images.length) return;
+        images.forEach((image) => {
+          const itemId = String(image.getAttribute("data-marketplace-preview-id") || "");
+          if (!itemId) return;
+          const item =
+            marketplaceItems.find((entry) => String(entry?._id || "") === itemId) ||
+            myMarketplaceSales.find((entry) => String(entry?._id || "") === itemId);
+          if (!item) return;
+          const nextImage = getMarketplacePreviewImageAt(item);
+          if (!nextImage || image.getAttribute("src") === nextImage) return;
+          image.setAttribute("src", nextImage);
+        });
+      }
       function refreshMarketplaceSearchUi() {
         const panel = document.getElementById("marketplace-search-panel");
         if (!panel) return;
@@ -5276,7 +5287,7 @@
           if (currentStudioToolId !== "marketplace") return;
           if (!["sale", "mine"].includes(String(marketplaceActiveTab || ""))) return;
           marketplacePreviewTick += 1;
-          refreshMarketplacePaneOnly();
+          rotateMarketplacePreviewFrames();
         }, 10000);
       }
       function stopMarketplacePreviewRotation() {
@@ -7584,8 +7595,8 @@
       }
       async function handleAuthSessionFailure(message = "Your session ended. Please sign in again.") {
         authSessionFailureCount += 1;
-        const withinGracePeriod = Date.now() - Number(lastSuccessfulAuthAt || 0) < 15000;
-        if (withinGracePeriod || authSessionFailureCount < 2) {
+        const withinGracePeriod = Date.now() - Number(lastSuccessfulAuthAt || 0) < 45000;
+        if (withinGracePeriod || authSessionFailureCount < 4) {
           return false;
         }
         await handleSessionExpired(message);
@@ -7634,7 +7645,7 @@
         }
       }
       async function handleSessionExpired(message = "Your session ended. Please sign in again.") {
-        const withinGraceWindow = Date.now() - Number(lastSuccessfulAuthAt || 0) < 15000;
+        const withinGraceWindow = Date.now() - Number(lastSuccessfulAuthAt || 0) < 45000;
         if (withinGraceWindow) {
           const stillMissing = await confirmSessionStillMissing();
           if (!stillMissing) return;
@@ -7700,8 +7711,10 @@
           return notificationsList;
         }
       }
-      async function markAllNotificationsRead() {
+      async function markAllNotificationsRead(options = {}) {
+        const { silent = false } = options;
         if (!loggedIn || !currentUser) return;
+        if (!notificationsList.some((item) => !item.isRead)) return;
         try {
           const res = await fetch("/api/notifications/read", {
             method: "POST",
@@ -7720,7 +7733,9 @@
           unreadNotificationCount = Number(data.unreadCount || 0);
           renderNotificationsUi();
         } catch (error) {
-          showBuilderSnackbar(error.message || "Could not update notifications.", "error");
+          if (!silent) {
+            showBuilderSnackbar(error.message || "Could not update notifications.", "error");
+          }
         }
       }
       function queueNotificationAutoHide() {
@@ -7734,7 +7749,7 @@
         if (!dropdown) return;
         dropdown.classList.add("hidden");
       }
-      function toggleNotifications(event) {
+      async function toggleNotifications(event) {
         event?.stopPropagation();
         const dropdown = document.getElementById("notification-dropdown");
         if (!dropdown) return;
@@ -7742,7 +7757,8 @@
         dropdown.classList.toggle("hidden", !shouldOpen);
         if (shouldOpen) {
           queueNotificationAutoHide();
-          fetchNotifications();
+          await fetchNotifications();
+          await markAllNotificationsRead({ silent: true });
         } else {
           clearTimeout(notificationDropdownTimer);
         }

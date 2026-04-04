@@ -2121,11 +2121,12 @@ mongoose
 
 app.use(
   session({
+    proxy: true,
     name: "medialab.sid",
     secret: process.env.SESSION_SECRET || "medialab-secret-key",
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    rolling: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       ttl: 24 * 60 * 60, // 1 day
