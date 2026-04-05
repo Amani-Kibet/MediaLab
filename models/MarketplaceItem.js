@@ -57,6 +57,7 @@ const MarketplaceItemSchema = new mongoose.Schema({
   price: { type: Number, default: 0, min: 0 },
   category: { type: String, default: "General", trim: true },
   screenshots: { type: [String], default: [] },
+  screenshotAssets: { type: [mongoose.Schema.Types.Mixed], default: [] },
   purpose: { type: String, default: "", trim: true },
   sourceType: {
     type: String,

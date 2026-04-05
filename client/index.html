@@ -3888,6 +3888,7 @@
           description: "",
           price: 0,
           screenshots: [],
+          screenshotAssets: [],
         };
       }
       function createEmptyMarketplaceUploadState() {
@@ -4876,6 +4877,9 @@
           screenshots: Array.isArray(marketplaceDraftListing.screenshots)
             ? marketplaceDraftListing.screenshots
             : [],
+          screenshotAssets: Array.isArray(marketplaceDraftListing.screenshotAssets)
+            ? marketplaceDraftListing.screenshotAssets
+            : [],
           sourceType: String(type || "").trim(),
         };
         if (currentStudioToolId === "marketplace") mountMarketplaceTool();
@@ -5519,7 +5523,7 @@
             (item) => `
               <button onclick="loadBuilderSiteTemplate('${escapeInlineJsString(item.slug || "")}'); hideBuilderPanels();" class="builder-cmd">
                 <i class="fas fa-layer-group text-fuchsia-300"></i>
-                <span>${escapeHtmlText(item.title || "Official Template")}<small>${escapeHtmlText(item.description || "Official MediaLab template")}</small></span>
+                <span>${escapeHtmlText(item.title || "Official Template")}<small>${escapeHtmlText(item.category || "General")} • ${escapeHtmlText(item.description || "Official MediaLab builder template")}</small></span>
               </button>`,
           )
           .join("");
@@ -5796,7 +5800,7 @@
         }
         beginUniversalProgress("Uploading marketplace screenshots...", 16, 88);
         let uploaded = 0;
-        const uploadedUrls = [];
+        const uploadedAssets = [];
         const uploadNext = async (file) => {
           const formData = new FormData();
           formData.append("screenshot", file);
@@ -5810,7 +5814,12 @@
             throw new Error(data.message || "Could not upload that screenshot.");
           }
           uploaded += 1;
-          uploadedUrls.push(String(data.url || "").trim());
+          uploadedAssets.push({
+            url: String(data.url || "").trim(),
+            thumbnailUrl: String(data.thumbnailUrl || data.url || "").trim(),
+            fileId: String(data.fileId || "").trim(),
+            name: String(data.name || file.name || "").trim(),
+          });
           const percent = 20 + Math.round((uploaded / Math.max(filesToUpload.length, 1)) * 80);
           updateUniversalProgress(
             percent,
@@ -5821,14 +5830,18 @@
           try {
             for (const file of filesToUpload) {
               await uploadNext(file);
-            }
-            marketplaceDraftListing = {
-              ...marketplaceDraftListing,
-              screenshots: [...(marketplaceDraftListing.screenshots || []), ...uploadedUrls].slice(
-                0,
-                4,
-              ),
-            };
+        }
+        marketplaceDraftListing = {
+          ...marketplaceDraftListing,
+          screenshots: [...(marketplaceDraftListing.screenshots || []), ...uploadedAssets.map((item) => item.url)].slice(
+            0,
+            4,
+          ),
+          screenshotAssets: [...(marketplaceDraftListing.screenshotAssets || []), ...uploadedAssets].slice(
+            0,
+            4,
+          ),
+        };
             completeUniversalProgress("Marketplace screenshots uploaded.");
             if (currentStudioToolId === "marketplace" && marketplaceActiveTab === "create") {
               mountMarketplaceTool();
@@ -5845,6 +5858,7 @@
         marketplaceDraftListing = {
           ...marketplaceDraftListing,
           screenshots: (marketplaceDraftListing.screenshots || []).filter((_, itemIndex) => itemIndex !== index),
+          screenshotAssets: (marketplaceDraftListing.screenshotAssets || []).filter((_, itemIndex) => itemIndex !== index),
         };
         mountMarketplaceTool();
       }
@@ -13831,6 +13845,9 @@
         panel.classList.remove("hidden");
         tab?.classList.add("active");
         activeBuilderPanel = name;
+        if (name === "templates") {
+          fetchBuilderCommunityTemplates().catch(() => {});
+        }
         queueBuilderPanelAutoHide();
         handleBuilderTutorialEvent("builder-tab-opened", { tab: name });
       }

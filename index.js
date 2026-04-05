@@ -1201,6 +1201,59 @@ async function uploadFileToImageKit({
   };
 }
 
+async function deleteImageKitFileById(fileId = "") {
+  const targetFileId = String(fileId || "").trim();
+  if (!targetFileId) return false;
+  const privateKey = String(process.env.IMAGEKIT_PRIVATE_KEY || "").trim();
+  if (!privateKey) {
+    throw new Error("ImageKit private key is not configured yet.");
+  }
+  const response = await fetch(`https://api.imagekit.io/v1/files/${encodeURIComponent(targetFileId)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}`,
+    },
+  });
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    const payload = await response.text().catch(() => "");
+    throw new Error(payload || "Could not delete the ImageKit file.");
+  }
+  return true;
+}
+
+async function cleanupMarketplaceStorageArtifacts(item = null) {
+  if (!item) return;
+  const templateRecords = await BuilderTemplate.find({
+    sourceMarketplaceItemId: item._id,
+  }).select("_id htmlFileId").lean();
+  for (const template of templateRecords) {
+    const htmlFileId = String(template?.htmlFileId || "").trim();
+    if (!htmlFileId) continue;
+    try {
+      await deleteImageKitFileById(htmlFileId);
+    } catch (error) {
+      const status = error?.status || error?.response?.status;
+      if (status !== 404) {
+        console.warn("Template ImageKit cleanup skipped:", error.message);
+      }
+    }
+  }
+  const screenshotAssets = Array.isArray(item?.screenshotAssets) ? item.screenshotAssets : [];
+  for (const asset of screenshotAssets) {
+    const fileId = String(asset?.fileId || "").trim();
+    if (!fileId) continue;
+    try {
+      await deleteImageKitFileById(fileId);
+    } catch (error) {
+      const status = error?.status || error?.response?.status;
+      if (status !== 404) {
+        console.warn("Marketplace screenshot cleanup skipped:", error.message);
+      }
+    }
+  }
+}
+
 function buildMarketplacePublicItem(item = {}, viewerId = "") {
   const comments = Array.isArray(item.comments) ? item.comments : [];
   const purchases = Array.isArray(item.purchases) ? item.purchases : [];
@@ -1230,6 +1283,7 @@ function buildMarketplacePublicItem(item = {}, viewerId = "") {
     price: Number(item.price || 0),
     category: item.category || "General",
     screenshots: Array.isArray(item.screenshots) ? item.screenshots.slice(0, 4) : [],
+    screenshotAssets: Array.isArray(item.screenshotAssets) ? item.screenshotAssets.slice(0, 4) : [],
     purpose: item.purpose || "",
     sourceType: item.sourceType || "draft",
     listingKind: item.listingKind || "sale",
@@ -2347,7 +2401,7 @@ const WEBSITE_TEMPLATE_VIEWS = {
 app.get("/api/builder/templates", async (_req, res) => {
   try {
     const items = await BuilderTemplate.find({ isActive: true })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .select("slug title description category authorName createdAt")
       .lean();
     return res.json({
@@ -3624,6 +3678,15 @@ app.post("/api/marketplace", publishRateLimit, express.json({ limit: "15mb" }), 
       .map((value) => String(value || "").trim())
       .filter(Boolean)
       .slice(0, 4);
+    const screenshotAssets = (Array.isArray(req.body?.screenshotAssets) ? req.body.screenshotAssets : [])
+      .map((asset) => ({
+        url: String(asset?.url || "").trim(),
+        thumbnailUrl: String(asset?.thumbnailUrl || asset?.url || "").trim(),
+        fileId: String(asset?.fileId || "").trim(),
+        name: String(asset?.name || "").trim(),
+      }))
+      .filter((asset) => asset.url)
+      .slice(0, 4);
     const sourceHtml = String(req.body?.sourceHtml || "").trim();
     const sourceEntryPath = normalizeImportedEntryPath(req.body?.sourceEntryPath || "index.html");
     const sourceFiles = (Array.isArray(req.body?.sourceFiles) ? req.body.sourceFiles : [])
@@ -3738,6 +3801,7 @@ app.post("/api/marketplace", publishRateLimit, express.json({ limit: "15mb" }), 
       price,
       category,
       screenshots,
+      screenshotAssets,
       purpose,
       sourceType,
       listingKind,
@@ -4133,6 +4197,7 @@ app.patch("/api/marketplace/:id/remove", publishRateLimit, express.json(), async
       return res.status(404).json({ success: false, message: "Marketplace sale not found." });
     }
     const reason = sanitizeMarketplaceText(req.body?.reason || "", 240);
+    await cleanupMarketplaceStorageArtifacts(item);
     await BuilderTemplate.deleteMany({ sourceMarketplaceItemId: item._id });
     const marketplaceRepo = String(item.marketplaceRepo || "").trim();
     const marketplaceRepoPath = String(item.marketplaceRepoPath || "").trim();
@@ -4284,6 +4349,7 @@ app.patch("/api/admin/marketplace/:id", adminRateLimit, requireAdminApi, express
       builderTemplate = await syncMarketplaceItemAsBuilderTemplate(item);
     }
     if (nextStatus === "disapproved" && String(item.listingKind || "sale") === "template") {
+      await cleanupMarketplaceStorageArtifacts(item);
       await BuilderTemplate.deleteMany({ sourceMarketplaceItemId: item._id });
     }
     await createUserNotification({
